@@ -1,0 +1,17 @@
+{
+  "name": "cc-hub",
+  "version": "0.1.0",
+  "description": "CLI couteau suisse IA — logs, digest, multi-modèles",
+  "type": "module",
+  "bin": {
+    "cc-hub": "./bin/cc-hub.ts"
+  },
+  "scripts": {
+    "start": "bun bin/cc-hub.ts"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "commander": "^13.0.0"
+  },
+"license": "MIT"
+}
