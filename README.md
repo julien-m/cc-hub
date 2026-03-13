@@ -246,6 +246,30 @@ cc-hub sync run       # trigger a manual sync
 
 When Turso is configured, an initial sync happens automatically on startup.
 
+### `skill` / `command` / `rule` — Claude Code global linking
+
+Install Claude Code skills, commands, and rules globally via symlinks.
+
+```bash
+# Skills (source = directory with SKILL.md)
+cc-hub skill link .claude/skills/prompt-guide     # by path
+cc-hub skill link prompt-guide                     # by name (resolved in .claude/skills/)
+cc-hub skill list                                  # list global skills
+cc-hub skill unlink prompt-guide                   # remove
+
+# Commands (source = .md file)
+cc-hub command link /path/to/project/.claude/commands/deploy.md
+cc-hub command list
+cc-hub command unlink deploy.md
+
+# Rules (source = .md file)
+cc-hub rule link /path/to/project/.claude/rules/no-console.md
+cc-hub rule list
+cc-hub rule unlink no-console.md
+```
+
+All installs use symlinks — the source stays in your project and updates are reflected immediately.
+
 ### `config` — Preferences
 
 ```bash
@@ -334,6 +358,10 @@ cc-hub/
       transcribe.js        # audio transcription via Replicate
       prompt.js            # prompting guides (get, init, list, update)
       sync.js              # Turso Cloud sync (run, status)
+      skill.js             # skill link, list, unlink
+      command.js           # command link, list, unlink
+      rule.js              # rule link, list, unlink
+      claude-link.js       # shared linking logic
     db/
       index.js             # libsql client + Turso embedded replicas
     services/
@@ -360,6 +388,7 @@ cc-hub/
 | **Phase 3** | `imagine`, `video`, `transcribe`           | done        |
 | **Phase 4** | `prompt` (init, get, list, update)         | done        |
 | **Phase 5** | Turso Cloud sync (multi-machine)           | done        |
+| **Phase 6** | `skill`, `command`, `rule` (global linking) | done        |
 
 ## Usage with Claude Code
 

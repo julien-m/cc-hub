@@ -10,6 +10,9 @@ import { createTranscribeCommand } from './commands/transcribe.ts';
 import { createPromptCommand } from './commands/prompt.ts';
 import { createSyncCommand } from './commands/sync.ts';
 import { createTelegramCommand } from './commands/telegram.ts';
+import { createSkillCommand } from './commands/skill.ts';
+import { createCommandCommand } from './commands/command.ts';
+import { createRuleCommand } from './commands/rule.ts';
 
 const program = new Command();
 
@@ -29,5 +32,8 @@ program.addCommand(createTranscribeCommand());
 program.addCommand(createPromptCommand());
 program.addCommand(createSyncCommand());
 program.addCommand(createTelegramCommand());
+program.addCommand(createSkillCommand());
+program.addCommand(createCommandCommand());
+program.addCommand(createRuleCommand());
 
 export { program };
