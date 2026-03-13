@@ -15,7 +15,7 @@ npm link
 
 ### Prerequisites
 
-- Node.js >= 18
+- [Bun](https://bun.sh/) >= 1.0
 - macOS (Keychain via [`creds`](https://github.com/anthropics/keychain-creds))
 
 ### Credentials setup
