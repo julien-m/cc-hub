@@ -9,6 +9,8 @@ import {
   readFileSync,
   symlinkSync,
   rmSync,
+  mkdirSync,
+  statSync,
 } from 'fs';
 import { createInterface } from 'readline';
 
@@ -20,6 +22,20 @@ function confirm(message: string): Promise<boolean> {
       res(answer.toLowerCase() === 'o' || answer.toLowerCase() === 'y');
     });
   });
+}
+
+/** Extrait le nom depuis le frontmatter d'un fichier SKILL.md */
+function extractNameFromFile(filePath: string): string {
+  const content = readFileSync(filePath, 'utf-8');
+  const match = content.match(/^---\s*\n([\s\S]*?)\n---/);
+  if (!match) {
+    throw new Error(`Frontmatter invalide dans ${filePath}`);
+  }
+  const nameMatch = match[1].match(/^name:\s*(.+)$/m);
+  if (!nameMatch) {
+    throw new Error(`Champ "name" manquant dans le frontmatter de ${filePath}`);
+  }
+  return nameMatch[1].trim();
 }
 
 export interface ClaudeLinkConfig {
@@ -61,18 +77,33 @@ async function link(
   config: ClaudeLinkConfig,
 ): Promise<void> {
   const source = resolvePath(pathOrName, config);
-  const name = config.extractName(source);
-  const dest = join(globalDir(config), name);
+
+  // Skills: si la source est un fichier (SKILL.md), on crée le dossier
+  // et on symlinke le fichier à l'intérieur
+  const sourceIsFile = statSync(source).isFile();
+  const needsWrap = config.isDirectory && sourceIsFile;
+
+  const name = needsWrap
+    ? extractNameFromFile(source)
+    : config.extractName(source);
+
+  const dest = needsWrap
+    ? join(globalDir(config), name, 'SKILL.md')
+    : join(globalDir(config), name);
+
+  const destDir = needsWrap
+    ? join(globalDir(config), name)
+    : dest;
 
   let destStat;
   try {
-    destStat = lstatSync(dest);
+    destStat = lstatSync(destDir);
   } catch {
     // n'existe pas
   }
   if (destStat) {
     const info = destStat.isSymbolicLink()
-      ? `symlink → ${readlinkSync(dest)}`
+      ? `symlink → ${readlinkSync(destDir)}`
       : config.isDirectory
         ? 'dossier'
         : 'fichier';
@@ -83,7 +114,17 @@ async function link(
       console.error('Annulé.');
       return;
     }
-    rmSync(dest, { recursive: true, force: true });
+    if (needsWrap) {
+      // Ne supprimer que le symlink SKILL.md, pas le dossier entier
+      // au cas où il contient d'autres fichiers
+      try { rmSync(dest, { force: true }); } catch { /* */ }
+    } else {
+      rmSync(destDir, { recursive: true, force: true });
+    }
+  }
+
+  if (needsWrap) {
+    mkdirSync(join(globalDir(config), name), { recursive: true });
   }
 
   symlinkSync(source, dest);
@@ -116,7 +157,26 @@ function list(config: ClaudeLinkConfig): void {
   }
 }
 
-async function unlink(name: string, config: ClaudeLinkConfig): Promise<void> {
+function resolveUnlinkName(nameOrPath: string, config: ClaudeLinkConfig): string {
+  // Si c'est un chemin (contient / ou commence par .), on résout le nom
+  if (nameOrPath.includes('/') || nameOrPath.startsWith('.')) {
+    const abs = resolve(nameOrPath);
+    if (existsSync(abs)) {
+      const isFile = statSync(abs).isFile();
+      if (config.isDirectory && isFile) {
+        return extractNameFromFile(abs);
+      }
+      if (config.isDirectory) {
+        return config.extractName(abs);
+      }
+      return basename(abs);
+    }
+  }
+  return nameOrPath;
+}
+
+async function unlink(nameOrPath: string, config: ClaudeLinkConfig): Promise<void> {
+  const name = resolveUnlinkName(nameOrPath, config);
   const dest = join(globalDir(config), name);
   try {
     lstatSync(dest);
