@@ -3,7 +3,7 @@ import { askLLM } from '../services/openrouter.ts';
 
 export function createAskCommand(): Command {
   const ask = new Command('ask')
-    .description('Interroger un LLM via OpenRouter')
+    .description('Poser une question à un LLM')
     .argument('<prompt>', 'Prompt à envoyer au modèle')
     .option('--model <model>', 'Modèle à utiliser (surcharge ASK_MODEL)')
     .action(async (prompt: string, opts: { model?: string }) => {

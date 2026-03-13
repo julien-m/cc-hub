@@ -1,8 +1,8 @@
-import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command } from 'commander';
 import { PROMPTS_DIR, ensureDirs } from '../utils/paths.ts';
-import { askLLM } from '../services/openrouter.ts';
+import { getConfig } from './config.ts';
 
 function modelToSlug(model: string): string {
   return model.replace(/\//g, '-').replace(/[^a-z0-9-]/gi, '').toLowerCase();
@@ -12,22 +12,75 @@ function slugToPath(slug: string): string {
   return join(PROMPTS_DIR, `${slug}.md`);
 }
 
+const VALID_TYPES = ['image', 'video', 'audio', 'text'] as const;
+type ModelType = typeof VALID_TYPES[number];
+
+const FALLBACK_MODEL_BY_TYPE: Record<ModelType, string> = {
+  text: 'anthropic/claude-opus-4.6',
+  image: 'nano-banana-2-new',
+  video: 'kling-30-pro',
+  audio: 'soniox',
+};
+
+function getDefaultModel(type: ModelType): string {
+  const cfg = getConfig();
+  const configKey = `prompt.default.${type}`;
+  const fromConfig = cfg[configKey];
+  if (typeof fromConfig === 'string' && fromConfig.length > 0) return fromConfig;
+  return FALLBACK_MODEL_BY_TYPE[type];
+}
+
+function validateModelType(type: string): asserts type is ModelType {
+  if (!VALID_TYPES.includes(type as ModelType)) {
+    throw new Error(`Type invalide: "${type}". Valeurs acceptées: ${VALID_TYPES.join(', ')}`);
+  }
+}
+
+function extractTypeFromGuide(filePath: string): string | null {
+  try {
+    const content = readFileSync(filePath, 'utf-8');
+    const match = content.match(/^type:\s*(.+)$/m);
+    return match ? match[1].trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 export function createPromptCommand(): Command {
   const prompt = new Command('prompt').description(
-    'Guides de prompting par modèle',
+    'Gérer les guides de prompting par modèle',
   );
 
   prompt
     .command('get')
-    .description('Afficher le guide de prompting pour un modèle')
-    .requiredOption('--model <model>', 'Modèle (ex: openai/gpt-4o)')
-    .action((opts: { model: string }) => {
-      const slug = modelToSlug(opts.model);
+    .description('Afficher le guide de prompting pour un modèle ou un type')
+    .option('--model <model>', 'Modèle (ex: anthropic/claude-opus-4.6)')
+    .option('--type <type>', 'Type (text, image, video, audio) — utilise le modèle par défaut du type')
+    .action((opts: { model?: string; type?: string }) => {
+      if (!opts.model && !opts.type) {
+        console.error('⚠️  Précise --model ou --type');
+        console.error('   Exemples :');
+        console.error('     cc-hub prompt get --model "anthropic/claude-opus-4.6"');
+        console.error('     cc-hub prompt get --type text');
+        process.exit(1);
+      }
+
+      let model: string;
+      if (opts.model) {
+        model = opts.model;
+      } else {
+        validateModelType(opts.type!);
+        model = getDefaultModel(opts.type! as ModelType);
+        console.error(`📎 Type "${opts.type}" → modèle par défaut : ${model}`);
+        console.error(`   (modifiable : cc-hub config set prompt.default.${opts.type} "autre/modele")`);
+      }
+
+      const slug = modelToSlug(model);
       const filePath = slugToPath(slug);
 
       if (!existsSync(filePath)) {
-        console.error(`⚠️  Aucun guide trouvé pour ${opts.model}`);
-        console.error(`   → Lance : cc-hub prompt init --model ${opts.model}`);
+        console.error(`⚠️  Aucun guide trouvé pour ${model}`);
+        console.error(`   → Utilise le skill /prompt-guide pour en générer un`);
         process.exit(2);
       }
 
@@ -35,97 +88,43 @@ export function createPromptCommand(): Command {
     });
 
   prompt
-    .command('init')
-    .description('Générer un guide de prompting pour un modèle')
-    .requiredOption('--model <model>', 'Modèle (ex: openai/gpt-4o)')
-    .action(async (opts: { model: string }) => {
-      try {
-        const slug = modelToSlug(opts.model);
-        const filePath = slugToPath(slug);
-
-        if (existsSync(filePath)) {
-          console.error(`⚠️  Un guide existe déjà pour ${opts.model}`);
-          console.error(`   → Utilise : cc-hub prompt update --model ${opts.model}`);
-          process.exit(1);
-        }
-
-        await generatePromptGuide(opts.model, filePath);
-      } catch (err) {
-        console.error(`❌ ${(err as Error).message}`);
-        process.exit(4);
-      }
-    });
-
-  prompt
     .command('list')
     .description('Lister les guides disponibles')
-    .action(() => {
+    .option('--type <type>', 'Filtrer par type (text, image, video, audio)')
+    .action((opts: { type?: string }) => {
       ensureDirs();
+      if (opts.type) validateModelType(opts.type);
+
       const files = readdirSync(PROMPTS_DIR).filter((f) => f.endsWith('.md'));
 
       if (files.length === 0) {
         console.log('Aucun guide disponible.');
-        console.log('   → Lance : cc-hub prompt init --model <model>');
+        console.log('   → Utilise le skill /prompt-guide pour en générer');
         return;
       }
 
+      let count = 0;
       for (const file of files) {
         const name = file.replace('.md', '');
         const fullPath = join(PROMPTS_DIR, file);
+        const type = extractTypeFromGuide(fullPath) || '?';
+
+        if (opts.type && type !== opts.type) continue;
+
         const stat = statSync(fullPath);
         const updated = stat.mtime.toLocaleDateString('fr-FR');
-        console.log(`${name.padEnd(35)} (mis à jour le ${updated})`);
+        const isDefault = VALID_TYPES.some(
+          (t) => type === t && modelToSlug(getDefaultModel(t as ModelType)) === name,
+        );
+        const marker = isDefault ? ' ★' : '';
+        console.log(`${name.padEnd(35)} [${type.padEnd(5)}] (mis à jour le ${updated})${marker}`);
+        count++;
       }
-    });
 
-  prompt
-    .command('update')
-    .description("Mettre à jour un guide existant")
-    .requiredOption('--model <model>', 'Modèle (ex: openai/gpt-4o)')
-    .action(async (opts: { model: string }) => {
-      try {
-        const slug = modelToSlug(opts.model);
-        const filePath = slugToPath(slug);
-
-        if (!existsSync(filePath)) {
-          console.error(`⚠️  Aucun guide trouvé pour ${opts.model}`);
-          console.error(`   → Lance : cc-hub prompt init --model ${opts.model}`);
-          process.exit(2);
-        }
-
-        await generatePromptGuide(opts.model, filePath);
-      } catch (err) {
-        console.error(`❌ ${(err as Error).message}`);
-        process.exit(4);
+      if (opts.type && count === 0) {
+        console.log(`Aucun guide de type "${opts.type}".`);
       }
     });
 
   return prompt;
-}
-
-async function generatePromptGuide(model: string, filePath: string): Promise<void> {
-  console.error(`🧠 Génération du guide de prompting pour ${model}...`);
-
-  const guidePrompt = `You are an expert prompt engineer. Generate a comprehensive prompting guide for the model "${model}".
-
-The guide should be a Markdown document with these sections:
-
-1. **Model Overview** — What the model excels at, its strengths and limitations
-2. **Key Principles** — The most important prompting principles for this specific model
-3. **Recommended Prompt Structure** — How to structure prompts for best results
-4. **Best Practices** — Specific techniques that work well with this model
-5. **Common Mistakes to Avoid** — What NOT to do when prompting this model
-6. **Examples** — 2-3 concrete before/after examples showing good vs bad prompts
-
-Write the guide in English. Be specific to this model — don't give generic advice. Include concrete, actionable tips.
-Start with a YAML frontmatter block with: model, provider, last_updated (today's date).`;
-
-  const content = await askLLM(guidePrompt, {
-    model: 'anthropic/claude-sonnet-4-20250514',
-  });
-
-  ensureDirs();
-  writeFileSync(filePath, content + '\n');
-
-  console.error(`✅ Guide sauvegardé: ${filePath}`);
 }

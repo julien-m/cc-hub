@@ -6,7 +6,7 @@ import { ARTIFACTS_DIR, ensureDirs } from '../utils/paths.ts';
 
 export function createVideoCommand(): Command {
   const video = new Command('video')
-    .description('Générer une vidéo via Replicate')
+    .description("Générer une vidéo à partir d'un prompt")
     .argument('<prompt>', 'Description de la vidéo à générer')
     .option('--model <model>', 'Modèle à utiliser (surcharge VIDEO_MODEL)')
     .action(async (prompt: string, opts: { model?: string }) => {

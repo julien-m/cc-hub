@@ -15,7 +15,7 @@ const MIME_TYPES: Record<string, string> = {
 
 export function createTranscribeCommand(): Command {
   const transcribe = new Command('transcribe')
-    .description('Transcrire un fichier audio via Replicate')
+    .description('Transcrire un fichier audio en texte')
     .argument('<file>', 'Fichier audio à transcrire')
     .option('--model <model>', 'Modèle à utiliser (surcharge TRANSCRIBE_MODEL)')
     .action(async (file: string, opts: { model?: string }) => {

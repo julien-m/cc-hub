@@ -3,7 +3,7 @@ import { getDb, syncDb, isTursoEnabled } from '../db/index.ts';
 
 export function createSyncCommand(): Command {
   const sync = new Command('sync').description(
-    'Synchroniser avec Turso Cloud',
+    'Synchroniser la base de données dans le cloud',
   );
 
   sync

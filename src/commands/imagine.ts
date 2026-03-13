@@ -6,7 +6,7 @@ import { ARTIFACTS_DIR, ensureDirs } from '../utils/paths.ts';
 
 export function createImagineCommand(): Command {
   const imagine = new Command('imagine')
-    .description("Générer une image via Replicate")
+    .description("Générer une image à partir d'un prompt")
     .argument('<prompt>', "Description de l'image à générer")
     .option('--model <model>', 'Modèle à utiliser (surcharge IMAGE_MODEL)')
     .action(async (prompt: string, opts: { model?: string }) => {
