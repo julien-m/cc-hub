@@ -208,7 +208,7 @@ export function createClaudeLinkCommand(config: ClaudeLinkConfig): Command {
   linkCmd.action(async (path: string, directory?: string) => {
     try {
       await link(path, config);
-      if (directory) {
+      if (typeof directory === 'string') {
         await link(directory, config);
       }
     } catch (err) {
@@ -234,7 +234,7 @@ export function createClaudeLinkCommand(config: ClaudeLinkConfig): Command {
   unlinkCmd.action(async (name: string, directory?: string) => {
     try {
       await unlink(name, config);
-      if (directory) {
+      if (typeof directory === 'string') {
         await unlink(directory, config);
       }
     } catch (err) {
