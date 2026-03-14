@@ -196,36 +196,52 @@ export function createClaudeLinkCommand(config: ClaudeLinkConfig): Command {
     `Gérer les ${config.type}s Claude Code installés globalement`,
   );
 
-  cmd
+  const linkCmd = cmd
     .command('link')
     .description(`Installer un ${config.type} globalement (symlink)`)
-    .argument('<path>', `Chemin ou nom du ${config.type}`)
-    .action(async (path: string) => {
-      try {
-        await link(path, config);
-      } catch (err) {
-        console.error(`Erreur: ${(err as Error).message}`);
-        process.exit(1);
+    .argument('<path>', `Chemin ou nom du ${config.type}`);
+
+  if (!config.isDirectory) {
+    linkCmd.argument('[directory]', 'Répertoire associé à linker aussi');
+  }
+
+  linkCmd.action(async (path: string, directory?: string) => {
+    try {
+      await link(path, config);
+      if (directory) {
+        await link(directory, config);
       }
-    });
+    } catch (err) {
+      console.error(`Erreur: ${(err as Error).message}`);
+      process.exit(1);
+    }
+  });
 
   cmd
     .command('list')
     .description(`Lister les ${config.type}s installés globalement`)
     .action(() => list(config));
 
-  cmd
+  const unlinkCmd = cmd
     .command('unlink')
     .description(`Désinstaller un ${config.type} global`)
-    .argument('<name>', `Nom du ${config.type} à désinstaller`)
-    .action(async (name: string) => {
-      try {
-        await unlink(name, config);
-      } catch (err) {
-        console.error(`Erreur: ${(err as Error).message}`);
-        process.exit(1);
+    .argument('<name>', `Nom du ${config.type} à désinstaller`);
+
+  if (!config.isDirectory) {
+    unlinkCmd.argument('[directory]', 'Répertoire associé à unliker aussi');
+  }
+
+  unlinkCmd.action(async (name: string, directory?: string) => {
+    try {
+      await unlink(name, config);
+      if (directory) {
+        await unlink(directory, config);
       }
-    });
+    } catch (err) {
+      console.error(`Erreur: ${(err as Error).message}`);
+      process.exit(1);
+    }
+  });
 
   return cmd;
 }
