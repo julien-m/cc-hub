@@ -56,12 +56,15 @@ cc-hub transcribe ./fichier.mp3
 ### Gérer les skills/commands/rules Claude Code
 
 ```bash
-cc-hub skill link <path|name>    # installer un skill globalement (symlink)
-cc-hub skill list                # lister les skills globaux
-cc-hub skill unlink <name>       # désinstaller
+cc-hub skill link <path|name>                    # installer un skill globalement (symlink)
+cc-hub skill link <path> --name <custom-name>    # avec un nom personnalisé
+cc-hub skill list                                # lister les skills globaux
+cc-hub skill unlink <name>                       # désinstaller
 
-cc-hub command link <path>       # idem pour les commandes
-cc-hub rule link <path>          # idem pour les rules
+cc-hub command link <path>                       # idem pour les commandes
+cc-hub command link <path> --name <custom-name>  # nom personnalisé (.md ajouté auto)
+cc-hub rule link <path>                          # idem pour les rules
+cc-hub rule link <path> --name <custom-name>     # nom personnalisé (.md ajouté auto)
 ```
 
 ## Règles

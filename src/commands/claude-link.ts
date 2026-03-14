@@ -75,6 +75,7 @@ function resolvePath(pathOrName: string, config: ClaudeLinkConfig): string {
 async function link(
   pathOrName: string,
   config: ClaudeLinkConfig,
+  customName?: string,
 ): Promise<void> {
   const source = resolvePath(pathOrName, config);
 
@@ -83,9 +84,19 @@ async function link(
   const sourceIsFile = statSync(source).isFile();
   const needsWrap = config.isDirectory && sourceIsFile;
 
-  const name = needsWrap
-    ? extractNameFromFile(source)
-    : config.extractName(source);
+  let name: string;
+  if (customName) {
+    // For file-based types (commands/rules), ensure .md extension
+    if (!config.isDirectory && !customName.endsWith('.md')) {
+      name = `${customName}.md`;
+    } else {
+      name = customName;
+    }
+  } else {
+    name = needsWrap
+      ? extractNameFromFile(source)
+      : config.extractName(source);
+  }
 
   const dest = needsWrap
     ? join(globalDir(config), name, 'SKILL.md')
@@ -199,15 +210,20 @@ export function createClaudeLinkCommand(config: ClaudeLinkConfig): Command {
   const linkCmd = cmd
     .command('link')
     .description(`Installer un ${config.type} globalement (symlink)`)
-    .argument('<path>', `Chemin ou nom du ${config.type}`);
+    .argument('<path>', `Chemin ou nom du ${config.type}`)
+    .option('--name <name>', 'Nom personnalisé pour le symlink');
 
   if (!config.isDirectory) {
     linkCmd.argument('[directory]', 'Répertoire associé à linker aussi');
   }
 
-  linkCmd.action(async (path: string, directory?: string) => {
+  linkCmd.action(async (path: string, ...args: unknown[]) => {
     try {
-      await link(path, config);
+      const { name: customName } = linkCmd.opts<{ name?: string }>();
+      const directory = !config.isDirectory && typeof args[0] === 'string'
+        ? args[0]
+        : undefined;
+      await link(path, config, customName);
       if (typeof directory === 'string') {
         await link(directory, config);
       }

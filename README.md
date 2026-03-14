@@ -268,6 +268,16 @@ cc-hub rule list
 cc-hub rule unlink no-console.md
 ```
 
+Use `--name` to give the symlink a different name than the source:
+
+```bash
+cc-hub command link ./test.md --name my-command.md    # ~/.claude/commands/my-command.md
+cc-hub rule link ./local-rule.md --name project-rules.md
+cc-hub skill link ./my-skill --name custom-skill-name
+```
+
+For commands and rules, the `.md` extension is added automatically if omitted.
+
 All installs use symlinks — the source stays in your project and updates are reflected immediately.
 
 ### `config` — Preferences
