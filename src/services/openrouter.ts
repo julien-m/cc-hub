@@ -3,6 +3,8 @@ import { getEnv } from './env.ts';
 interface AskOptions {
   model?: string;
   stdin?: string;
+  files?: Array<{ path: string; content: string }>;
+  effort?: 'low' | 'medium' | 'high';
 }
 
 export async function askLLM(prompt: string, opts: AskOptions = {}): Promise<string> {
@@ -18,10 +20,24 @@ export async function askLLM(prompt: string, opts: AskOptions = {}): Promise<str
   }
 
   const messages: Array<{ role: string; content: string }> = [];
+
+  // Message 1: the prompt (intent first)
+  messages.push({ role: 'user', content: prompt });
+
+  // Message 2: files + stdin as context (if any)
+  const contextParts: string[] = [];
+
+  if (opts.files?.length) {
+    const { buildFileContext } = await import('../utils/files.ts');
+    contextParts.push(buildFileContext(opts.files));
+  }
+
   if (opts.stdin) {
-    messages.push({ role: 'user', content: `${opts.stdin}\n\n${prompt}` });
-  } else {
-    messages.push({ role: 'user', content: prompt });
+    contextParts.push(`<stdin>\n${opts.stdin}\n</stdin>`);
+  }
+
+  if (contextParts.length > 0) {
+    messages.push({ role: 'user', content: contextParts.join('\n\n') });
   }
 
   const baseUrl = getEnv('OPENROUTER_BASE_URL') || 'https://openrouter.ai/api/v1';
@@ -37,7 +53,12 @@ export async function askLLM(prompt: string, opts: AskOptions = {}): Promise<str
     body: JSON.stringify({
       model,
       messages,
-      max_tokens: 4096,
+      ...(opts.effort && {
+        reasoning: {
+          effort: opts.effort,
+          exclude: true,
+        },
+      }),
     }),
   });
 

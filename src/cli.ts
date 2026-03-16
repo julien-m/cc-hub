@@ -13,6 +13,7 @@ import { createTelegramCommand } from './commands/telegram.ts';
 import { createSkillCommand } from './commands/skill.ts';
 import { createCommandCommand } from './commands/command.ts';
 import { createRuleCommand } from './commands/rule.ts';
+import { createReviewCommand } from './commands/review.ts';
 
 const program = new Command();
 
@@ -35,5 +36,6 @@ program.addCommand(createTelegramCommand());
 program.addCommand(createSkillCommand());
 program.addCommand(createCommandCommand());
 program.addCommand(createRuleCommand());
+program.addCommand(createReviewCommand());
 
 export { program };
