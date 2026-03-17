@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { askLLM } from '../services/openrouter.ts';
 import { askPoyo } from '../services/poyo.ts';
 import { getEnv } from '../services/env.ts';
+import { readStdin } from '../utils/stdin.ts';
 import {
 	resolveFilePaths,
 	readFileAsContext,
@@ -68,14 +69,4 @@ export function createAskCommand(): Command {
 		});
 
 	return ask;
-}
-
-function readStdin(): Promise<string> {
-	return new Promise((resolve, reject) => {
-		let data = '';
-		process.stdin.setEncoding('utf-8');
-		process.stdin.on('data', (chunk: string) => { data += chunk; });
-		process.stdin.on('end', () => resolve(data));
-		process.stdin.on('error', reject);
-	});
 }

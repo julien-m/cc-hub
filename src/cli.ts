@@ -14,6 +14,7 @@ import { createSkillCommand } from './commands/skill.ts';
 import { createCommandCommand } from './commands/command.ts';
 import { createRuleCommand } from './commands/rule.ts';
 import { createReviewCommand } from './commands/review.ts';
+import { createCopilotCommand } from './commands/copilot.ts';
 
 const program = new Command();
 
@@ -37,5 +38,6 @@ program.addCommand(createSkillCommand());
 program.addCommand(createCommandCommand());
 program.addCommand(createRuleCommand());
 program.addCommand(createReviewCommand());
+program.addCommand(createCopilotCommand());
 
 export { program };

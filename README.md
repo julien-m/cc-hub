@@ -222,6 +222,88 @@ cc-hub transcribe ./meeting.mp3 --model openai/whisper
 
 Outputs the transcription to stdout.
 
+### `copilot` — LLM via GitHub Models (Copilot)
+
+LLM access via GitHub Models REST API. Ideal for background/cron tasks.
+
+```bash
+cc-hub copilot "Summarize this text"
+cc-hub copilot "Explain this code" -f src/cli.ts
+cc-hub copilot "Compare these files" -f src/a.ts -f src/b.ts
+cat file.ts | cc-hub copilot "Analyze"
+cc-hub copilot "Question" --model openai/gpt-4.1
+```
+
+Default model: `gpt-4.1-mini`. Token is retrieved automatically via `gh auth token`.
+
+Advanced options:
+
+```bash
+# Control creativity and length
+cc-hub copilot "Summarize" --temperature 0.2 --max-tokens 200
+
+# Free-form JSON response
+cc-hub copilot "3 European capitals in JSON" --response-format '{"type":"json_object"}'
+
+# Structured output with strict JSON schema
+cc-hub copilot "3 European capitals" --response-format '{
+  "type": "json_schema",
+  "json_schema": {
+    "name": "capitals",
+    "strict": true,
+    "schema": {
+      "type": "object",
+      "properties": {
+        "capitals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "country": { "type": "string" },
+              "city": { "type": "string" }
+            },
+            "required": ["country", "city"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["capitals"],
+      "additionalProperties": false
+    }
+  }
+}'
+# → {"capitals":[{"country":"France","city":"Paris"},{"country":"Germany","city":"Berlin"},...]}
+
+# Reproducible output
+cc-hub copilot "Translate to English" --seed 42
+```
+
+| Option | Description |
+| --- | --- |
+| `--model <model>` | Model ID in `publisher/name` format (default: `gpt-4.1-mini`) |
+| `-f, --file <path>` | File or glob as context (repeatable) |
+| `--temperature <0-1>` | Creativity (0 = deterministic, 1 = creative) |
+| `--top-p <0-1>` | Nucleus sampling (alternative to temperature) |
+| `--max-tokens <n>` | Max tokens in response |
+| `--frequency-penalty <-2,2>` | Penalize repeated tokens |
+| `--presence-penalty <-2,2>` | Encourage new topics |
+| `--seed <n>` | Reproducible output |
+| `--stop <seq>` | Stop sequence (repeatable) |
+| `--response-format <json>` | `json_object` or `json_schema` with strict schema |
+| `--tools <json>` | Function calling definitions |
+| `--tool-choice <mode>` | `auto`, `required`, or `none` |
+
+### `review` — Code review via Poyo (Gemini)
+
+```bash
+cc-hub review -f plan.md
+cc-hub review -f commands/ "Check consistency between these commands"
+cc-hub review -f src/*.ts -f README.md
+cat output.log | cc-hub review "Analyze these errors"
+```
+
+Uses Poyo provider with `gemini-3-flash-preview` by default. Without a custom prompt, applies a built-in critical review prompt. `-f` accepts files, directories (non-recursive), and globs.
+
 ### `prompt` — Per-model prompting guides
 
 Maintains a local collection of prompting guides (Markdown files). Claude Code calls `prompt get` at runtime to fetch the guide and craft optimal prompts autonomously.
