@@ -37,19 +37,6 @@ cat fichier.ts | cc-hub ask "Explique ce code"
 cc-hub ask "Question" --provider poyo --model gemini-3-flash-preview
 ```
 
-### Obtenir une revue critique de fichiers (via Poyo/Gemini)
-
-```bash
-cc-hub review -f plan.md
-cc-hub review -f commands/ "Vérifie la cohérence entre ces commandes"
-cc-hub review -f src/*.ts -f README.md
-cat output.log | cc-hub review "Analyse ces erreurs"
-```
-
-- Provider : toujours Poyo, modèle par défaut `gemini-3-flash-preview`
-- Sans prompt custom, applique un prompt de revue critique par défaut
-- `-f` accepte fichiers, répertoires (non-récursif), et globs
-
 ### Générer une image (via Poyo)
 
 ```bash
@@ -164,5 +151,5 @@ cc-hub rule link <path> --name <custom-name>     # nom personnalisé (.md ajout�
 
 - Ne jamais logger de secrets dans `--details` ou `--title`
 - Utiliser `--important` avec parcimonie — ces artifacts sont envoyés sur Telegram
-- Le stdout de `ask`, `copilot`, `imagine`, `video`, `transcribe`, `review` est exploitable en pipe
+- Le stdout de `ask`, `copilot`, `imagine`, `video`, `transcribe` est exploitable en pipe
 - Toujours utiliser `creds` pour les secrets (jamais de clés en dur)

@@ -293,17 +293,6 @@ cc-hub copilot "Translate to English" --seed 42
 | `--tools <json>` | Function calling definitions |
 | `--tool-choice <mode>` | `auto`, `required`, or `none` |
 
-### `review` — Code review via Poyo (Gemini)
-
-```bash
-cc-hub review -f plan.md
-cc-hub review -f commands/ "Check consistency between these commands"
-cc-hub review -f src/*.ts -f README.md
-cat output.log | cc-hub review "Analyze these errors"
-```
-
-Uses Poyo provider with `gemini-3-flash-preview` by default. Without a custom prompt, applies a built-in critical review prompt. `-f` accepts files, directories (non-recursive), and globs.
-
 ### `prompt` — Per-model prompting guides
 
 Maintains a local collection of prompting guides (Markdown files). Claude Code calls `prompt get` at runtime to fetch the guide and craft optimal prompts autonomously.
