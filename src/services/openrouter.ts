@@ -5,6 +5,8 @@ interface AskOptions {
   stdin?: string;
   files?: Array<{ path: string; content: string }>;
   effort?: 'low' | 'medium' | 'high';
+  json?: boolean;
+  jsonSchema?: object;
 }
 
 export async function askLLM(prompt: string, opts: AskOptions = {}): Promise<string> {
@@ -20,6 +22,10 @@ export async function askLLM(prompt: string, opts: AskOptions = {}): Promise<str
   }
 
   const messages: Array<{ role: string; content: string }> = [];
+
+  if (opts.json) {
+    messages.push({ role: 'system', content: 'Respond with valid JSON only. No markdown, no explanation, no code fences.' });
+  }
 
   // Message 1: the prompt (intent first)
   messages.push({ role: 'user', content: prompt });
@@ -53,6 +59,11 @@ export async function askLLM(prompt: string, opts: AskOptions = {}): Promise<str
     body: JSON.stringify({
       model,
       messages,
+      ...(opts.json && {
+        response_format: opts.jsonSchema
+          ? { type: 'json_schema', json_schema: opts.jsonSchema }
+          : { type: 'json_object' },
+      }),
       ...(opts.effort && {
         reasoning: {
           effort: opts.effort,

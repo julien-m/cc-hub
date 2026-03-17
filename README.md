@@ -187,11 +187,34 @@ cc-hub ask "Explain this bug" --model openai/gpt-4o
 cc-hub ask "Translate to English" --model google/gemini-2.5-pro
 ```
 
-Supports piping:
+Supports piping and file context:
 
 ```bash
 cat file.ts | cc-hub ask "Explain this code"
+cc-hub ask "Explain this code" -f src/cli.ts
+cc-hub ask "Compare these files" -f src/a.ts -f src/b.ts
 ```
+
+JSON output:
+
+```bash
+# Free-form JSON (model chooses the structure)
+cc-hub ask "3 European capitals in JSON" --json
+
+# Structured output with a JSON Schema (inline)
+cc-hub ask "3 European capitals" --schema '{"name":"caps","strict":true,"schema":{"type":"object","properties":{"capitals":{"type":"array","items":{"type":"object","properties":{"city":{"type":"string"},"country":{"type":"string"}},"required":["city","country"],"additionalProperties":false}}},"required":["capitals"],"additionalProperties":false}}'
+
+# Structured output with a JSON Schema (file)
+cc-hub ask "3 European capitals" --schema ./capitals.schema.json
+```
+
+| Option | Description |
+| --- | --- |
+| `--model <model>` | Model ID (default: `ASK_MODEL` from `.env`) |
+| `-f, --file <path>` | File or glob as context (repeatable) |
+| `--provider <name>` | `openrouter` (default) or `poyo` |
+| `--json` | Free-form JSON output |
+| `--schema <json_or_file>` | Structured output with JSON Schema (inline string or `.json` file path). Implies `--json` |
 
 Output goes to stdout. Silent by default (no auto-logging).
 

@@ -35,7 +35,13 @@ cc-hub ask "Explique ce code" -f fichier.ts
 cc-hub ask "Compare ces fichiers" -f src/a.ts -f src/b.ts
 cat fichier.ts | cc-hub ask "Explique ce code"
 cc-hub ask "Question" --provider poyo --model gemini-3-flash-preview
+cc-hub ask "3 capitales européennes en JSON" --json --model openai/gpt-4.1
+cc-hub ask "3 European capitals" --schema '{"name":"caps","strict":true,"schema":{...}}'
+cc-hub ask "3 European capitals" --schema ./capitals.schema.json
 ```
+
+- `--json` : sortie JSON libre (le modèle choisit la structure)
+- `--schema <json_or_file>` : sortie JSON contrainte par un JSON Schema (inline ou chemin vers fichier `.json`). Implique `--json`
 
 ### Générer une image (via Poyo)
 

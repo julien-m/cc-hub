@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { Command } from 'commander';
 import { askLLM } from '../services/openrouter.ts';
 import { askPoyo } from '../services/poyo.ts';
@@ -9,6 +10,14 @@ import {
 	estimateTokens,
 	buildFileContext,
 } from '../utils/files.ts';
+
+async function parseSchema(value: string): Promise<object> {
+	if (value.trimStart().startsWith('{')) {
+		return JSON.parse(value) as object;
+	}
+	const content = await readFile(value, 'utf-8');
+	return JSON.parse(content) as object;
+}
 
 function collect(val: string, acc: string[]): string[] {
 	acc.push(val);
@@ -22,7 +31,9 @@ export function createAskCommand(): Command {
 		.option('--model <model>', 'Modèle à utiliser (surcharge ASK_MODEL)')
 		.option('-f, --file <path>', 'File or glob to include as context (repeatable)', collect, [])
 		.option('--provider <name>', 'LLM provider (openrouter, poyo)')
-		.action(async (prompt: string, opts: { model?: string; file: string[]; provider?: string }) => {
+		.option('--json', 'Request JSON output from the model')
+		.option('--schema <json_or_file>', 'JSON schema for structured output (inline JSON or path to .json file)')
+		.action(async (prompt: string, opts: { model?: string; file: string[]; provider?: string; json?: boolean; schema?: string }) => {
 			try {
 				let stdin: string | undefined;
 				if (!process.stdin.isTTY) {
@@ -51,6 +62,11 @@ export function createAskCommand(): Command {
 					}
 				}
 
+				let jsonSchema: object | undefined;
+				if (opts.schema) {
+					jsonSchema = await parseSchema(opts.schema);
+				}
+
 				const provider = opts.provider || getEnv('ASK_PROVIDER') || 'openrouter';
 				const askFn = provider === 'poyo' ? askPoyo : askLLM;
 
@@ -58,6 +74,8 @@ export function createAskCommand(): Command {
 					model: opts.model,
 					stdin,
 					files: files.length > 0 ? files : undefined,
+					json: opts.json || !!jsonSchema,
+					jsonSchema,
 				});
 
 				process.stdout.write(response);
