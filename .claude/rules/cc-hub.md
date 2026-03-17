@@ -60,71 +60,18 @@ cc-hub video "Description" --duration 10 --aspect-ratio 9:16
 - Durée : 3-15 secondes (défaut : 5)
 - Ratios : `16:9` (défaut), `1:1`, `9:16`
 
-### Poser une question via GitHub Models / Copilot
+### Poser une question via GitHub Copilot CLI
 
 ```bash
 cc-hub copilot "Explique ce code"
 cc-hub copilot "Compare ces fichiers" -f src/a.ts -f src/b.ts
 cat fichier.ts | cc-hub copilot "Analyse"
-cc-hub copilot "Question" --model openai/gpt-4.1
+cc-hub copilot "Question" --model claude-sonnet-4.6
 ```
 
-- Provider : GitHub Models (API REST, auth via `gh auth token`)
-- Modèle par défaut : `gpt-4.1-mini`
+- Provider : GitHub Copilot CLI (`gh copilot -p`)
+- Modèle par défaut : `gpt-4.1`
 - Idéal pour les tâches non urgentes (cron de nuit, batch)
-
-Options avancées :
-
-```bash
-# Contrôle de créativité et longueur
-cc-hub copilot "Résume" --temperature 0.2 --max-tokens 200
-
-# Réponse JSON libre
-cc-hub copilot "3 capitales européennes en JSON" --response-format '{"type":"json_object"}'
-
-# Réponse JSON avec schéma strict (structured output)
-cc-hub copilot "3 capitales européennes" --response-format '{
-  "type": "json_schema",
-  "json_schema": {
-    "name": "capitals",
-    "strict": true,
-    "schema": {
-      "type": "object",
-      "properties": {
-        "capitals": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "country": { "type": "string" },
-              "city": { "type": "string" }
-            },
-            "required": ["country", "city"],
-            "additionalProperties": false
-          }
-        }
-      },
-      "required": ["capitals"],
-      "additionalProperties": false
-    }
-  }
-}'
-
-# Résultat reproductible
-cc-hub copilot "Traduis en anglais" --seed 42
-
-# Toutes les options
---temperature <0-1>         # créativité
---top-p <0-1>               # nucleus sampling
---max-tokens <n>            # limite de tokens en sortie
---frequency-penalty <-2,2>  # pénalise les répétitions
---presence-penalty <-2,2>   # encourage les nouveaux sujets
---seed <n>                  # reproductibilité
---stop <seq>                # séquence d'arrêt (repeatable)
---response-format <json>    # json_object ou json_schema
---tools <json>              # function calling
---tool-choice <mode>        # auto, required, none
-```
 
 ### Transcrire un fichier audio (via Soniox)
 

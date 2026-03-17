@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { statSync } from 'node:fs';
-import { askGitHubModels } from '../services/github-models.ts';
+import { askCopilot } from '../services/copilot.ts';
 import { readStdin } from '../utils/stdin.ts';
 import {
 	resolveFilePaths,
@@ -30,47 +30,15 @@ function collect(val: string, acc: string[]): string[] {
 	return acc;
 }
 
-function parseNumber(val: string): number {
-	const n = Number(val);
-	if (Number.isNaN(n)) throw new Error(`Invalid number: ${val}`);
-	return n;
-}
-
-function parseInt(val: string): number {
-	const n = Number.parseInt(val, 10);
-	if (Number.isNaN(n)) throw new Error(`Invalid integer: ${val}`);
-	return n;
-}
-
 export function createCopilotCommand(): Command {
 	const copilot = new Command('copilot')
-		.description('Poser une question via GitHub Models (Copilot)')
+		.description('Poser une question via GitHub Copilot CLI')
 		.argument('<prompt>', 'Prompt à envoyer au modèle')
-		.option('--model <model>', 'Modèle à utiliser (défaut: gpt-4.1-mini)')
+		.option('--model <model>', 'Modèle à utiliser (défaut: gpt-4.1)')
 		.option('-f, --file <path>', 'File or glob to include as context (repeatable)', collect, [])
-		.option('--temperature <n>', 'Creativity: 0 = deterministic, 1 = creative (range 0-1)', parseNumber)
-		.option('--top-p <n>', 'Nucleus sampling: only consider top N% probable tokens (range 0-1)', parseNumber)
-		.option('--max-tokens <n>', 'Maximum number of tokens in the response', parseInt)
-		.option('--frequency-penalty <n>', 'Penalize repeated tokens by frequency (range -2 to 2)', parseNumber)
-		.option('--presence-penalty <n>', 'Penalize tokens already present, encourages new topics (range -2 to 2)', parseNumber)
-		.option('--seed <n>', 'Seed for reproducible outputs (same seed + prompt = same response)', parseInt)
-		.option('--stop <seq>', 'Stop sequence — generation stops when produced (repeatable)', collect, [])
-		.option('--response-format <json>', 'Response format as JSON: {"type":"json_object"} or {"type":"json_schema","json_schema":{...}}')
-		.option('--tool-choice <mode>', 'Tool calling mode: auto, required, none')
-		.option('--tools <json>', 'Tools definition as JSON array for function calling')
 		.action(async (prompt: string, opts: {
 			model?: string;
 			file: string[];
-			temperature?: number;
-			topP?: number;
-			maxTokens?: number;
-			frequencyPenalty?: number;
-			presencePenalty?: number;
-			seed?: number;
-			stop: string[];
-			responseFormat?: string;
-			toolChoice?: string;
-			tools?: string;
 		}) => {
 			try {
 				let stdin: string | undefined;
@@ -101,38 +69,10 @@ export function createCopilotCommand(): Command {
 					}
 				}
 
-				let responseFormat: object | undefined;
-				if (opts.responseFormat) {
-					try {
-						responseFormat = JSON.parse(opts.responseFormat);
-					} catch {
-						throw new Error('Invalid JSON for --response-format');
-					}
-				}
-
-				let tools: object[] | undefined;
-				if (opts.tools) {
-					try {
-						tools = JSON.parse(opts.tools);
-					} catch {
-						throw new Error('Invalid JSON for --tools');
-					}
-				}
-
-				const response = await askGitHubModels(prompt, {
+				const response = await askCopilot(prompt, {
 					model: opts.model,
 					stdin,
 					files: files.length > 0 ? files : undefined,
-					temperature: opts.temperature,
-					topP: opts.topP,
-					maxTokens: opts.maxTokens,
-					frequencyPenalty: opts.frequencyPenalty,
-					presencePenalty: opts.presencePenalty,
-					seed: opts.seed,
-					stop: opts.stop.length > 0 ? opts.stop : undefined,
-					responseFormat,
-					tools,
-					toolChoice: opts.toolChoice,
 				});
 
 				process.stdout.write(response);
