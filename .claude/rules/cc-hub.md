@@ -46,31 +46,30 @@ cc-hub ask "3 European capitals" --schema ./capitals.schema.json
 ### Générer une image (via Poyo)
 
 ```bash
-cc-hub imagine "Description de l'image"
-cc-hub imagine "Description" --size 16:9 --resolution 2K
-cc-hub imagine "Description" -o mon-image.png
-# → télécharge dans ~/.claude-hub/artifacts/ et affiche le chemin
+cc-hub imagine "Description" -o /tmp/mon-image.png       # chemin complet → respecté
+cc-hub imagine "Description" -o ./local/image.png         # chemin relatif → respecté
+cc-hub imagine "Description" -o mon-image.png             # nom seul → dans ~/.claude-hub/artifacts/
+cc-hub imagine "Description" --size 16:9 --resolution 2K -o rendu.png
 ```
 
 - Modèle par défaut : `nano-banana-2-new`
 - Sizes : `1:1`, `16:9`, `9:16`, `3:2`, `2:3`, `4:3`, `3:4`, `4:5`, `5:4`, `21:9`
 - Résolutions : `1K` (défaut), `2K`, `4K`
-- `-o, --output <filename>` : nom de fichier personnalisé (dans `~/.claude-hub/artifacts/`)
-- Sans `-o`, le nom est unique par défaut (inclut un timestamp `HHmmss`)
+- `-o, --output <path>` (**obligatoire**) : chemin complet → respecté tel quel, nom seul → dans `~/.claude-hub/artifacts/`
 
 ### Générer une vidéo (via Poyo)
 
 ```bash
-cc-hub video "Description de la vidéo"
-cc-hub video "Description" --duration 10 --aspect-ratio 9:16
-cc-hub video "Description" -o clip.mp4
+cc-hub video "Description" -o /tmp/clip.mp4               # chemin complet → respecté
+cc-hub video "Description" -o ./local/clip.mp4             # chemin relatif → respecté
+cc-hub video "Description" -o clip.mp4                     # nom seul → dans ~/.claude-hub/artifacts/
+cc-hub video "Description" --duration 10 --aspect-ratio 9:16 -o short.mp4
 ```
 
 - Modèle par défaut : `kling-3.0/pro`
 - Durée : 3-15 secondes (défaut : 5)
 - Ratios : `16:9` (défaut), `1:1`, `9:16`
-- `-o, --output <filename>` : nom de fichier personnalisé (dans `~/.claude-hub/artifacts/`)
-- Sans `-o`, le nom est unique par défaut (inclut un timestamp `HHmmss`)
+- `-o, --output <path>` (**obligatoire**) : chemin complet → respecté tel quel, nom seul → dans `~/.claude-hub/artifacts/`
 
 ### Poser une question via GitHub Copilot CLI
 
@@ -104,6 +103,59 @@ cc-hub command link <path>                       # idem pour les commandes
 cc-hub command link <path> --name <custom-name>  # nom personnalisé (.md ajouté auto)
 cc-hub rule link <path>                          # idem pour les rules
 cc-hub rule link <path> --name <custom-name>     # nom personnalisé (.md ajouté auto)
+```
+
+## Chargement du prompt guide avant appel LLM
+
+Avant chaque commande cc-hub qui contacte un LLM, **charger le guide de prompting** du modèle utilisé. Cela permet d'optimiser le prompt envoyé au modèle.
+
+### Procédure
+
+1. Identifier le modèle utilisé (explicite via `--model`, ou le modèle par défaut de la commande)
+2. Exécuter `cc-hub prompt get --model <model>` (ou `cc-hub prompt get --type <type>`)
+3. **Lire le contenu retourné** et l'utiliser pour optimiser le prompt avant de l'envoyer
+4. Si le guide n'existe pas (exit code 2), **le générer d'abord** avec le skill `/prompt-guide --model <model>`, puis recommencer
+
+### Mapping commande → type / modèle par défaut
+
+| Commande | Type | Commande prompt |
+|----------|------|-----------------|
+| `cc-hub imagine` | image | `cc-hub prompt get --type image` |
+| `cc-hub video` | video | `cc-hub prompt get --type video` |
+| `cc-hub ask --model X` | text | `cc-hub prompt get --model X` |
+| `cc-hub copilot --model X` | text | `cc-hub prompt get --model X` |
+| `cc-hub transcribe` | audio | `cc-hub prompt get --type audio` |
+
+Pour `ask` et `copilot`, utiliser le modèle exact passé en `--model`. Pour les autres, `--type` résout automatiquement vers le modèle par défaut configuré (modifiable via `cc-hub config set prompt.default.<type> "model"`).
+
+### Cache de session
+
+- Charger le guide **une seule fois par modèle** dans la conversation
+- Réutiliser le guide déjà chargé pour les appels suivants au même modèle
+- Si le modèle change (ex: `--model` différent), charger le nouveau guide
+
+### Exemple de workflow
+
+```bash
+# 1. Charger le guide (une fois)
+cc-hub prompt get --type image
+# → lit le guide, l'utilise pour les prompts suivants
+
+# 2. Générer l'image avec un prompt optimisé selon le guide
+cc-hub imagine "prompt optimisé selon les recommandations du guide" -o image.png
+```
+
+Si le guide n'existe pas :
+
+```bash
+# 1. Générer le guide
+/prompt-guide --type image
+
+# 2. Charger le guide
+cc-hub prompt get --type image
+
+# 3. Utiliser
+cc-hub imagine "prompt optimisé" -o image.png
 ```
 
 ## Règles
