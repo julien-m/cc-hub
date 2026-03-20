@@ -4,6 +4,8 @@ Registre des modèles connus avec leurs traits clés pour accélérer la recherc
 
 > Ce registre est un **point de départ**. La recherche web reste obligatoire pour chaque guide — les informations ici peuvent être obsolètes.
 
+> **Source of truth:** The canonical model registry is in `src/data/models.ts`. This file provides additional metadata (traits, documentation URLs, must-mention items) for guide generation, but model IDs and provider mappings should always match the code registry.
+
 ---
 
 ## Anthropic
