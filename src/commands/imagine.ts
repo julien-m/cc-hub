@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { Command } from 'commander';
 import { generateMedia, downloadFile } from '../services/poyo-media.ts';
 import { getEnv } from '../services/env.ts';
+import { resolveForProvider } from '../services/models.ts';
 import { ARTIFACTS_DIR, ensureDirs } from '../utils/paths.ts';
 
 export function createImagineCommand(): Command {
@@ -15,7 +16,8 @@ export function createImagineCommand(): Command {
 		.requiredOption('-o, --output <path>', 'Chemin ou nom du fichier de sortie')
 		.action(async (prompt: string, opts: { model?: string; size: string; resolution: string; output: string }) => {
 			try {
-				const model = opts.model || getEnv('IMAGINE_MODEL') || 'nano-banana-2-new';
+				const rawModel = opts.model || getEnv('IMAGINE_MODEL') || 'poyo/nano-banana-2-new';
+			const model = resolveForProvider(rawModel, 'poyo');
 
 				console.error(`🎨 Génération d'image avec ${model}...`);
 

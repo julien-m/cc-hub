@@ -14,11 +14,8 @@ export async function askPoyo(prompt: string, opts: AskOptions = {}): Promise<st
 		console.error('POYO_API_KEY non configuré dans .env');
 		process.exit(3);
 	}
-	const model = opts.model || getEnv('ASK_MODEL');
-	if (!model) {
-		console.error('Aucun modèle spécifié — utilise --model <model>');
-		process.exit(1);
-	}
+	const model = opts.model;
+	if (!model) throw new Error('No model specified');
 
 	const messages: Array<{ role: string; content: string }> = [];
 

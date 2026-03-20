@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { Command } from 'commander';
 import { generateMedia, downloadFile } from '../services/poyo-media.ts';
 import { getEnv } from '../services/env.ts';
+import { resolveForProvider } from '../services/models.ts';
 import { ARTIFACTS_DIR, ensureDirs } from '../utils/paths.ts';
 
 export function createVideoCommand(): Command {
@@ -15,7 +16,8 @@ export function createVideoCommand(): Command {
 		.requiredOption('-o, --output <path>', 'Chemin ou nom du fichier de sortie')
 		.action(async (prompt: string, opts: { model?: string; duration: string; aspectRatio: string; output: string }) => {
 			try {
-				const model = opts.model || getEnv('VIDEO_MODEL') || 'kling-3.0/standard';
+				const rawModel = opts.model || getEnv('VIDEO_MODEL') || 'kuaishou/kling-3.0-pro';
+			const model = resolveForProvider(rawModel, 'poyo');
 
 				console.error(`🎬 Génération de vidéo avec ${model}...`);
 

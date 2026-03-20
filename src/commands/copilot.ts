@@ -1,6 +1,8 @@
 import { Command } from 'commander';
 import { statSync } from 'node:fs';
 import { askCopilot } from '../services/copilot.ts';
+import { resolveForProvider } from '../services/models.ts';
+import { getEnv } from '../services/env.ts';
 import { readStdin } from '../utils/stdin.ts';
 import {
 	resolveFilePaths,
@@ -69,8 +71,11 @@ export function createCopilotCommand(): Command {
 					}
 				}
 
+				const rawModel = opts.model || getEnv('COPILOT_MODEL') || 'openai/gpt-4.1';
+				const nativeModel = resolveForProvider(rawModel, 'copilot');
+
 				const response = await askCopilot(prompt, {
-					model: opts.model,
+					model: nativeModel,
 					stdin,
 					files: files.length > 0 ? files : undefined,
 				});

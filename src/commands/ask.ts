@@ -3,6 +3,8 @@ import { Command } from 'commander';
 import { askLLM } from '../services/openrouter.ts';
 import { askPoyo } from '../services/poyo.ts';
 import { getEnv } from '../services/env.ts';
+import { resolveForProvider } from '../services/models.ts';
+import type { ProviderName } from '../data/models.ts';
 import { readStdin } from '../utils/stdin.ts';
 import {
 	resolveFilePaths,
@@ -68,10 +70,17 @@ export function createAskCommand(): Command {
 				}
 
 				const provider = opts.provider || getEnv('ASK_PROVIDER') || 'openrouter';
+				const rawModel = opts.model || getEnv('ASK_MODEL');
+				if (!rawModel) {
+					console.error('No model specified — use --model <model> or set ASK_MODEL');
+					process.exit(1);
+				}
+				const providerName: ProviderName = provider === 'poyo' ? 'poyo' : 'openrouter';
+				const model = resolveForProvider(rawModel, providerName);
 				const askFn = provider === 'poyo' ? askPoyo : askLLM;
 
 				const response = await askFn(prompt, {
-					model: opts.model,
+					model,
 					stdin,
 					files: files.length > 0 ? files : undefined,
 					json: opts.json || !!jsonSchema,

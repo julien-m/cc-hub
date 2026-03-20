@@ -5,15 +5,12 @@
  */
 
 import { execFile } from 'node:child_process';
-import { getEnv } from './env.ts';
 
 export interface CopilotOptions {
 	model?: string;
 	stdin?: string;
 	files?: Array<{ path: string; content: string }>;
 }
-
-const DEFAULT_MODEL = 'gpt-4.1';
 
 /**
  * Asks GitHub Copilot via the `gh copilot` CLI.
@@ -22,7 +19,8 @@ const DEFAULT_MODEL = 'gpt-4.1';
  * @returns The model response text
  */
 export async function askCopilot(prompt: string, opts: CopilotOptions = {}): Promise<string> {
-	const model = opts.model || getEnv('COPILOT_MODEL') || DEFAULT_MODEL;
+	const model = opts.model;
+	if (!model) throw new Error('No model specified for Copilot');
 
 	const parts: string[] = [];
 
