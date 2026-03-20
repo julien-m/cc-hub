@@ -12,6 +12,18 @@
 
 ---
 
+## Prerequisites
+
+**Uncommitted changes:** `src/commands/imagine.ts` and `src/commands/video.ts` have pending uncommitted modifications (the `--output` rework). These must be committed before starting this plan to avoid conflicting diffs.
+
+**Breaking changes to note:**
+- `COPILOT_MODEL` env var must switch to OpenRouter format (e.g., `openai/gpt-5.4`)
+- `IMAGINE_MODEL` env var must switch to canonical format (e.g., `poyo/nano-banana-2-new`)
+- `VIDEO_MODEL` env var must switch to canonical format (e.g., `kuaishou/kling-3.0-pro`)
+- **Video default model changes from `kling-3.0/standard` to `kling-3.0/pro`** — this is a deliberate behavioral change to align with the cc-hub documentation, not just a format migration.
+
+---
+
 ## File Structure
 
 | File | Action | Responsibility |
@@ -29,6 +41,18 @@
 | `src/services/copilot.ts` | Modify | Remove DEFAULT_MODEL and env var fallback |
 | `src/services/openrouter.ts` | Modify | Remove ASK_MODEL env var fallback, require model from caller |
 | `src/services/poyo.ts` | Modify | Remove ASK_MODEL env var fallback, require model from caller |
+| `.claude/skills/prompt-guide/references/known-models.md` | Modify | Add note pointing to src/data/models.ts as authoritative source |
+
+---
+
+### Task 0: Commit Pending Changes
+
+- [ ] **Step 1: Commit the pending imagine/video modifications**
+
+```bash
+git add src/commands/imagine.ts src/commands/video.ts
+git commit -m "feat(imagine,video): update output option handling"
+```
 
 ---
 
@@ -329,6 +353,10 @@ describe('toProviderName', () => {
     expect(toProviderName('poyo/nano-banana-2-new', 'poyo')).toBe('nano-banana-2-new');
   });
 
+  test('translates canonical ID to openrouter (self-mapping)', () => {
+    expect(toProviderName('anthropic/claude-opus-4.6', 'openrouter')).toBe('anthropic/claude-opus-4.6');
+  });
+
   test('throws for unknown model', () => {
     expect(() => toProviderName('unknown/model', 'copilot')).toThrow('Unknown model');
   });
@@ -345,6 +373,10 @@ describe('resolveForProvider', () => {
 
   test('registered model returns native name for poyo', () => {
     expect(resolveForProvider('google/gemini-3-pro', 'poyo')).toBe('gemini-3-pro-preview');
+  });
+
+  test('registered model returns openrouter self-mapping', () => {
+    expect(resolveForProvider('anthropic/claude-opus-4.6', 'openrouter')).toBe('anthropic/claude-opus-4.6');
   });
 
   test('unregistered model passes through for openrouter', () => {
@@ -382,6 +414,14 @@ describe('modelToSlug', () => {
   test('converts Kling model ID (strips dot)', () => {
     expect(modelToSlug('kuaishou/kling-3.0-pro')).toBe('kuaishou-kling-30-pro');
   });
+
+  test('handles empty string', () => {
+    expect(modelToSlug('')).toBe('');
+  });
+
+  test('lowercases uppercase input', () => {
+    expect(modelToSlug('OpenAI/GPT-5.4')).toBe('openai-gpt-54');
+  });
 });
 
 describe('listModels', () => {
@@ -405,6 +445,11 @@ describe('listModels', () => {
   test('combines type and provider filters', () => {
     const poyoText = listModels({ type: 'text', provider: 'poyo' });
     expect(poyoText.every(m => m.type === 'text' && m.providers.poyo !== undefined)).toBe(true);
+  });
+
+  test('returns empty array for no matches', () => {
+    const result = listModels({ type: 'image', provider: 'copilot' });
+    expect(result).toEqual([]);
   });
 });
 ```
@@ -546,7 +591,7 @@ export function createModelsCommand(): Command {
 
 - [ ] **Step 2: Register in cli.ts**
 
-In `src/cli.ts`, add import and registration:
+In `src/cli.ts`, add import:
 
 ```typescript
 import { createModelsCommand } from './commands/models.ts';
@@ -575,14 +620,20 @@ git commit -m "feat(models): add 'cc-hub models list' command"
 
 ---
 
-### Task 4: Update Services — Remove Model Fallbacks
+### Task 4: Update Services + Commands — Model Resolution
+
+This task combines service refactoring and command-level resolution into a single atomic commit. This avoids a broken intermediate state where services no longer have fallbacks but commands don't yet provide models.
 
 **Files:**
-- Modify: `src/services/copilot.ts:16,25`
+- Modify: `src/services/copilot.ts:8,16,25`
 - Modify: `src/services/openrouter.ts:18-22`
 - Modify: `src/services/poyo.ts:17-21`
+- Modify: `src/commands/ask.ts:36,70-79`
+- Modify: `src/commands/copilot.ts:39,72`
+- Modify: `src/commands/imagine.ts:16-18`
+- Modify: `src/commands/video.ts:16-18`
 
-- [ ] **Step 1: Update `copilot.ts` — remove DEFAULT_MODEL and env var fallback**
+- [ ] **Step 1: Update `copilot.ts` service — remove DEFAULT_MODEL and env var fallback**
 
 In `src/services/copilot.ts`:
 
@@ -601,9 +652,9 @@ const model = opts.model;
 if (!model) throw new Error('No model specified for Copilot');
 ```
 
-Remove the `import { getEnv } from './env.ts';` line (no longer used).
+Remove the `import { getEnv } from './env.ts';` line (no longer used in this file).
 
-- [ ] **Step 2: Update `openrouter.ts` — require model from caller**
+- [ ] **Step 2: Update `openrouter.ts` service — require model from caller**
 
 In `src/services/openrouter.ts`, replace lines 18-22:
 ```typescript
@@ -619,7 +670,7 @@ with:
   if (!model) throw new Error('No model specified');
 ```
 
-- [ ] **Step 3: Update `poyo.ts` — require model from caller**
+- [ ] **Step 3: Update `poyo.ts` service — require model from caller**
 
 In `src/services/poyo.ts`, replace lines 17-21:
 ```typescript
@@ -635,29 +686,7 @@ with:
 	if (!model) throw new Error('No model specified');
 ```
 
-- [ ] **Step 4: Verify compilation**
-
-Run: `bun build src/services/copilot.ts src/services/openrouter.ts src/services/poyo.ts --no-bundle`
-Expected: No errors (note: unused `getEnv` import may remain in openrouter.ts and poyo.ts — remove only if it becomes the only usage; keep if other env vars are still read in the same file)
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/services/copilot.ts src/services/openrouter.ts src/services/poyo.ts
-git commit -m "refactor(services): remove model env var fallbacks, require model from caller"
-```
-
----
-
-### Task 5: Update Commands — Model Resolution at Command Level
-
-**Files:**
-- Modify: `src/commands/ask.ts:36,70-79`
-- Modify: `src/commands/copilot.ts:39,72`
-- Modify: `src/commands/imagine.ts:16-18`
-- Modify: `src/commands/video.ts:16-18`
-
-- [ ] **Step 1: Update `ask.ts`**
+- [ ] **Step 4: Update `ask.ts` command**
 
 Add import at top of `src/commands/ask.ts`:
 ```typescript
@@ -699,9 +728,9 @@ with:
 			});
 ```
 
-- [ ] **Step 2: Update `copilot.ts`**
+- [ ] **Step 5: Update `copilot.ts` command**
 
-Add import at top of `src/commands/copilot.ts`:
+Add imports at top of `src/commands/copilot.ts`:
 ```typescript
 import { resolveForProvider } from '../services/models.ts';
 import { getEnv } from '../services/env.ts';
@@ -722,7 +751,7 @@ Update the `askCopilot` call to pass `nativeModel`:
 			});
 ```
 
-- [ ] **Step 3: Update `imagine.ts`**
+- [ ] **Step 6: Update `imagine.ts` command**
 
 Add import at top of `src/commands/imagine.ts`:
 ```typescript
@@ -739,7 +768,7 @@ with:
 			const model = resolveForProvider(rawModel, 'poyo');
 ```
 
-- [ ] **Step 4: Update `video.ts`**
+- [ ] **Step 7: Update `video.ts` command**
 
 Add import at top of `src/commands/video.ts`:
 ```typescript
@@ -756,29 +785,35 @@ with:
 			const model = resolveForProvider(rawModel, 'poyo');
 ```
 
-- [ ] **Step 5: Verify compilation**
+Note: This changes the default from `kling-3.0/standard` to `kling-3.0/pro`, aligning with the cc-hub documentation.
 
-Run: `bun build src/commands/ask.ts src/commands/copilot.ts src/commands/imagine.ts src/commands/video.ts --no-bundle`
+- [ ] **Step 8: Verify compilation**
+
+Run: `bun build src/services/copilot.ts src/services/openrouter.ts src/services/poyo.ts src/commands/ask.ts src/commands/copilot.ts src/commands/imagine.ts src/commands/video.ts --no-bundle`
 Expected: No errors
 
-- [ ] **Step 6: Test manually**
+- [ ] **Step 9: Run tests**
 
-Run: `bun bin/cc-hub.ts models list --provider copilot`
-Then verify: `bun bin/cc-hub.ts copilot --help` still shows model option
+Run: `bun test`
+Expected: All tests pass
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
-git add src/commands/ask.ts src/commands/copilot.ts src/commands/imagine.ts src/commands/video.ts
-git commit -m "feat(commands): resolve models via registry at command level"
+git add src/services/copilot.ts src/services/openrouter.ts src/services/poyo.ts src/commands/ask.ts src/commands/copilot.ts src/commands/imagine.ts src/commands/video.ts
+git commit -m "feat(models): resolve models via registry at command level
+
+Services no longer read model env vars (ASK_MODEL, COPILOT_MODEL).
+Model resolution moves to command layer using resolveForProvider.
+Video default changes from kling-3.0/standard to kling-3.0/pro."
 ```
 
 ---
 
-### Task 6: Update `prompt.ts` — Shared Types
+### Task 5: Update `prompt.ts` — Shared Types
 
 **Files:**
-- Modify: `src/commands/prompt.ts:1-31`
+- Modify: `src/commands/prompt.ts:1-23`
 
 - [ ] **Step 1: Update imports and remove local definitions**
 
@@ -835,16 +870,38 @@ const FALLBACK_MODEL_BY_TYPE: Record<ModelType, string> = {
 Run: `bun build src/commands/prompt.ts --no-bundle`
 Expected: No errors
 
-- [ ] **Step 3: Run existing tests**
+- [ ] **Step 3: Run tests**
 
 Run: `bun test`
-Expected: All tests from Task 2 still pass
+Expected: All tests pass
 
 - [ ] **Step 4: Commit**
 
 ```bash
 git add src/commands/prompt.ts
 git commit -m "refactor(prompt): use shared modelToSlug and types from registry"
+```
+
+---
+
+### Task 6: Update Skill Reference
+
+**Files:**
+- Modify: `.claude/skills/prompt-guide/references/known-models.md`
+
+- [ ] **Step 1: Add authoritative source note**
+
+At the top of `.claude/skills/prompt-guide/references/known-models.md`, after the first paragraph, add:
+
+```markdown
+> **Source of truth:** The canonical model registry is in `src/data/models.ts`. This file provides additional metadata (traits, documentation URLs, must-mention items) for guide generation, but model IDs and provider mappings should always match the code registry.
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add .claude/skills/prompt-guide/references/known-models.md
+git commit -m "docs(prompt-guide): reference src/data/models.ts as authoritative model source"
 ```
 
 ---
@@ -867,7 +924,7 @@ mv ~/.claude-hub/prompts/soniox.md ~/.claude-hub/prompts/soniox-soniox.md
 - [ ] **Step 2: Verify prompt lookup still works**
 
 Run: `bun bin/cc-hub.ts prompt get --type image`
-Expected: Should show the nano-banana guide (now resolved via `poyo/nano-banana-2-new` → slug `poyo-nano-banana-2-new`)
+Expected: Should show the nano-banana guide (resolved via `poyo/nano-banana-2-new` → slug `poyo-nano-banana-2-new`)
 
 Run: `bun bin/cc-hub.ts prompt get --type video`
 Expected: Should show the kling guide
