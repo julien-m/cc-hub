@@ -48,23 +48,29 @@ cc-hub ask "3 European capitals" --schema ./capitals.schema.json
 ```bash
 cc-hub imagine "Description de l'image"
 cc-hub imagine "Description" --size 16:9 --resolution 2K
+cc-hub imagine "Description" -o mon-image.png
 # → télécharge dans ~/.claude-hub/artifacts/ et affiche le chemin
 ```
 
 - Modèle par défaut : `nano-banana-2-new`
 - Sizes : `1:1`, `16:9`, `9:16`, `3:2`, `2:3`, `4:3`, `3:4`, `4:5`, `5:4`, `21:9`
 - Résolutions : `1K` (défaut), `2K`, `4K`
+- `-o, --output <filename>` : nom de fichier personnalisé (dans `~/.claude-hub/artifacts/`)
+- Sans `-o`, le nom est unique par défaut (inclut un timestamp `HHmmss`)
 
 ### Générer une vidéo (via Poyo)
 
 ```bash
 cc-hub video "Description de la vidéo"
 cc-hub video "Description" --duration 10 --aspect-ratio 9:16
+cc-hub video "Description" -o clip.mp4
 ```
 
 - Modèle par défaut : `kling-3.0/pro`
 - Durée : 3-15 secondes (défaut : 5)
 - Ratios : `16:9` (défaut), `1:1`, `9:16`
+- `-o, --output <filename>` : nom de fichier personnalisé (dans `~/.claude-hub/artifacts/`)
+- Sans `-o`, le nom est unique par défaut (inclut un timestamp `HHmmss`)
 
 ### Poser une question via GitHub Copilot CLI
 

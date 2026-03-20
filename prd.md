@@ -312,9 +312,10 @@ cat fichier.ts | cc-hub ask "Explique ce code"
 ```bash
 cc-hub imagine "Dashboard dark mode minimal"
 cc-hub imagine "Logo for project X" --model stability-ai/sdxl
+cc-hub imagine "Hero banner" -o banner.png
 ```
 
-Retourne le chemin du fichier image généré.
+Retourne le chemin du fichier image généré. Noms uniques par défaut (timestamp `HHmmss`). Option `-o, --output <filename>` pour un nom personnalisé.
 
 ---
 
@@ -322,9 +323,10 @@ Retourne le chemin du fichier image généré.
 ```bash
 cc-hub video "Product demo 10 seconds"
 cc-hub video "Animated logo loop" --model minimax/video-01
+cc-hub video "Intro clip" -o intro.mp4
 ```
 
-Retourne le chemin du fichier ou une URL de téléchargement.
+Retourne le chemin du fichier vidéo généré. Noms uniques par défaut (timestamp `HHmmss`). Option `-o, --output <filename>` pour un nom personnalisé.
 
 ---
 

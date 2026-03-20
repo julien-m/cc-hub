@@ -223,18 +223,20 @@ Output goes to stdout. Silent by default (no auto-logging).
 ```bash
 cc-hub imagine "Dashboard dark mode minimal"
 cc-hub imagine "Logo for project X" --model stability-ai/sdxl
+cc-hub imagine "Hero banner" -o banner.png
 ```
 
-Downloads the image to `~/.claude-hub/artifacts/` and prints the path to stdout.
+Downloads the image to `~/.claude-hub/artifacts/` and prints the path to stdout. Filenames are unique by default (include timestamp). Use `-o, --output <filename>` to specify a custom filename.
 
 ### `video` — Video generation
 
 ```bash
 cc-hub video "Product demo 10 seconds"
 cc-hub video "Animated logo loop" --model minimax/video-01
+cc-hub video "Intro clip" -o intro.mp4
 ```
 
-Downloads the video to `~/.claude-hub/artifacts/` and prints the path to stdout.
+Downloads the video to `~/.claude-hub/artifacts/` and prints the path to stdout. Filenames are unique by default (include timestamp). Use `-o, --output <filename>` to specify a custom filename.
 
 ### `transcribe` — Audio to text
 
