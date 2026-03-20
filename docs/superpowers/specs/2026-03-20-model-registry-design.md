@@ -461,4 +461,3 @@ Unit tests for `src/services/models.ts`:
 - Dynamic model discovery via API calls to providers
 - `cc-hub models add/remove` CLI commands (edit `src/data/models.ts` directly)
 - Fuzzy matching or alias resolution beyond the registry
-- Migration of existing prompt guide files (slugs remain unchanged)
