@@ -155,6 +155,20 @@ export const MODELS: Model[] = [
     },
   },
   {
+    id: 'google/gemini-3.1-pro-preview',
+    type: 'text',
+    providers: {
+      openrouter: 'google/gemini-3.1-pro-preview',
+    },
+  },
+  {
+    id: 'google/gemini-3.1-flash-lite-preview',
+    type: 'text',
+    providers: {
+      openrouter: 'google/gemini-3.1-flash-lite-preview',
+    },
+  },
+  {
     id: 'google/gemini-2.5-flash',
     type: 'text',
     providers: {
