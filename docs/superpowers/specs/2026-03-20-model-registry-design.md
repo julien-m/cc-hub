@@ -313,6 +313,8 @@ export function listModels(opts?: {
 
 Key design: `resolveForProvider` replaces the previous `toProviderName` for command-level usage. It handles unregistered models gracefully: passthrough for OpenRouter (which accepts any valid model ID directly), error for Copilot/Poyo (where the name format is different and blind passthrough would fail silently or error at the API level).
 
+Both functions are exported: `toProviderName` for internal/strict contexts where the model must exist in the registry, `resolveForProvider` for user-facing command input where unregistered models may be passed.
+
 ### 3. New Command — `cc-hub models list`
 
 New file: `src/commands/models.ts`
@@ -354,7 +356,7 @@ const nativeModel = resolveForProvider(rawModel, 'copilot');
 const response = await askCopilot(prompt, { model: nativeModel, ... });
 ```
 
-Note: the default changes from `'gpt-4.1'` (native Copilot name) to `'openai/gpt-4.1'` (canonical ID). The service `copilot.ts` no longer needs its own `DEFAULT_MODEL` constant — the command handles defaults. The `COPILOT_MODEL` env var now accepts OpenRouter format (breaking change for users who had `COPILOT_MODEL=GPT-5.4` — must update to `openai/gpt-5.4`).
+Note: the default changes from `'gpt-4.1'` (native Copilot name) to `'openai/gpt-4.1'` (canonical ID). The service `copilot.ts` no longer needs its own `DEFAULT_MODEL` constant — the command handles defaults. The service's `CopilotOptions.model` becomes effectively required (the command always provides it). The `COPILOT_MODEL` env var now accepts OpenRouter format (breaking change for users who had `COPILOT_MODEL=GPT-5.4` — must update to `openai/gpt-5.4`).
 
 **`ask.ts`:**
 - Import `resolveForProvider` from `services/models.ts`
@@ -372,6 +374,8 @@ const response = await askFn(prompt, { model, ... });
 
 This ensures env-var-sourced models (`ASK_MODEL`) are also translated when using `--provider poyo`.
 
+The `ASK_MODEL` env var fallback is removed from the service layer (`openrouter.ts` and `poyo.ts`). Model resolution is the command's responsibility — services receive the final model name. This matches the same pattern applied to `copilot.ts`.
+
 **`imagine.ts`:**
 - Import `resolveForProvider` from `services/models.ts`
 - Resolve model at command level, with fallback for unregistered native names
@@ -385,7 +389,7 @@ No slash-based heuristic needed: `resolveForProvider` checks the registry first.
 
 **`video.ts`:**
 - Same pattern as `imagine.ts`
-- Default changes from `'kling-3.0/standard'` (native) to `'kuaishou/kling-3.0-standard'` (canonical)
+- Default changes from `'kling-3.0/standard'` (native) to `'kuaishou/kling-3.0-pro'` (canonical), aligning with the cc-hub documentation which specifies `kling-3.0/pro` as the default
 
 **`prompt.ts`:**
 - Import `modelToSlug` and `ModelType`, `VALID_TYPES` from the shared modules
@@ -404,9 +408,8 @@ const FALLBACK_MODEL_BY_TYPE: Record<ModelType, string> = {
 ### 5. Backward Compatibility
 
 **Non-breaking:**
-- `prompt get` with existing slugs still resolves correctly (slug algorithm unchanged)
+- `prompt get` with existing slugs for OpenRouter models still resolves correctly (slug algorithm unchanged)
 - `ask` without `--provider` still sends to OpenRouter with passthrough
-- Existing prompt guide files do not need migration
 
 **Breaking (minor):**
 - `COPILOT_MODEL` env var must now use OpenRouter format (`openai/gpt-5.4` instead of `GPT-5.4`)
@@ -414,6 +417,14 @@ const FALLBACK_MODEL_BY_TYPE: Record<ModelType, string> = {
 - `VIDEO_MODEL` env var must now use canonical format (`kuaishou/kling-3.0-standard` instead of `kling-3.0/standard`)
 
 These env vars are set in `.env` files consumed by `creds env`. The migration is a one-time edit per `.env` file.
+
+**Prompt guide file migration:**
+The FALLBACK_MODEL_BY_TYPE change to canonical IDs affects slugs for non-OpenRouter models:
+- `nano-banana-2-new.md` → `poyo-nano-banana-2-new.md`
+- `kling-30-pro.md` → `kuaishou-kling-30-pro.md`
+- `soniox.md` → `soniox-soniox.md`
+
+These 3 files must be renamed in `~/.claude-hub/prompts/` as part of implementation. A one-time migration step (simple `mv` commands) will be documented.
 
 ### 6. Updating the Skill Reference
 
@@ -431,8 +442,10 @@ These env vars are set in `.env` files consumed by `creds env`. The migration is
 | `src/commands/ask.ts` | **Modified** — resolve model at command level via `resolveForProvider` |
 | `src/commands/imagine.ts` | **Modified** — resolve model at command level via `resolveForProvider` |
 | `src/commands/video.ts` | **Modified** — resolve model at command level via `resolveForProvider` |
-| `src/commands/prompt.ts` | **Modified** — import shared `modelToSlug`, `ModelType`, `VALID_TYPES` |
-| `src/services/copilot.ts` | **Modified** — remove `DEFAULT_MODEL`, model resolution moves to command |
+| `src/commands/prompt.ts` | **Modified** — import shared `modelToSlug`, `ModelType`, `VALID_TYPES`; update `FALLBACK_MODEL_BY_TYPE` to canonical IDs |
+| `src/services/copilot.ts` | **Modified** — remove `DEFAULT_MODEL` and `COPILOT_MODEL` fallback; model required from caller |
+| `src/services/openrouter.ts` | **Modified** — remove `ASK_MODEL` env var fallback; model must be provided by caller |
+| `src/services/poyo.ts` | **Modified** — remove `ASK_MODEL` env var fallback; model must be provided by caller |
 
 ## Test Plan
 
