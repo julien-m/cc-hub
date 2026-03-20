@@ -22,10 +22,12 @@ Introduce a centralized, static model registry as the single source of truth for
 
 ### 1. Data Registry — `src/data/models.ts`
 
-Static array of model definitions, versioned in the repository.
+Static array of model definitions, versioned in the repository. Exports `ModelType` and `ProviderName` as the single source of truth for these types (other modules import from here).
 
 ```typescript
 export type ModelType = 'text' | 'image' | 'video' | 'audio';
+export const VALID_TYPES: readonly ModelType[] = ['text', 'image', 'video', 'audio'];
+
 export type ProviderName = 'openrouter' | 'copilot' | 'poyo';
 
 export interface Model {
@@ -86,6 +88,9 @@ export const MODELS: Model[] = [
   },
 
   // --- OpenAI ---
+  // Note: openai/gpt-53-codex — the missing dot is intentional, this is
+  // the actual OpenRouter ID (their slug convention strips dots for Codex models).
+  // The existing prompt file `openai-gpt-53-codex.md` already uses this format.
   {
     id: 'openai/gpt-5.4',
     type: 'text',
@@ -103,10 +108,10 @@ export const MODELS: Model[] = [
     },
   },
   {
-    id: 'openai/gpt-5.2-codex',
+    id: 'openai/gpt-52-codex',
     type: 'text',
     providers: {
-      openrouter: 'openai/gpt-5.2-codex',
+      openrouter: 'openai/gpt-52-codex',
       copilot: 'GPT-5.2-Codex',
     },
   },
@@ -119,18 +124,18 @@ export const MODELS: Model[] = [
     },
   },
   {
-    id: 'openai/gpt-5.1-codex-max',
+    id: 'openai/gpt-51-codex-max',
     type: 'text',
     providers: {
-      openrouter: 'openai/gpt-5.1-codex-max',
+      openrouter: 'openai/gpt-51-codex-max',
       copilot: 'GPT-5.1-Codex-Max',
     },
   },
   {
-    id: 'openai/gpt-5.1-codex',
+    id: 'openai/gpt-51-codex',
     type: 'text',
     providers: {
-      openrouter: 'openai/gpt-5.1-codex',
+      openrouter: 'openai/gpt-51-codex',
       copilot: 'GPT-5.1-Codex',
     },
   },
@@ -208,6 +213,13 @@ export const MODELS: Model[] = [
       poyo: 'kling-3.0/pro',
     },
   },
+  {
+    id: 'kuaishou/kling-3.0-standard',
+    type: 'video',
+    providers: {
+      poyo: 'kling-3.0/standard',
+    },
+  },
 
   // --- Soniox ---
   {
@@ -222,6 +234,7 @@ export const MODELS: Model[] = [
 
 **Conventions for ID format:**
 - Models available on OpenRouter use their OpenRouter ID directly (e.g., `anthropic/claude-opus-4.6`)
+- OpenRouter Codex models strip dots in their slug (e.g., `openai/gpt-53-codex` not `openai/gpt-5.3-codex`) — this is the actual OpenRouter convention, not a typo
 - Models only on Poyo get a pseudo-provider prefix: `poyo/`, `kuaishou/`, `soniox/`
 - The ID is always `lowercase/slug-format`
 
@@ -253,6 +266,33 @@ export function toProviderName(id: string, provider: ProviderName): string {
   return native;
 }
 
+/**
+ * Resolve a user-supplied model identifier to the provider's native name.
+ *
+ * Strategy:
+ * 1. If the ID is in the registry → translate to native name for the target provider
+ * 2. If not in the registry:
+ *    - openrouter: passthrough (OpenRouter accepts any valid model ID)
+ *    - copilot/poyo: error (name format differs, blind passthrough would fail)
+ */
+export function resolveForProvider(userInput: string, provider: ProviderName): string {
+  const model = byId.get(userInput);
+  if (model) {
+    const native = model.providers[provider];
+    if (native) return native;
+    throw new Error(
+      `${userInput} is not available on ${provider}. ` +
+      `Use 'cc-hub models list --provider ${provider}' to see available models.`
+    );
+  }
+  // Not in registry — passthrough for OpenRouter, error for others
+  if (provider === 'openrouter') return userInput;
+  throw new Error(
+    `Unknown model: ${userInput}. ` +
+    `Use 'cc-hub models list --provider ${provider}' to see available models.`
+  );
+}
+
 /** Convert canonical ID to filesystem slug for prompt guide files */
 export function modelToSlug(id: string): string {
   return id.replace(/\//g, '-').replace(/[^a-z0-9-]/gi, '').toLowerCase();
@@ -271,6 +311,8 @@ export function listModels(opts?: {
 }
 ```
 
+Key design: `resolveForProvider` replaces the previous `toProviderName` for command-level usage. It handles unregistered models gracefully: passthrough for OpenRouter (which accepts any valid model ID directly), error for Copilot/Poyo (where the name format is different and blind passthrough would fail silently or error at the API level).
+
 ### 3. New Command — `cc-hub models list`
 
 New file: `src/commands/models.ts`
@@ -283,6 +325,7 @@ openai/gpt-53-codex             text   [openrouter, copilot]
 google/gemini-3-pro             text   [openrouter, copilot, poyo]
 poyo/nano-banana-2-new          image  [poyo]
 kuaishou/kling-3.0-pro          video  [poyo]
+kuaishou/kling-3.0-standard     video  [poyo]
 
 $ cc-hub models list --provider copilot --type text
 anthropic/claude-opus-4.6       text   [openrouter, copilot]
@@ -297,35 +340,80 @@ Registered in `cli.ts` alongside existing commands.
 
 ### 4. Command Modifications
 
-All changes are minimal — add a single translation call before the API call.
+Translation happens at the **command level**, before passing the model to the service layer. This ensures env-var-sourced models are also translated.
 
 **`copilot.ts`:**
-- Import `toProviderName` from `services/models.ts`
-- Before calling `askCopilot`, translate: `toProviderName(opts.model, 'copilot')`
-- Default (no `--model`) remains `gpt-4.1` unchanged
+- Import `resolveForProvider` from `services/models.ts`
+- Resolve the final model (from `--model` flag, env var, or default) at command level
+- Pass the resolved native name to `askCopilot`
+
+```typescript
+// In the action handler, before askCopilot call:
+const rawModel = opts.model || getEnv('COPILOT_MODEL') || 'openai/gpt-4.1';
+const nativeModel = resolveForProvider(rawModel, 'copilot');
+const response = await askCopilot(prompt, { model: nativeModel, ... });
+```
+
+Note: the default changes from `'gpt-4.1'` (native Copilot name) to `'openai/gpt-4.1'` (canonical ID). The service `copilot.ts` no longer needs its own `DEFAULT_MODEL` constant — the command handles defaults. The `COPILOT_MODEL` env var now accepts OpenRouter format (breaking change for users who had `COPILOT_MODEL=GPT-5.4` — must update to `openai/gpt-5.4`).
 
 **`ask.ts`:**
-- When `provider === 'poyo'` and `opts.model` is set, translate via `toProviderName(model, 'poyo')`
-- OpenRouter calls pass the ID through unchanged (it's already in the right format)
+- Import `resolveForProvider` from `services/models.ts`
+- Determine provider, then resolve model before passing to service
+
+```typescript
+const provider = opts.provider || getEnv('ASK_PROVIDER') || 'openrouter';
+const rawModel = opts.model || getEnv('ASK_MODEL');
+if (!rawModel) { /* error: no model */ }
+const providerName = provider === 'poyo' ? 'poyo' : 'openrouter';
+const model = resolveForProvider(rawModel, providerName as ProviderName);
+const askFn = provider === 'poyo' ? askPoyo : askLLM;
+const response = await askFn(prompt, { model, ... });
+```
+
+This ensures env-var-sourced models (`ASK_MODEL`) are also translated when using `--provider poyo`.
 
 **`imagine.ts`:**
-- If model contains `/` (canonical format), translate via `toProviderName(model, 'poyo')`
-- Otherwise, pass through as-is (backward compatibility with `nano-banana-2-new`)
+- Import `resolveForProvider` from `services/models.ts`
+- Resolve model at command level, with fallback for unregistered native names
+
+```typescript
+const rawModel = opts.model || getEnv('IMAGINE_MODEL') || 'poyo/nano-banana-2-new';
+const model = resolveForProvider(rawModel, 'poyo');
+```
+
+No slash-based heuristic needed: `resolveForProvider` checks the registry first. If `rawModel` is a canonical ID like `poyo/nano-banana-2-new`, it resolves to `nano-banana-2-new`. If someone passes a raw native name like `nano-banana-2-new`, it won't be in the registry (no match by canonical ID), and since provider is `poyo` (not `openrouter`), it will error — which is the correct behavior to enforce the canonical format.
 
 **`video.ts`:**
-- Same logic as `imagine.ts`
+- Same pattern as `imagine.ts`
+- Default changes from `'kling-3.0/standard'` (native) to `'kuaishou/kling-3.0-standard'` (canonical)
 
 **`prompt.ts`:**
-- Replace local `modelToSlug` with import from `services/models.ts`
-- Replace `FALLBACK_MODEL_BY_TYPE` with a lookup from the registry (or keep as simple config)
-- Rest unchanged
+- Import `modelToSlug` and `ModelType`, `VALID_TYPES` from the shared modules
+- Remove local `modelToSlug`, `VALID_TYPES`, `ModelType` definitions
+- `FALLBACK_MODEL_BY_TYPE` updated to use canonical IDs:
+
+```typescript
+const FALLBACK_MODEL_BY_TYPE: Record<ModelType, string> = {
+  text: 'anthropic/claude-opus-4.6',
+  image: 'poyo/nano-banana-2-new',
+  video: 'kuaishou/kling-3.0-pro',
+  audio: 'soniox/soniox',
+};
+```
 
 ### 5. Backward Compatibility
 
-- Native provider names (`nano-banana-2-new`, `kling-3.0/pro`) continue to work in `imagine`/`video` via passthrough
-- `ask` without `--model` still uses `ASK_MODEL` env var or errors
-- `copilot` without `--model` still defaults to `gpt-4.1`
+**Non-breaking:**
 - `prompt get` with existing slugs still resolves correctly (slug algorithm unchanged)
+- `ask` without `--provider` still sends to OpenRouter with passthrough
+- Existing prompt guide files do not need migration
+
+**Breaking (minor):**
+- `COPILOT_MODEL` env var must now use OpenRouter format (`openai/gpt-5.4` instead of `GPT-5.4`)
+- `IMAGINE_MODEL` env var must now use canonical format (`poyo/nano-banana-2-new` instead of `nano-banana-2-new`)
+- `VIDEO_MODEL` env var must now use canonical format (`kuaishou/kling-3.0-standard` instead of `kling-3.0/standard`)
+
+These env vars are set in `.env` files consumed by `creds env`. The migration is a one-time edit per `.env` file.
 
 ### 6. Updating the Skill Reference
 
@@ -335,15 +423,25 @@ All changes are minimal — add a single translation call before the API call.
 
 | File | Action |
 |------|--------|
-| `src/data/models.ts` | **New** — model registry |
-| `src/services/models.ts` | **New** — lookup/translation functions |
+| `src/data/models.ts` | **New** — model registry, exports `ModelType`, `VALID_TYPES`, `ProviderName`, `Model`, `MODELS` |
+| `src/services/models.ts` | **New** — `resolveForProvider`, `findModel`, `findByProviderName`, `modelToSlug`, `listModels` |
 | `src/commands/models.ts` | **New** — `cc-hub models list` command |
 | `src/cli.ts` | **Modified** — register models command |
-| `src/commands/copilot.ts` | **Modified** — add translation call |
-| `src/commands/ask.ts` | **Modified** — add translation for poyo provider |
-| `src/commands/imagine.ts` | **Modified** — add translation for canonical IDs |
-| `src/commands/video.ts` | **Modified** — add translation for canonical IDs |
-| `src/commands/prompt.ts` | **Modified** — import shared `modelToSlug` |
+| `src/commands/copilot.ts` | **Modified** — resolve model at command level via `resolveForProvider` |
+| `src/commands/ask.ts` | **Modified** — resolve model at command level via `resolveForProvider` |
+| `src/commands/imagine.ts` | **Modified** — resolve model at command level via `resolveForProvider` |
+| `src/commands/video.ts` | **Modified** — resolve model at command level via `resolveForProvider` |
+| `src/commands/prompt.ts` | **Modified** — import shared `modelToSlug`, `ModelType`, `VALID_TYPES` |
+| `src/services/copilot.ts` | **Modified** — remove `DEFAULT_MODEL`, model resolution moves to command |
+
+## Test Plan
+
+Unit tests for `src/services/models.ts`:
+
+1. **`resolveForProvider`** — registered model returns native name; unregistered model passes through for openrouter; unregistered model throws for copilot/poyo; model not available on target provider throws with helpful message
+2. **`modelToSlug`** — converts `anthropic/claude-opus-4.6` to `anthropic-claude-opus-46`; handles edge cases (double dashes, special chars)
+3. **`listModels`** — filters by type; filters by provider; combines both filters; returns all when no filter
+4. **`findModel`** / **`findByProviderName`** — basic lookup, returns undefined for unknown
 
 ## Out of Scope
 
