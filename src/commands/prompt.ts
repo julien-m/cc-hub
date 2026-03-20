@@ -3,23 +3,18 @@ import { join } from 'node:path';
 import { Command } from 'commander';
 import { PROMPTS_DIR, ensureDirs } from '../utils/paths.ts';
 import { getConfig } from './config.ts';
-
-function modelToSlug(model: string): string {
-  return model.replace(/\//g, '-').replace(/[^a-z0-9-]/gi, '').toLowerCase();
-}
+import { modelToSlug } from '../services/models.ts';
+import { VALID_TYPES, type ModelType } from '../data/models.ts';
 
 function slugToPath(slug: string): string {
   return join(PROMPTS_DIR, `${slug}.md`);
 }
 
-const VALID_TYPES = ['image', 'video', 'audio', 'text'] as const;
-type ModelType = typeof VALID_TYPES[number];
-
 const FALLBACK_MODEL_BY_TYPE: Record<ModelType, string> = {
   text: 'anthropic/claude-opus-4.6',
-  image: 'nano-banana-2-new',
-  video: 'kling-30-pro',
-  audio: 'soniox',
+  image: 'poyo/nano-banana-2-new',
+  video: 'kuaishou/kling-3.0-pro',
+  audio: 'soniox/soniox',
 };
 
 function getDefaultModel(type: ModelType): string {
