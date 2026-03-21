@@ -72,10 +72,25 @@ cc-hub video "Zoom out slowly" -i https://example.com/scene.png -o out.mp4  # av
 ```
 
 - Modèle par défaut : `kling-3.0/pro`
+- Modèles disponibles : `kuaishou/kling-3.0-pro`, `kuaishou/kling-3.0-standard`, `google/veo-3.1-fast`, `google/veo-3.1-quality`, `openai/sora-2-pro`
 - Durée : 3-15 secondes (défaut : 5)
 - Ratios : `16:9` (défaut), `1:1`, `9:16`
 - `-o, --output <path>` (**obligatoire**) : chemin complet → respecté tel quel, nom seul → dans `~/.claude-hub/artifacts/`
 - `-i, --image <path>` (optionnel) : image de départ pour animation (chemin local ou URL). Formats supportés : png, jpg, jpeg, webp
+
+### Générer une vidéo par transfert de mouvement (Motion Control)
+
+```bash
+cc-hub motion "Dance animation" -i ./character.png -v ./dance.mp4 -o result.mp4
+cc-hub motion "Walking scene" -i https://example.com/person.jpg -v ./walk.mp4 -o walk.mp4
+cc-hub motion "Gesture transfer" -i ./avatar.png -v ./gesture.mp4 --character-orientation video -o out.mp4
+```
+
+- Modèle : `kling-3.0-motion-control` (fixe)
+- `-i, --image <path>` (**obligatoire**) : image du personnage à animer (chemin local ou URL). Formats : png, jpg, jpeg, webp
+- `-v, --video <path>` (**obligatoire**) : vidéo de référence pour le mouvement (chemin local ou URL). Formats : mp4, webm, mov
+- `--character-orientation <value>` (optionnel) : `character` (défaut) ou `video`
+- `-o, --output <path>` (**obligatoire**) : chemin complet → respecté tel quel, nom seul → dans `~/.claude-hub/artifacts/`
 
 ### Poser une question via GitHub Copilot CLI
 

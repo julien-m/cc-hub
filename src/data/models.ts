@@ -205,6 +205,34 @@ export const MODELS: Model[] = [
       poyo: 'kling-3.0/standard',
     },
   },
+  {
+    id: 'kuaishou/kling-3.0-motion-control',
+    type: 'video',
+    providers: {
+      poyo: 'kling-3.0-motion-control',
+    },
+  },
+  {
+    id: 'google/veo-3.1-fast',
+    type: 'video',
+    providers: {
+      poyo: 'veo3.1-fast',
+    },
+  },
+  {
+    id: 'google/veo-3.1-quality',
+    type: 'video',
+    providers: {
+      poyo: 'veo3.1-quality',
+    },
+  },
+  {
+    id: 'openai/sora-2-pro',
+    type: 'video',
+    providers: {
+      poyo: 'sora-2-pro',
+    },
+  },
 
   // --- Soniox ---
   {

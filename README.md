@@ -258,6 +258,25 @@ Downloads the video to `~/.claude-hub/artifacts/` and prints the path to stdout.
 | `-i, --image <path>` | Start frame image for animation (local path or URL). Supported: png, jpg, jpeg, webp |
 | `-o, --output <path>` | Output file path or name (**required**) |
 
+Available video models: `kuaishou/kling-3.0-pro` (default), `kuaishou/kling-3.0-standard`, `google/veo-3.1-fast`, `google/veo-3.1-quality`, `openai/sora-2-pro`.
+
+### `motion` — Motion control video
+
+Transfers movement from a reference video onto a character image using Kling 3.0 Motion Control.
+
+```bash
+cc-hub motion "Dance animation" -i ./character.png -v ./dance.mp4 -o result.mp4
+cc-hub motion "Walking scene" -i https://example.com/person.jpg -v ./walk.mp4 -o walk-result.mp4
+cc-hub motion "Gesture transfer" -i ./avatar.png -v ./gesture.mp4 --character-orientation video -o out.mp4
+```
+
+| Option | Description |
+| --- | --- |
+| `-i, --image <path>` | Character image — the person/character to animate (**required**). Supported: png, jpg, jpeg, webp |
+| `-v, --video <path>` | Reference video — the movement source (**required**). Supported: mp4, webm, mov |
+| `--character-orientation <value>` | Alignment mode: `character` or `video` (default: `character`) |
+| `-o, --output <path>` | Output file path or name (**required**) |
+
 ### `transcribe` — Audio to text
 
 ```bash
