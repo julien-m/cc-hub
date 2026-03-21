@@ -221,22 +221,42 @@ Output goes to stdout. Silent by default (no auto-logging).
 ### `imagine` — Image generation
 
 ```bash
-cc-hub imagine "Dashboard dark mode minimal"
-cc-hub imagine "Logo for project X" --model stability-ai/sdxl
-cc-hub imagine "Hero banner" -o banner.png
+cc-hub imagine "Dashboard dark mode minimal" -o dashboard.png
+cc-hub imagine "Logo for project X" --model stability-ai/sdxl -o logo.png
+cc-hub imagine "Hero banner" --size 16:9 --resolution 2K -o banner.png
+cc-hub imagine "Transform into watercolor" -i ./photo.png -o watercolor.png
+cc-hub imagine "Stylize this" -i https://example.com/img.jpg -o styled.png
 ```
 
-Downloads the image to `~/.claude-hub/artifacts/` and prints the path to stdout. Filenames are unique by default (include timestamp). Use `-o, --output <filename>` to specify a custom filename.
+Downloads the image to `~/.claude-hub/artifacts/` and prints the path to stdout. Use `-o, --output <filename>` to specify a custom filename.
+
+| Option | Description |
+| --- | --- |
+| `--model <model>` | Model override (default: `IMAGINE_MODEL` from `.env`) |
+| `--size <ratio>` | Aspect ratio: `1:1`, `16:9`, `9:16`, `3:2`, `2:3`, `4:3`, `3:4`, `4:5`, `5:4`, `21:9` (default: `1:1`) |
+| `--resolution <res>` | Output resolution: `1K`, `2K`, `4K` (default: `1K`) |
+| `-i, --image <path>` | Reference image (local path or URL). Supported: png, jpg, jpeg, webp |
+| `-o, --output <path>` | Output file path or name (**required**) |
 
 ### `video` — Video generation
 
 ```bash
-cc-hub video "Product demo 10 seconds"
-cc-hub video "Animated logo loop" --model minimax/video-01
+cc-hub video "Product demo 10 seconds" -o demo.mp4
+cc-hub video "Animated logo loop" --duration 10 --aspect-ratio 9:16 -o loop.mp4
 cc-hub video "Intro clip" -o intro.mp4
+cc-hub video "The person starts walking" -i ./portrait.jpg -o animated.mp4
+cc-hub video "Zoom out slowly" -i https://example.com/scene.png -o reveal.mp4
 ```
 
-Downloads the video to `~/.claude-hub/artifacts/` and prints the path to stdout. Filenames are unique by default (include timestamp). Use `-o, --output <filename>` to specify a custom filename.
+Downloads the video to `~/.claude-hub/artifacts/` and prints the path to stdout. Use `-o, --output <filename>` to specify a custom filename.
+
+| Option | Description |
+| --- | --- |
+| `--model <model>` | Model override (default: `VIDEO_MODEL` from `.env`) |
+| `--duration <seconds>` | Duration in seconds, 3-15 (default: `5`) |
+| `--aspect-ratio <ratio>` | Aspect ratio: `16:9`, `1:1`, `9:16` (default: `16:9`) |
+| `-i, --image <path>` | Start frame image for animation (local path or URL). Supported: png, jpg, jpeg, webp |
+| `-o, --output <path>` | Output file path or name (**required**) |
 
 ### `transcribe` — Audio to text
 
@@ -475,6 +495,7 @@ cc-hub/
       creds.js             # credential reading via creds CLI
       digest-generator.js  # digest generation via Claude
       env.js               # .env file parser (provider/model defaults)
+      image-input.ts       # resolve local image path or URL for Poyo API
       openrouter.js        # OpenRouter API client
       replicate.js         # Replicate API client (predict + poll + download)
       purge.js             # automatic purge
