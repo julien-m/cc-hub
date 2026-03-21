@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import { generateMedia, downloadFile } from '../services/poyo-media.ts';
 import { getEnv } from '../services/env.ts';
 import { resolveForProvider } from '../services/models.ts';
+import { resolveImageInput } from '../services/image-input.ts';
 import { ARTIFACTS_DIR, ensureDirs } from '../utils/paths.ts';
 
 export function createVideoCommand(): Command {
@@ -13,11 +14,18 @@ export function createVideoCommand(): Command {
 		.option('--model <model>', 'Modèle à utiliser (surcharge VIDEO_MODEL)')
 		.option('--duration <seconds>', 'Durée en secondes (3-15)', '5')
 		.option('--aspect-ratio <ratio>', 'Ratio (16:9, 1:1, 9:16)', '16:9')
+		.option('-i, --image <path>', 'Image de départ pour animation (chemin local ou URL)')
 		.requiredOption('-o, --output <path>', 'Chemin ou nom du fichier de sortie')
-		.action(async (prompt: string, opts: { model?: string; duration: string; aspectRatio: string; output: string }) => {
+		.action(async (prompt: string, opts: { model?: string; duration: string; aspectRatio: string; image?: string; output: string }) => {
 			try {
 				const rawModel = opts.model || getEnv('VIDEO_MODEL') || 'kuaishou/kling-3.0-pro';
 			const model = resolveForProvider(rawModel, 'poyo');
+
+				let imageUrls: string[] | undefined;
+				if (opts.image) {
+					console.error('🖼️  Résolution de l\'image de référence...');
+					imageUrls = await resolveImageInput(opts.image);
+				}
 
 				console.error(`🎬 Génération de vidéo avec ${model}...`);
 
@@ -28,6 +36,7 @@ export function createVideoCommand(): Command {
 						duration: parseInt(opts.duration, 10),
 						aspect_ratio: opts.aspectRatio,
 						sound: true,
+						...(imageUrls && { image_urls: imageUrls }),
 					},
 				});
 

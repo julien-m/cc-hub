@@ -50,12 +50,15 @@ cc-hub imagine "Description" -o /tmp/mon-image.png       # chemin complet → re
 cc-hub imagine "Description" -o ./local/image.png         # chemin relatif → respecté
 cc-hub imagine "Description" -o mon-image.png             # nom seul → dans ~/.claude-hub/artifacts/
 cc-hub imagine "Description" --size 16:9 --resolution 2K -o rendu.png
+cc-hub imagine "Transform into watercolor" -i ./photo.png -o result.png  # avec image de référence locale
+cc-hub imagine "Stylize this" -i https://example.com/img.jpg -o out.png  # avec URL de référence
 ```
 
 - Modèle par défaut : `nano-banana-2-new`
 - Sizes : `1:1`, `16:9`, `9:16`, `3:2`, `2:3`, `4:3`, `3:4`, `4:5`, `5:4`, `21:9`
 - Résolutions : `1K` (défaut), `2K`, `4K`
 - `-o, --output <path>` (**obligatoire**) : chemin complet → respecté tel quel, nom seul → dans `~/.claude-hub/artifacts/`
+- `-i, --image <path>` (optionnel) : image de référence (chemin local ou URL). Formats supportés : png, jpg, jpeg, webp
 
 ### Générer une vidéo (via Poyo)
 
@@ -64,12 +67,15 @@ cc-hub video "Description" -o /tmp/clip.mp4               # chemin complet → r
 cc-hub video "Description" -o ./local/clip.mp4             # chemin relatif → respecté
 cc-hub video "Description" -o clip.mp4                     # nom seul → dans ~/.claude-hub/artifacts/
 cc-hub video "Description" --duration 10 --aspect-ratio 9:16 -o short.mp4
+cc-hub video "The person starts walking" -i ./portrait.jpg -o animated.mp4  # image-to-video
+cc-hub video "Zoom out slowly" -i https://example.com/scene.png -o out.mp4  # avec URL de référence
 ```
 
 - Modèle par défaut : `kling-3.0/pro`
 - Durée : 3-15 secondes (défaut : 5)
 - Ratios : `16:9` (défaut), `1:1`, `9:16`
 - `-o, --output <path>` (**obligatoire**) : chemin complet → respecté tel quel, nom seul → dans `~/.claude-hub/artifacts/`
+- `-i, --image <path>` (optionnel) : image de départ pour animation (chemin local ou URL). Formats supportés : png, jpg, jpeg, webp
 
 ### Poser une question via GitHub Copilot CLI
 
