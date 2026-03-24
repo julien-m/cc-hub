@@ -16,7 +16,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'anthropic/claude-opus-4.6',
-      copilot: 'Claude Opus 4.6',
+      copilot: 'claude-opus-4.6',
     },
   },
   {
@@ -24,7 +24,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'anthropic/claude-opus-4.5',
-      copilot: 'Claude Opus 4.5',
+      copilot: 'claude-opus-4.5',
     },
   },
   {
@@ -32,7 +32,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'anthropic/claude-sonnet-4.6',
-      copilot: 'Claude Sonnet 4.6',
+      copilot: 'claude-sonnet-4.6',
     },
   },
   {
@@ -40,7 +40,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'anthropic/claude-sonnet-4.5',
-      copilot: 'Claude Sonnet 4.5',
+      copilot: 'claude-sonnet-4.5',
     },
   },
   {
@@ -48,7 +48,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'anthropic/claude-sonnet-4',
-      copilot: 'Claude Sonnet 4',
+      copilot: 'claude-sonnet-4',
     },
   },
   {
@@ -56,7 +56,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'anthropic/claude-haiku-4.5',
-      copilot: 'Claude Haiku 4.5',
+      copilot: 'claude-haiku-4.5',
     },
   },
 
@@ -67,7 +67,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'openai/gpt-5.4',
-      copilot: 'GPT-5.4',
+      copilot: 'gpt-5.4',
     },
   },
   {
@@ -75,7 +75,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'openai/gpt-53-codex',
-      copilot: 'GPT-5.3-Codex',
+      copilot: 'gpt-5.3-codex',
     },
   },
   {
@@ -83,7 +83,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'openai/gpt-52-codex',
-      copilot: 'GPT-5.2-Codex',
+      copilot: 'gpt-5.2-codex',
     },
   },
   {
@@ -91,7 +91,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'openai/gpt-5.2',
-      copilot: 'GPT-5.2',
+      copilot: 'gpt-5.2',
     },
   },
   {
@@ -99,7 +99,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'openai/gpt-51-codex-max',
-      copilot: 'GPT-5.1-Codex-Max',
+      copilot: 'gpt-5.1-codex-max',
     },
   },
   {
@@ -107,7 +107,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'openai/gpt-51-codex',
-      copilot: 'GPT-5.1-Codex',
+      copilot: 'gpt-5.1-codex',
     },
   },
   {
@@ -115,7 +115,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'openai/gpt-5.1',
-      copilot: 'GPT-5.1',
+      copilot: 'gpt-5.1',
     },
   },
   {
@@ -123,7 +123,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'openai/gpt-5-mini',
-      copilot: 'GPT-5 mini',
+      copilot: 'gpt-5-mini',
     },
   },
   {
@@ -131,7 +131,7 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'openai/gpt-4.1',
-      copilot: 'GPT-4.1',
+      copilot: 'gpt-4.1',
     },
   },
 
@@ -141,7 +141,6 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'google/gemini-3-pro',
-      copilot: 'Gemini 3 Pro (Preview)',
       poyo: 'gemini-3-pro-preview',
     },
   },
@@ -150,7 +149,6 @@ export const MODELS: Model[] = [
     type: 'text',
     providers: {
       openrouter: 'google/gemini-3-flash',
-      copilot: 'Gemini 3 Flash (Preview)',
       poyo: 'gemini-3-flash-preview',
     },
   },

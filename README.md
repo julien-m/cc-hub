@@ -7,8 +7,8 @@ Runs entirely locally, zero server. Callable from any directory.
 ## Installation
 
 ```bash
-npm install
-npm link
+bun install
+bun link
 ```
 
 `cc-hub` is now available globally.
@@ -51,20 +51,25 @@ Create `~/.claude-hub/.env` to set default providers and models (no secrets here
 ```env
 # LLM — via OpenRouter
 LLM_PROVIDER=openrouter
-LLM_MODEL=anthropic/claude-sonnet-4-20250514
+LLM_MODEL=anthropic/claude-sonnet-4.6
 
-# Image — via Replicate
-IMAGE_PROVIDER=replicate
-IMAGE_MODEL=black-forest-labs/flux-1.1-pro
+# Copilot — via GitHub Copilot CLI
+COPILOT_MODEL=openai/gpt-5.4
 
-# Video — via Replicate
-VIDEO_PROVIDER=replicate
-VIDEO_MODEL=minimax/video-01
+# Image — via Poyo
+IMAGE_PROVIDER=poyo
+IMAGE_MODEL=poyo/nano-banana-2-new
 
-# Transcription — via Replicate
-TRANSCRIBE_PROVIDER=replicate
-TRANSCRIBE_MODEL=openai/whisper
+# Video — via Poyo
+VIDEO_PROVIDER=poyo
+VIDEO_MODEL=kuaishou/kling-3.0-pro
+
+# Transcription — via Soniox
+TRANSCRIBE_PROVIDER=poyo
+TRANSCRIBE_MODEL=soniox/soniox
 ```
+
+All models use **canonical IDs** (OpenRouter format): `provider/model-name`. Use `cc-hub models list` to browse all available models.
 
 Every command uses its `.env` default but accepts `--model` for on-the-fly override.
 
@@ -183,8 +188,8 @@ Uses `crontab` internally.
 
 ```bash
 cc-hub ask "Summarize this text"
-cc-hub ask "Explain this bug" --model openai/gpt-4o
-cc-hub ask "Translate to English" --model google/gemini-2.5-pro
+cc-hub ask "Explain this bug" --model openai/gpt-5.4
+cc-hub ask "Translate to English" --model google/gemini-3-pro
 ```
 
 Supports piping and file context:
@@ -222,7 +227,7 @@ Output goes to stdout. Silent by default (no auto-logging).
 
 ```bash
 cc-hub imagine "Dashboard dark mode minimal" -o dashboard.png
-cc-hub imagine "Logo for project X" --model stability-ai/sdxl -o logo.png
+cc-hub imagine "Logo for project X" --model poyo/nano-banana-2-new -o logo.png
 cc-hub imagine "Hero banner" --size 16:9 --resolution 2K -o banner.png
 cc-hub imagine "Transform into watercolor" -i ./photo.png -o watercolor.png
 cc-hub imagine "Stylize this" -i https://example.com/img.jpg -o styled.png
@@ -281,91 +286,49 @@ cc-hub motion "Gesture transfer" -i ./avatar.png -v ./gesture.mp4 --character-or
 
 ```bash
 cc-hub transcribe ./meeting.mp3
-cc-hub transcribe ./meeting.mp3 --model openai/whisper
 ```
 
-Outputs the transcription to stdout.
+Transcription via Soniox. Outputs the transcription to stdout.
 
-### `copilot` — LLM via GitHub Models (Copilot)
+### `copilot` — LLM via GitHub Copilot CLI
 
-LLM access via GitHub Models REST API. Ideal for background/cron tasks.
+LLM access via `gh copilot` CLI. Ideal for background/cron tasks.
 
 ```bash
 cc-hub copilot "Summarize this text"
 cc-hub copilot "Explain this code" -f src/cli.ts
 cc-hub copilot "Compare these files" -f src/a.ts -f src/b.ts
 cat file.ts | cc-hub copilot "Analyze"
-cc-hub copilot "Question" --model openai/gpt-4.1
+cc-hub copilot "Question" --model anthropic/claude-sonnet-4.6
 ```
 
-Default model: `gpt-4.1-mini`. Token is retrieved automatically via `gh auth token`.
+Default model: `openai/gpt-5.4`. Token is retrieved automatically via `gh auth token`.
 
-Advanced options:
+Unlike `ask` (which sends file contents to an external LLM API), `copilot` runs the `gh copilot` CLI locally — it has direct access to the filesystem. You can reference local paths in the prompt without `-f`:
 
 ```bash
-# Control creativity and length
-cc-hub copilot "Summarize" --temperature 0.2 --max-tokens 200
+# Copilot reads the files itself — no need to pass them explicitly
+cc-hub copilot "Analyze the project in ~/projects/my-app and suggest improvements"
+cc-hub copilot "Find security issues in src/auth/"
 
-# Free-form JSON response
-cc-hub copilot "3 European capitals in JSON" --response-format '{"type":"json_object"}'
-
-# Structured output with strict JSON schema
-cc-hub copilot "3 European capitals" --response-format '{
-  "type": "json_schema",
-  "json_schema": {
-    "name": "capitals",
-    "strict": true,
-    "schema": {
-      "type": "object",
-      "properties": {
-        "capitals": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "country": { "type": "string" },
-              "city": { "type": "string" }
-            },
-            "required": ["country", "city"],
-            "additionalProperties": false
-          }
-        }
-      },
-      "required": ["capitals"],
-      "additionalProperties": false
-    }
-  }
-}'
-# → {"capitals":[{"country":"France","city":"Paris"},{"country":"Germany","city":"Berlin"},...]}
-
-# Reproducible output
-cc-hub copilot "Translate to English" --seed 42
+# -f is still useful to inject file content directly into the prompt context
+cc-hub copilot "Explain this code" -f src/cli.ts
 ```
 
 | Option | Description |
 | --- | --- |
-| `--model <model>` | Model ID in `publisher/name` format (default: `gpt-4.1-mini`) |
-| `-f, --file <path>` | File or glob as context (repeatable) |
-| `--temperature <0-1>` | Creativity (0 = deterministic, 1 = creative) |
-| `--top-p <0-1>` | Nucleus sampling (alternative to temperature) |
-| `--max-tokens <n>` | Max tokens in response |
-| `--frequency-penalty <-2,2>` | Penalize repeated tokens |
-| `--presence-penalty <-2,2>` | Encourage new topics |
-| `--seed <n>` | Reproducible output |
-| `--stop <seq>` | Stop sequence (repeatable) |
-| `--response-format <json>` | `json_object` or `json_schema` with strict schema |
-| `--tools <json>` | Function calling definitions |
-| `--tool-choice <mode>` | `auto`, `required`, or `none` |
+| `--model <model>` | Model canonical ID (default: `openai/gpt-5.4`) |
+| `-f, --file <path>` | File or glob to inject as context in the prompt (repeatable) |
 
 ### `prompt` — Per-model prompting guides
 
 Maintains a local collection of prompting guides (Markdown files). Claude Code calls `prompt get` at runtime to fetch the guide and craft optimal prompts autonomously.
 
 ```bash
-cc-hub prompt get --model openai/gpt-4o         # display guide
-cc-hub prompt init --model openai/gpt-4o        # generate guide via LLM
+cc-hub prompt get --model openai/gpt-5.4        # display guide for a model
+cc-hub prompt get --type image                   # display guide by type
 cc-hub prompt list                               # list available guides
-cc-hub prompt update --model openai/gpt-4o      # refresh an existing guide
+cc-hub prompt delete --model openai/gpt-5.4     # remove a guide
 ```
 
 Guides are stored in `~/.claude-hub/prompts/<model-slug>.md`.
@@ -422,6 +385,25 @@ cc-hub config set purge.days 30       # retention period
 cc-hub config set digest.channel telegram
 cc-hub config show                    # display config
 ```
+
+### `models` — Model registry
+
+Browse available models filtered by provider or type.
+
+```bash
+cc-hub models list                          # all models
+cc-hub models list --provider copilot       # models available on GitHub Copilot
+cc-hub models list --provider openrouter    # models available on OpenRouter
+cc-hub models list --provider poyo          # models available on Poyo
+cc-hub models list --type text              # text models only
+cc-hub models list --type image             # image models only
+cc-hub models list --type video             # video models only
+cc-hub models list --provider copilot --type text  # combine filters
+```
+
+Providers: `openrouter`, `copilot`, `poyo`. Types: `text`, `image`, `video`, `audio`.
+
+All models across cc-hub use **canonical IDs** (OpenRouter format): `provider/model-name` (e.g. `openai/gpt-5.4`, `anthropic/claude-sonnet-4.6`).
 
 ## Artifacts
 
@@ -532,9 +514,11 @@ cc-hub/
 | **Phase 1** | `log`, `digest`, `schedule`, `config`      | done        |
 | **Phase 2** | `ask` via OpenRouter                       | done        |
 | **Phase 3** | `imagine`, `video`, `transcribe`           | done        |
-| **Phase 4** | `prompt` (init, get, list, update)         | done        |
+| **Phase 4** | `prompt` (get, list, delete)               | done        |
 | **Phase 5** | Turso Cloud sync (multi-machine)           | done        |
 | **Phase 6** | `skill`, `command`, `rule` (global linking) | done        |
+| **Phase 7** | `copilot` via GitHub Copilot CLI           | done        |
+| **Phase 8** | `models` registry, `motion` control        | done        |
 
 ## Usage with Claude Code
 

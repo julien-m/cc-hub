@@ -29,7 +29,7 @@ describe('findModel', () => {
 // ---------------------------------------------------------------------------
 describe('findByProviderName', () => {
   test('finds by copilot display name', () => {
-    const m = findByProviderName('copilot', 'Claude Sonnet 4');
+    const m = findByProviderName('copilot', 'claude-sonnet-4');
     expect(m).toBeDefined();
     expect(m!.id).toBe('anthropic/claude-sonnet-4');
   });
@@ -50,7 +50,7 @@ describe('findByProviderName', () => {
 // ---------------------------------------------------------------------------
 describe('toProviderName', () => {
   test('translates canonical ID to copilot name', () => {
-    expect(toProviderName('openai/gpt-4.1', 'copilot')).toBe('GPT-4.1');
+    expect(toProviderName('openai/gpt-4.1', 'copilot')).toBe('gpt-4.1');
   });
 
   test('translates canonical ID to poyo name', () => {
@@ -80,7 +80,7 @@ describe('toProviderName', () => {
 // ---------------------------------------------------------------------------
 describe('resolveForProvider', () => {
   test('registered model resolves to copilot name', () => {
-    expect(resolveForProvider('openai/gpt-4.1', 'copilot')).toBe('GPT-4.1');
+    expect(resolveForProvider('openai/gpt-4.1', 'copilot')).toBe('gpt-4.1');
   });
 
   test('registered model resolves to poyo name', () => {

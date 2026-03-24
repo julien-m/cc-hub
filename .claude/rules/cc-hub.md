@@ -2,6 +2,14 @@
 
 `cc-hub` est un CLI installé globalement sur cette machine. Utilise-le quand c'est pertinent.
 
+## Format des modèles
+
+Tous les modèles se passent au **format canonical ID** (identique aux IDs OpenRouter) : `provider/model-name`.
+
+Exemples : `openai/gpt-5.4`, `anthropic/claude-sonnet-4.6`, `google/gemini-3-pro`.
+
+Utiliser `cc-hub models list` pour voir les modèles disponibles et leurs providers.
+
 ## Quand utiliser cc-hub
 
 ### Logging d'activité
@@ -30,12 +38,12 @@ cc-hub telegram send-file photo.png --caption "Légende optionnelle"
 ### Poser une question à un autre LLM (via OpenRouter ou Poyo)
 
 ```bash
-cc-hub ask "Question ou instruction" --model anthropic/claude-sonnet-4-20250514
+cc-hub ask "Question ou instruction" --model anthropic/claude-sonnet-4.6
 cc-hub ask "Explique ce code" -f fichier.ts
 cc-hub ask "Compare ces fichiers" -f src/a.ts -f src/b.ts
 cat fichier.ts | cc-hub ask "Explique ce code"
 cc-hub ask "Question" --provider poyo --model gemini-3-flash-preview
-cc-hub ask "3 capitales européennes en JSON" --json --model openai/gpt-4.1
+cc-hub ask "3 capitales européennes en JSON" --json --model openai/gpt-5.4
 cc-hub ask "3 European capitals" --schema '{"name":"caps","strict":true,"schema":{...}}'
 cc-hub ask "3 European capitals" --schema ./capitals.schema.json
 ```
@@ -71,7 +79,7 @@ cc-hub video "The person starts walking" -i ./portrait.jpg -o animated.mp4  # im
 cc-hub video "Zoom out slowly" -i https://example.com/scene.png -o out.mp4  # avec URL de référence
 ```
 
-- Modèle par défaut : `kling-3.0/pro`
+- Modèle par défaut : `kuaishou/kling-3.0-pro`
 - Modèles disponibles : `kuaishou/kling-3.0-pro`, `kuaishou/kling-3.0-standard`, `google/veo-3.1-fast`, `google/veo-3.1-quality`, `openai/sora-2-pro`
 - Durée : 3-15 secondes (défaut : 5)
 - Ratios : `16:9` (défaut), `1:1`, `9:16`
@@ -98,12 +106,30 @@ cc-hub motion "Gesture transfer" -i ./avatar.png -v ./gesture.mp4 --character-or
 cc-hub copilot "Explique ce code"
 cc-hub copilot "Compare ces fichiers" -f src/a.ts -f src/b.ts
 cat fichier.ts | cc-hub copilot "Analyse"
-cc-hub copilot "Question" --model claude-sonnet-4.6
+cc-hub copilot "Question" --model anthropic/claude-sonnet-4.6
 ```
 
 - Provider : GitHub Copilot CLI (`gh copilot -p`)
-- Modèle par défaut : `gpt-4.1`
+- Modèle par défaut : `openai/gpt-5.4`
+- Les modèles se passent au format canonical ID (ex: `openai/gpt-5.4`, `anthropic/claude-sonnet-4.6`)
+- Contrairement à `ask`, `copilot` tourne localement via `gh copilot` et a accès au filesystem. On peut référencer des chemins locaux directement dans le prompt sans `-f` (ex: `"Analyse le projet dans ~/projects/my-app"`). `-f` reste utile pour injecter le contenu d'un fichier dans le contexte du prompt.
 - Idéal pour les tâches non urgentes (cron de nuit, batch)
+
+### Lister les modèles disponibles
+
+```bash
+cc-hub models list                          # tous les modèles
+cc-hub models list --provider copilot       # modèles disponibles sur Copilot
+cc-hub models list --provider openrouter    # modèles disponibles sur OpenRouter
+cc-hub models list --provider poyo          # modèles disponibles sur Poyo
+cc-hub models list --type text              # modèles texte uniquement
+cc-hub models list --type image             # modèles image uniquement
+cc-hub models list --type video             # modèles vidéo uniquement
+```
+
+- Providers : `openrouter`, `copilot`, `poyo`
+- Types : `text`, `image`, `video`, `audio`
+- Combinable : `--provider copilot --type text`
 
 ### Transcrire un fichier audio (via Soniox)
 
@@ -124,6 +150,47 @@ cc-hub command link <path>                       # idem pour les commandes
 cc-hub command link <path> --name <custom-name>  # nom personnalisé (.md ajouté auto)
 cc-hub rule link <path>                          # idem pour les rules
 cc-hub rule link <path> --name <custom-name>     # nom personnalisé (.md ajouté auto)
+```
+
+### Digest quotidien
+
+```bash
+cc-hub digest preview                       # afficher les événements bruts
+cc-hub digest preview --since 2026-03-20    # depuis une date
+cc-hub digest files                         # lister les fichiers artifacts
+cc-hub digest files --important             # uniquement les artifacts importants
+```
+
+### Planifier le digest
+
+```bash
+cc-hub schedule set 08:00                   # planifier le digest à 08h00 (cron)
+cc-hub schedule show                        # afficher la planification actuelle
+cc-hub schedule unset                       # supprimer la planification
+```
+
+### Configuration
+
+```bash
+cc-hub config show                          # afficher toutes les préférences
+cc-hub config set <key> <value>             # définir une préférence
+cc-hub config set prompt.default.text "openai/gpt-5.4"
+```
+
+### Synchroniser la base de données
+
+```bash
+cc-hub sync run                             # lancer une synchronisation Turso
+cc-hub sync status                          # afficher le statut de synchronisation
+```
+
+### Gérer les guides de prompting
+
+```bash
+cc-hub prompt get --model openai/gpt-5.4   # récupérer le guide d'un modèle
+cc-hub prompt get --type image              # récupérer le guide par type
+cc-hub prompt list                          # lister les guides disponibles
+cc-hub prompt delete --model openai/gpt-5.4 # supprimer un guide
 ```
 
 ## Chargement du prompt guide avant appel LLM

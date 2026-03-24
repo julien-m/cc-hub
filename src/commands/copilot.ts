@@ -36,7 +36,7 @@ export function createCopilotCommand(): Command {
 	const copilot = new Command('copilot')
 		.description('Poser une question via GitHub Copilot CLI')
 		.argument('<prompt>', 'Prompt à envoyer au modèle')
-		.option('--model <model>', 'Modèle à utiliser (défaut: gpt-4.1)')
+		.option('--model <model>', 'Modèle à utiliser (défaut: gpt-5.4)')
 		.option('-f, --file <path>', 'File or glob to include as context (repeatable)', collect, [])
 		.action(async (prompt: string, opts: {
 			model?: string;
@@ -71,7 +71,7 @@ export function createCopilotCommand(): Command {
 					}
 				}
 
-				const rawModel = opts.model || getEnv('COPILOT_MODEL') || 'openai/gpt-4.1';
+				const rawModel = opts.model || getEnv('COPILOT_MODEL') || 'openai/gpt-5.4';
 				const nativeModel = resolveForProvider(rawModel, 'copilot');
 
 				const response = await askCopilot(prompt, {
