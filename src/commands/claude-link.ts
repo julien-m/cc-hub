@@ -39,9 +39,9 @@ function extractNameFromFile(filePath: string): string {
 }
 
 export interface ClaudeLinkConfig {
-  /** "skill" | "command" | "rule" */
-  type: string;
-  /** Sous-dossier dans ~/.claude/ ("skills", "commands", "rules") */
+  /** "skill" | "command" | "rule" | "agent" */
+  type: 'skill' | 'command' | 'rule' | 'agent';
+  /** Sous-dossier dans ~/.claude/ ("skills", "commands", "rules", "agents") */
   subdir: string;
   /** true = source est un dossier (skill), false = source est un fichier .md */
   isDirectory: boolean;
@@ -314,5 +314,18 @@ export const ruleConfig: ClaudeLinkConfig = {
   resolveLocal(name: string): string {
     const withExt = name.endsWith('.md') ? name : `${name}.md`;
     return resolve('.claude', 'rules', withExt);
+  },
+};
+
+export const agentConfig: ClaudeLinkConfig = {
+  type: 'agent',
+  subdir: 'agents',
+  isDirectory: false,
+  extractName(sourcePath: string): string {
+    return basename(sourcePath);
+  },
+  resolveLocal(name: string): string {
+    const withExt = name.endsWith('.md') ? name : `${name}.md`;
+    return resolve('.claude', 'agents', withExt);
   },
 };

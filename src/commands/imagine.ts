@@ -18,8 +18,8 @@ export function createImagineCommand(): Command {
 		.requiredOption('-o, --output <path>', 'Chemin ou nom du fichier de sortie')
 		.action(async (prompt: string, opts: { model?: string; size: string; resolution: string; image?: string; output: string }) => {
 			try {
-				const rawModel = opts.model || getEnv('IMAGINE_MODEL') || 'poyo/nano-banana-2-new';
-			const model = resolveForProvider(rawModel, 'poyo');
+				const rawModel = opts.model || getEnv('IMAGINE_MODEL') || 'google/gemini-3.1-flash-image';
+				const model = resolveForProvider(rawModel, 'poyo');
 
 				let imageUrls: string[] | undefined;
 				if (opts.image) {

@@ -62,7 +62,7 @@ cc-hub imagine "Transform into watercolor" -i ./photo.png -o result.png  # avec 
 cc-hub imagine "Stylize this" -i https://example.com/img.jpg -o out.png  # avec URL de référence
 ```
 
-- Modèle par défaut : `nano-banana-2-new`
+- Modèle par défaut : `google/gemini-3.1-flash-image`
 - Sizes : `1:1`, `16:9`, `9:16`, `3:2`, `2:3`, `4:3`, `3:4`, `4:5`, `5:4`, `21:9`
 - Résolutions : `1K` (défaut), `2K`, `4K`
 - `-o, --output <path>` (**obligatoire**) : chemin complet → respecté tel quel, nom seul → dans `~/.claude-hub/artifacts/`
@@ -138,7 +138,7 @@ cc-hub transcribe ./fichier.mp3
 # → transcription sur stdout
 ```
 
-### Gérer les skills/commands/rules Claude Code
+### Gérer les skills/commands/rules/agents Claude Code
 
 ```bash
 cc-hub skill link <path|name>                    # installer un skill globalement (symlink)
@@ -150,6 +150,10 @@ cc-hub command link <path>                       # idem pour les commandes
 cc-hub command link <path> --name <custom-name>  # nom personnalisé (.md ajouté auto)
 cc-hub rule link <path>                          # idem pour les rules
 cc-hub rule link <path> --name <custom-name>     # nom personnalisé (.md ajouté auto)
+cc-hub agent link <path>                         # idem pour les agents
+cc-hub agent link <path> --name <custom-name>    # nom personnalisé (.md ajouté auto)
+cc-hub agent list                                # lister les agents globaux
+cc-hub agent unlink <name>                       # désinstaller
 ```
 
 ### Digest quotidien

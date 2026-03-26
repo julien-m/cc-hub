@@ -183,10 +183,17 @@ export const MODELS: Model[] = [
 
   // --- Poyo media ---
   {
-    id: 'poyo/nano-banana-2-new',
+    id: 'google/gemini-3.1-flash-image',
     type: 'image',
     providers: {
       poyo: 'nano-banana-2-new',
+    },
+  },
+  {
+    id: 'google/gemini-3.1-flash-image-edit',
+    type: 'image',
+    providers: {
+      poyo: 'nano-banana-2-new-edit',
     },
   },
   {

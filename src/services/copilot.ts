@@ -6,6 +6,26 @@
 
 import { execFile } from 'node:child_process';
 
+/** Auth patterns from `gh copilot` stderr when not logged in or token expired. */
+const AUTH_ERROR_PATTERNS = [
+	'not logged in',
+	'must authenticate',
+	'authentication required',
+	'invalid token',
+	'token expired',
+	'auth login',
+	'login is required',
+	'could not determine token',
+];
+
+/** Thrown when GitHub Copilot CLI requires authentication. */
+export class CopilotAuthError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'CopilotAuthError';
+	}
+}
+
 export interface CopilotOptions {
 	model?: string;
 	stdin?: string;
@@ -17,6 +37,8 @@ export interface CopilotOptions {
  * @param prompt - The prompt to send
  * @param opts - Options (model, stdin content, file contexts)
  * @returns The model response text
+ * @throws CopilotAuthError when GitHub Copilot requires authentication
+ * @throws Error when no model is specified or CLI returns an error
  */
 export async function askCopilot(prompt: string, opts: CopilotOptions = {}): Promise<string> {
 	const model = opts.model;
@@ -47,6 +69,12 @@ export async function askCopilot(prompt: string, opts: CopilotOptions = {}): Pro
 		const child = execFile('gh', args, { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
 			if (error) {
 				const message = stderr?.trim() || error.message;
+				const lower = message.toLowerCase();
+				const isAuthError = AUTH_ERROR_PATTERNS.some((p) => lower.includes(p));
+				if (isAuthError) {
+					reject(new CopilotAuthError(message));
+					return;
+				}
 				reject(new Error(`Copilot CLI error: ${message}`));
 				return;
 			}

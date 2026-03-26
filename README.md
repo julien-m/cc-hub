@@ -58,7 +58,7 @@ COPILOT_MODEL=openai/gpt-5.4
 
 # Image — via Poyo
 IMAGE_PROVIDER=poyo
-IMAGE_MODEL=poyo/nano-banana-2-new
+IMAGE_MODEL=google/gemini-3.1-flash-image
 
 # Video — via Poyo
 VIDEO_PROVIDER=poyo
@@ -227,7 +227,7 @@ Output goes to stdout. Silent by default (no auto-logging).
 
 ```bash
 cc-hub imagine "Dashboard dark mode minimal" -o dashboard.png
-cc-hub imagine "Logo for project X" --model poyo/nano-banana-2-new -o logo.png
+cc-hub imagine "Logo for project X" --model google/gemini-3.1-flash-image -o logo.png
 cc-hub imagine "Hero banner" --size 16:9 --resolution 2K -o banner.png
 cc-hub imagine "Transform into watercolor" -i ./photo.png -o watercolor.png
 cc-hub imagine "Stylize this" -i https://example.com/img.jpg -o styled.png
@@ -344,9 +344,9 @@ cc-hub sync run       # trigger a manual sync
 
 When Turso is configured, an initial sync happens automatically on startup.
 
-### `skill` / `command` / `rule` — Claude Code global linking
+### `skill` / `command` / `rule` / `agent` — Claude Code global linking
 
-Install Claude Code skills, commands, and rules globally via symlinks.
+Install Claude Code skills, commands, rules, and agents globally via symlinks.
 
 ```bash
 # Skills (source = directory with SKILL.md)
@@ -364,6 +364,11 @@ cc-hub command unlink deploy.md
 cc-hub rule link /path/to/project/.claude/rules/no-console.md
 cc-hub rule list
 cc-hub rule unlink no-console.md
+
+# Agents (source = .md file)
+cc-hub agent link /path/to/project/.claude/agents/my-agent.md
+cc-hub agent list
+cc-hub agent unlink my-agent.md
 ```
 
 Use `--name` to give the symlink a different name than the source:
@@ -372,9 +377,10 @@ Use `--name` to give the symlink a different name than the source:
 cc-hub command link ./test.md --name my-command.md    # ~/.claude/commands/my-command.md
 cc-hub rule link ./local-rule.md --name project-rules.md
 cc-hub skill link ./my-skill --name custom-skill-name
+cc-hub agent link ./agent.md --name custom-agent.md   # ~/.claude/agents/custom-agent.md
 ```
 
-For commands and rules, the `.md` extension is added automatically if omitted.
+For commands, rules, and agents, the `.md` extension is added automatically if omitted.
 
 All installs use symlinks — the source stays in your project and updates are reflected immediately.
 
@@ -488,6 +494,7 @@ cc-hub/
       skill.js             # skill link, list, unlink
       command.js           # command link, list, unlink
       rule.js              # rule link, list, unlink
+      agent.js             # agent link, list, unlink
       claude-link.js       # shared linking logic
     db/
       index.js             # libsql client + Turso embedded replicas
@@ -516,7 +523,7 @@ cc-hub/
 | **Phase 3** | `imagine`, `video`, `transcribe`           | done        |
 | **Phase 4** | `prompt` (get, list, delete)               | done        |
 | **Phase 5** | Turso Cloud sync (multi-machine)           | done        |
-| **Phase 6** | `skill`, `command`, `rule` (global linking) | done        |
+| **Phase 6** | `skill`, `command`, `rule`, `agent` (global linking) | done        |
 | **Phase 7** | `copilot` via GitHub Copilot CLI           | done        |
 | **Phase 8** | `models` registry, `motion` control        | done        |
 

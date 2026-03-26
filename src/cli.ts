@@ -14,6 +14,7 @@ import { createTelegramCommand } from './commands/telegram.ts';
 import { createSkillCommand } from './commands/skill.ts';
 import { createCommandCommand } from './commands/command.ts';
 import { createRuleCommand } from './commands/rule.ts';
+import { createAgentCommand } from './commands/agent.ts';
 import { createCopilotCommand } from './commands/copilot.ts';
 import { createModelsCommand } from './commands/models.ts';
 
@@ -39,6 +40,7 @@ program.addCommand(createTelegramCommand());
 program.addCommand(createSkillCommand());
 program.addCommand(createCommandCommand());
 program.addCommand(createRuleCommand());
+program.addCommand(createAgentCommand());
 program.addCommand(createCopilotCommand());
 program.addCommand(createModelsCommand());
 

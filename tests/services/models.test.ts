@@ -84,7 +84,7 @@ describe('resolveForProvider', () => {
   });
 
   test('registered model resolves to poyo name', () => {
-    expect(resolveForProvider('poyo/nano-banana-2-new', 'poyo')).toBe('nano-banana-2-new');
+    expect(resolveForProvider('google/gemini-3.1-flash-image', 'poyo')).toBe('nano-banana-2-new');
   });
 
   test('registered model resolves to openrouter name', () => {
@@ -131,8 +131,8 @@ describe('modelToSlug', () => {
     expect(modelToSlug('openai/gpt-53-codex')).toBe('openai-gpt-53-codex');
   });
 
-  test('poyo ID', () => {
-    expect(modelToSlug('poyo/nano-banana-2-new')).toBe('poyo-nano-banana-2-new');
+  test('poyo image model ID', () => {
+    expect(modelToSlug('google/gemini-3.1-flash-image')).toBe('google-gemini-31-flash-image');
   });
 
   test('kling ID (dots stripped)', () => {

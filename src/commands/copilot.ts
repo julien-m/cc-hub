@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import { statSync } from 'node:fs';
-import { askCopilot } from '../services/copilot.ts';
+import { askCopilot, CopilotAuthError } from '../services/copilot.ts';
 import { resolveForProvider } from '../services/models.ts';
 import { getEnv } from '../services/env.ts';
 import { readStdin } from '../utils/stdin.ts';
@@ -83,6 +83,11 @@ export function createCopilotCommand(): Command {
 				process.stdout.write(response);
 				if (!response.endsWith('\n')) process.stdout.write('\n');
 			} catch (err) {
+				if (err instanceof CopilotAuthError) {
+					console.error('❌ GitHub Copilot is not authenticated.');
+					console.error('   Run: gh auth login');
+					process.exit(3);
+				}
 				console.error(`❌ ${(err as Error).message}`);
 				process.exit(4);
 			}
