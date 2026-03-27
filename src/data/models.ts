@@ -197,6 +197,20 @@ export const MODELS: Model[] = [
     },
   },
   {
+    id: 'google/nano-banana-2',
+    type: 'image',
+    providers: {
+      poyo: 'nano-banana-2',
+    },
+  },
+  {
+    id: 'google/nano-banana-2-edit',
+    type: 'image',
+    providers: {
+      poyo: 'nano-banana-2-edit',
+    },
+  },
+  {
     id: 'kuaishou/kling-3.0-pro',
     type: 'video',
     providers: {

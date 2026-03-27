@@ -87,6 +87,14 @@ describe('resolveForProvider', () => {
     expect(resolveForProvider('google/gemini-3.1-flash-image', 'poyo')).toBe('nano-banana-2-new');
   });
 
+  test('nano-banana-2 pro resolves to poyo name', () => {
+    expect(resolveForProvider('google/nano-banana-2', 'poyo')).toBe('nano-banana-2');
+  });
+
+  test('nano-banana-2-edit pro resolves to poyo name', () => {
+    expect(resolveForProvider('google/nano-banana-2-edit', 'poyo')).toBe('nano-banana-2-edit');
+  });
+
   test('registered model resolves to openrouter name', () => {
     expect(resolveForProvider('anthropic/claude-sonnet-4', 'openrouter')).toBe(
       'anthropic/claude-sonnet-4',

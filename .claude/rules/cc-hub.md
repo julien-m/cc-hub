@@ -63,6 +63,7 @@ cc-hub imagine "Stylize this" -i https://example.com/img.jpg -o out.png  # avec 
 ```
 
 - Modèle par défaut : `google/gemini-3.1-flash-image`
+- Modèles image disponibles : `google/gemini-3.1-flash-image` (standard), `google/gemini-3.1-flash-image-edit` (standard edit), `google/nano-banana-2` (pro), `google/nano-banana-2-edit` (pro edit)
 - Sizes : `1:1`, `16:9`, `9:16`, `3:2`, `2:3`, `4:3`, `3:4`, `4:5`, `5:4`, `21:9`
 - Résolutions : `1K` (défaut), `2K`, `4K`
 - `-o, --output <path>` (**obligatoire**) : chemin complet → respecté tel quel, nom seul → dans `~/.claude-hub/artifacts/`

@@ -243,6 +243,8 @@ Downloads the image to `~/.claude-hub/artifacts/` and prints the path to stdout.
 | `-i, --image <path>` | Reference image (local path or URL). Supported: png, jpg, jpeg, webp |
 | `-o, --output <path>` | Output file path or name (**required**) |
 
+Available image models: `google/gemini-3.1-flash-image` (default), `google/gemini-3.1-flash-image-edit`, `google/nano-banana-2` (pro), `google/nano-banana-2-edit` (pro).
+
 ### `video` — Video generation
 
 ```bash
