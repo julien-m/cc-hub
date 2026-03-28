@@ -15,6 +15,7 @@ const FALLBACK_MODEL_BY_TYPE: Record<ModelType, string> = {
   image: 'google/gemini-3.1-flash-image',
   video: 'kuaishou/kling-3.0-pro',
   audio: 'soniox/soniox',
+  music: 'poyo/generate-music',
 };
 
 function getDefaultModel(type: ModelType): string {

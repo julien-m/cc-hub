@@ -64,6 +64,9 @@ IMAGE_MODEL=google/gemini-3.1-flash-image
 VIDEO_PROVIDER=poyo
 VIDEO_MODEL=kuaishou/kling-3.0-pro
 
+# Music — via Poyo
+MUSIC_MODEL=poyo/generate-music
+
 # Transcription — via Soniox
 TRANSCRIBE_PROVIDER=poyo
 TRANSCRIBE_MODEL=soniox/soniox
@@ -243,7 +246,7 @@ Downloads the image to `~/.claude-hub/artifacts/` and prints the path to stdout.
 | `-i, --image <path>` | Reference image (local path or URL). Supported: png, jpg, jpeg, webp |
 | `-o, --output <path>` | Output file path or name (**required**) |
 
-Available image models: `google/gemini-3.1-flash-image` (default), `google/gemini-3.1-flash-image-edit`, `google/nano-banana-2` (pro), `google/nano-banana-2-edit` (pro).
+Available image models: `google/gemini-3.1-flash-image` (default), `google/gemini-3.1-flash-image-edit`, `google/nano-banana-2` (pro), `google/nano-banana-2-edit` (pro edit), `google/nano-banana`, `google/nano-banana-edit`, `bytedance/seedream-5.0-lite`, `bytedance/seedream-5.0-lite-edit`, `bytedance/seedream-4.5`, `bytedance/seedream-4.5-edit`, `openai/gpt-image-1.5`, `openai/gpt-image-1.5-edit`, `openai/gpt-4o-image`, `openai/gpt-4o-image-edit`, `openai/z-image`, `bfl/flux-2-pro`, `bfl/flux-2-pro-edit`, `bfl/flux-2-flex`, `bfl/flux-2-flex-edit`, `xai/grok-imagine`.
 
 ### `video` — Video generation
 
@@ -265,7 +268,7 @@ Downloads the video to `~/.claude-hub/artifacts/` and prints the path to stdout.
 | `-i, --image <path>` | Start frame image for animation (local path or URL). Supported: png, jpg, jpeg, webp |
 | `-o, --output <path>` | Output file path or name (**required**) |
 
-Available video models: `kuaishou/kling-3.0-pro` (default), `kuaishou/kling-3.0-standard`, `google/veo-3.1-fast`, `google/veo-3.1-quality`, `openai/sora-2-pro`.
+Available video models: `kuaishou/kling-3.0-pro` (default), `kuaishou/kling-3.0-standard`, `kuaishou/kling-2.6`, `kuaishou/kling-2.6-motion-control`, `kuaishou/kling-2.5-turbo-pro`, `kuaishou/kling-2.1-standard`, `kuaishou/kling-2.1-pro`, `minimax/hailuo-2.3`, `minimax/hailuo-02`, `minimax/hailuo-02-pro`, `alibaba/wan-2.2-text-to-video-fast`, `alibaba/wan-2.2-image-to-video-fast`, `alibaba/wan-2.5-text-to-video`, `alibaba/wan-2.5-image-to-video`, `alibaba/wan-2.6-text-to-video`, `alibaba/wan-2.6-image-to-video`, `alibaba/wan-2.6-video-to-video`, `alibaba/wan-animate-move`, `alibaba/wan-animate-replace`, `bytedance/seedance-1.0-pro`, `bytedance/seedance-1.5-pro`, `runway/gen-4.5`, `google/veo-3.1-fast`, `google/veo-3.1-quality`, `openai/sora-2-official`, `openai/sora-2`, `openai/sora-2-pro`, `openai/sora-2-stable`, `xai/grok-imagine-video`.
 
 ### `motion` — Motion control video
 
@@ -283,6 +286,20 @@ cc-hub motion "Gesture transfer" -i ./avatar.png -v ./gesture.mp4 --character-or
 | `-v, --video <path>` | Reference video — the movement source (**required**). Supported: mp4, webm, mov |
 | `--character-orientation <value>` | Alignment mode: `character` or `video` (default: `character`) |
 | `-o, --output <path>` | Output file path or name (**required**) |
+
+### `music` — Music generation
+
+```bash
+cc-hub music generate "Upbeat jazz with piano and bass" -o jazz.mp3
+cc-hub music generate "Ambient electronic chill" --model poyo/generate-music -o ambient.mp3
+```
+
+| Option | Description |
+| --- | --- |
+| `--model <model>` | Model override (default: `MUSIC_MODEL` from `.env`) |
+| `-o, --output <path>` | Output file path or name (**required**) |
+
+Default model: `poyo/generate-music`. Only the `generate` subcommand is available for now — other music operations (extend, cover, vocals, stems) will come in a future release.
 
 ### `transcribe` — Audio to text
 
@@ -409,7 +426,7 @@ cc-hub models list --type video             # video models only
 cc-hub models list --provider copilot --type text  # combine filters
 ```
 
-Providers: `openrouter`, `copilot`, `poyo`. Types: `text`, `image`, `video`, `audio`.
+Providers: `openrouter`, `copilot`, `poyo`. Types: `text`, `image`, `video`, `audio`, `music`.
 
 All models across cc-hub use **canonical IDs** (OpenRouter format): `provider/model-name` (e.g. `openai/gpt-5.4`, `anthropic/claude-sonnet-4.6`).
 
@@ -488,8 +505,9 @@ cc-hub/
       schedule.js          # schedule set, remove, status
       config.js            # config set, show
       ask.js               # LLM via OpenRouter
-      imagine.js           # image generation via Replicate
-      video.js             # video generation via Replicate
+      imagine.js           # image generation via Poyo
+      video.js             # video generation via Poyo
+      music.js             # music generation via Poyo
       transcribe.js        # audio transcription via Replicate
       prompt.js            # prompting guides (get, init, list, update)
       sync.js              # Turso Cloud sync (run, status)
@@ -528,6 +546,7 @@ cc-hub/
 | **Phase 6** | `skill`, `command`, `rule`, `agent` (global linking) | done        |
 | **Phase 7** | `copilot` via GitHub Copilot CLI           | done        |
 | **Phase 8** | `models` registry, `motion` control        | done        |
+| **Phase 9** | Full Poyo model catalog, `music generate`  | done        |
 
 ## Usage with Claude Code
 

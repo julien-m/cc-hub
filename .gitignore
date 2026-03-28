@@ -31,3 +31,6 @@ coverage/
 *.tmp
 *.swp
 *~
+
+# Materialized conventions
+.conventions/

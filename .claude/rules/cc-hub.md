@@ -63,7 +63,7 @@ cc-hub imagine "Stylize this" -i https://example.com/img.jpg -o out.png  # avec 
 ```
 
 - Modèle par défaut : `google/gemini-3.1-flash-image`
-- Modèles image disponibles : `google/gemini-3.1-flash-image` (standard), `google/gemini-3.1-flash-image-edit` (standard edit), `google/nano-banana-2` (pro), `google/nano-banana-2-edit` (pro edit)
+- Modèles image disponibles : `google/gemini-3.1-flash-image` (default), `google/gemini-3.1-flash-image-edit`, `google/nano-banana-2` (pro), `google/nano-banana-2-edit` (pro edit), `google/nano-banana`, `google/nano-banana-edit`, `bytedance/seedream-5.0-lite`, `bytedance/seedream-5.0-lite-edit`, `bytedance/seedream-4.5`, `bytedance/seedream-4.5-edit`, `openai/gpt-image-1.5`, `openai/gpt-image-1.5-edit`, `openai/gpt-4o-image`, `openai/gpt-4o-image-edit`, `openai/z-image`, `bfl/flux-2-pro`, `bfl/flux-2-pro-edit`, `bfl/flux-2-flex`, `bfl/flux-2-flex-edit`, `xai/grok-imagine`
 - Sizes : `1:1`, `16:9`, `9:16`, `3:2`, `2:3`, `4:3`, `3:4`, `4:5`, `5:4`, `21:9`
 - Résolutions : `1K` (défaut), `2K`, `4K`
 - `-o, --output <path>` (**obligatoire**) : chemin complet → respecté tel quel, nom seul → dans `~/.claude-hub/artifacts/`
@@ -81,7 +81,7 @@ cc-hub video "Zoom out slowly" -i https://example.com/scene.png -o out.mp4  # av
 ```
 
 - Modèle par défaut : `kuaishou/kling-3.0-pro`
-- Modèles disponibles : `kuaishou/kling-3.0-pro`, `kuaishou/kling-3.0-standard`, `google/veo-3.1-fast`, `google/veo-3.1-quality`, `openai/sora-2-pro`
+- Modèles disponibles : `kuaishou/kling-3.0-pro` (default), `kuaishou/kling-3.0-standard`, `kuaishou/kling-2.6`, `kuaishou/kling-2.6-motion-control`, `kuaishou/kling-2.5-turbo-pro`, `kuaishou/kling-2.1-standard`, `kuaishou/kling-2.1-pro`, `minimax/hailuo-2.3`, `minimax/hailuo-02`, `minimax/hailuo-02-pro`, `alibaba/wan-2.2-text-to-video-fast`, `alibaba/wan-2.2-image-to-video-fast`, `alibaba/wan-2.5-text-to-video`, `alibaba/wan-2.5-image-to-video`, `alibaba/wan-2.6-text-to-video`, `alibaba/wan-2.6-image-to-video`, `alibaba/wan-2.6-video-to-video`, `alibaba/wan-animate-move`, `alibaba/wan-animate-replace`, `bytedance/seedance-1.0-pro`, `bytedance/seedance-1.5-pro`, `runway/gen-4.5`, `google/veo-3.1-fast`, `google/veo-3.1-quality`, `openai/sora-2-official`, `openai/sora-2`, `openai/sora-2-pro`, `openai/sora-2-stable`, `xai/grok-imagine-video`
 - Durée : 3-15 secondes (défaut : 5)
 - Ratios : `16:9` (défaut), `1:1`, `9:16`
 - `-o, --output <path>` (**obligatoire**) : chemin complet → respecté tel quel, nom seul → dans `~/.claude-hub/artifacts/`
@@ -129,8 +129,19 @@ cc-hub models list --type video             # modèles vidéo uniquement
 ```
 
 - Providers : `openrouter`, `copilot`, `poyo`
-- Types : `text`, `image`, `video`, `audio`
+- Types : `text`, `image`, `video`, `audio`, `music`
 - Combinable : `--provider copilot --type text`
+
+### Générer de la musique (via Poyo)
+
+```bash
+cc-hub music generate "Upbeat jazz with piano" -o jazz.mp3
+cc-hub music generate "Ambient electronic" --model poyo/generate-music -o ambient.mp3
+```
+
+- Modèle par défaut : `poyo/generate-music`
+- `-o, --output <path>` (**obligatoire**) : chemin complet → respecté tel quel, nom seul → dans `~/.claude-hub/artifacts/`
+- `--model <model>` (optionnel) : surcharge MUSIC_MODEL
 
 ### Transcrire un fichier audio (via Soniox)
 
@@ -218,6 +229,7 @@ Avant chaque commande cc-hub qui contacte un LLM, **charger le guide de promptin
 | `cc-hub ask --model X` | text | `cc-hub prompt get --model X` |
 | `cc-hub copilot --model X` | text | `cc-hub prompt get --model X` |
 | `cc-hub transcribe` | audio | `cc-hub prompt get --type audio` |
+| `cc-hub music generate` | music | `cc-hub prompt get --type music` |
 
 Pour `ask` et `copilot`, utiliser le modèle exact passé en `--model`. Pour les autres, `--type` résout automatiquement vers le modèle par défaut configuré (modifiable via `cc-hub config set prompt.default.<type> "model"`).
 
@@ -255,5 +267,5 @@ cc-hub imagine "prompt optimisé" -o image.png
 
 - Ne jamais logger de secrets dans `--details` ou `--title`
 - Utiliser `--important` avec parcimonie — ces artifacts sont envoyés sur Telegram
-- Le stdout de `ask`, `copilot`, `imagine`, `video`, `transcribe` est exploitable en pipe
+- Le stdout de `ask`, `copilot`, `imagine`, `video`, `music`, `transcribe` est exploitable en pipe
 - Toujours utiliser `creds` pour les secrets (jamais de clés en dur)
