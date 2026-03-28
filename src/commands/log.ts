@@ -1,9 +1,10 @@
+/** Command handler for activity log management. */
 import { existsSync, readFileSync } from 'node:fs';
 import { Command } from 'commander';
 import { type Row } from '@libsql/client';
 import { getDb } from '../db/index.ts';
 import { storeArtifact } from '../services/artifacts.ts';
-import { formatEvent, formatEventDetail, type EventRow } from '../utils/format.ts';
+import { formatEvent, formatEventDetail, type EventRow } from '../services/format.ts';
 
 const VALID_TYPES = [
   'tech_watch',
@@ -29,38 +30,57 @@ const VALID_TYPES = [
 
 const VALID_STATUSES = ['success', 'failed', 'partial'] as const;
 
-export function createLogCommand(): Command {
+/**
+ * Map a raw database row to a typed EventRow.
+ * @param row - The raw libsql Row object.
+ * @returns A properly typed EventRow.
+ */
+const toEventRow = (row: Row): EventRow => ({
+  id: row.id as number,
+  created_at: row.created_at as string,
+  source: row.source as string,
+  type: row.type as string,
+  status: row.status as string,
+  title: row.title as string,
+  details: (row.details as string) ?? null,
+  artifact_path: (row.artifact_path as string) ?? null,
+  important: row.important as number,
+});
+
+/**
+ * Create the `log` command group.
+ * @returns The configured Commander command.
+ */
+export const createLogCommand = (): Command => {
   const log = new Command('log').description(
-    "Gérer les logs d'activité",
+    'Manage activity logs',
   );
 
   log
     .command('add')
-    .description("Ajouter un log d'activité")
-    .requiredOption('--type <type>', `Type d'événement (${VALID_TYPES.join(', ')})`)
-    .requiredOption('--title <title>', "Titre de l'événement")
-    .requiredOption('--status <status>', `Statut (${VALID_STATUSES.join(', ')})`)
-    .option('--details <details>', 'Détails supplémentaires')
-    .option('--file <path>', 'Fichier artifact à joindre')
+    .description('Add an activity log')
+    .requiredOption('--type <type>', `Event type (${VALID_TYPES.join(', ')})`)
+    .requiredOption('--title <title>', 'Event title')
+    .requiredOption('--status <status>', `Status (${VALID_STATUSES.join(', ')})`)
+    .option('--details <details>', 'Additional details')
+    .option('--file <path>', 'Artifact file to attach')
     .option('--source <source>', 'Source', 'claude-code')
-    .option('--important', 'Marquer comme important', false)
+    .option('--important', 'Mark as important', false)
     .action(async (opts: { type: string; title: string; status: string; details?: string; file?: string; source: string; important: boolean }) => {
       if (!(VALID_TYPES as readonly string[]).includes(opts.type)) {
-        console.error(`Type invalide: ${opts.type}`);
-        console.error(`Types valides: ${VALID_TYPES.join(', ')}`);
-        process.exit(1);
+        console.error(`Invalid type: "${opts.type}". Valid types: ${VALID_TYPES.join(', ')}`);
+        process.exit(2);
       }
       if (!(VALID_STATUSES as readonly string[]).includes(opts.status)) {
-        console.error(`Statut invalide: ${opts.status}`);
-        console.error(`Statuts valides: ${VALID_STATUSES.join(', ')}`);
-        process.exit(1);
+        console.error(`Invalid status: "${opts.status}". Valid statuses: ${VALID_STATUSES.join(', ')}`);
+        process.exit(2);
       }
 
       let artifactPath: string | null = null;
       if (opts.file) {
         if (!existsSync(opts.file)) {
-          console.error(`Fichier introuvable: ${opts.file}`);
-          process.exit(1);
+          console.error(`Artifact file not found: ${opts.file}`);
+          process.exit(2);
         }
         artifactPath = storeArtifact(opts.file, null);
       }
@@ -80,16 +100,16 @@ export function createLogCommand(): Command {
         ],
       });
 
-      console.error(`✅ Log #${result.lastInsertRowid} ajouté: ${opts.title}`);
+      console.error(`Log #${result.lastInsertRowid} added: ${opts.title}`);
     });
 
   log
     .command('list')
-    .description('Lister les logs')
-    .option('--today', "Événements d'aujourd'hui uniquement")
-    .option('--failed', 'Événements en échec uniquement')
-    .option('--type <type>', 'Filtrer par type')
-    .option('--limit <n>', 'Nombre max de résultats', '50')
+    .description('List logs')
+    .option('--today', 'Today only')
+    .option('--failed', 'Failed events only')
+    .option('--type <type>', 'Filter by type')
+    .option('--limit <n>', 'Max results', '50')
     .action(async (opts: { today?: boolean; failed?: boolean; type?: string; limit: string }) => {
       const db = await getDb();
       const conditions: string[] = [];
@@ -114,23 +134,24 @@ export function createLogCommand(): Command {
       });
 
       if (result.rows.length === 0) {
-        console.log('Aucun événement trouvé.');
+        console.log('No events found.');
         return;
       }
 
-      for (const event of result.rows) {
-        console.log(`#${event.id} ${formatEvent(event as unknown as EventRow)}`);
+      for (const row of result.rows) {
+        const event = toEventRow(row);
+        console.log(`#${event.id} ${formatEvent(event)}`);
       }
     });
 
   log
     .command('get <id>')
-    .description("Détail d'un log")
+    .description('Show log details')
     .action(async (id: string) => {
       const numId = parseInt(id);
       if (isNaN(numId)) {
-        console.error(`ID invalide: ${id}`);
-        process.exit(1);
+        console.error(`Invalid ID: "${id}". Must be a number.`);
+        process.exit(2);
       }
       const db = await getDb();
       const result = await db.execute({
@@ -138,19 +159,20 @@ export function createLogCommand(): Command {
         args: [numId],
       });
 
-      const event = result.rows[0] as Row | undefined;
-      if (!event) {
-        console.error(`Événement #${id} introuvable.`);
+      const row = result.rows[0] as Row | undefined;
+      if (!row) {
+        console.error(`Event #${id} not found.`);
         process.exit(2);
       }
 
-      console.log(formatEventDetail(event as unknown as EventRow));
+      const event = toEventRow(row);
+      console.log(formatEventDetail(event));
 
-      if (event.artifact_path && existsSync(String(event.artifact_path))) {
-        console.log('\n--- Contenu artifact ---\n');
-        console.log(readFileSync(String(event.artifact_path), 'utf-8'));
+      if (event.artifact_path && existsSync(event.artifact_path)) {
+        console.log('\n--- Artifact content ---\n');
+        console.log(readFileSync(event.artifact_path, 'utf-8'));
       }
     });
 
   return log;
-}
+};

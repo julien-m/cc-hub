@@ -1,3 +1,4 @@
+/** Command handler for the daily digest preview and artifact listing. */
 import { existsSync } from 'node:fs';
 import { Command } from 'commander';
 import {
@@ -5,15 +6,19 @@ import {
   formatDigestPreview,
 } from '../services/digest-generator.ts';
 
-export function createDigestCommand(): Command {
+/**
+ * Create the `digest` command group.
+ * @returns The configured Commander command.
+ */
+export const createDigestCommand = (): Command => {
   const digest = new Command('digest').description(
-    'Digest quotidien',
+    'Daily digest',
   );
 
   digest
     .command('preview')
-    .description('Afficher les événements bruts')
-    .option('--since <date>', 'Date de début (ISO)')
+    .description('Show raw events')
+    .option('--since <date>', 'Start date (ISO)')
     .action(async (opts: { since?: string }) => {
       const events = await getEventsForDigest(opts.since);
       console.log(formatDigestPreview(events));
@@ -21,9 +26,9 @@ export function createDigestCommand(): Command {
 
   digest
     .command('files')
-    .description('Lister les fichiers artifacts')
-    .option('--since <date>', 'Date de début (ISO)')
-    .option('--important', 'Uniquement les artifacts importants')
+    .description('List artifact files')
+    .option('--since <date>', 'Start date (ISO)')
+    .option('--important', 'Only important artifacts')
     .action(async (opts: { since?: string; important?: boolean }) => {
       const events = await getEventsForDigest(opts.since);
       const withArtifacts = events.filter(
@@ -34,7 +39,7 @@ export function createDigestCommand(): Command {
       );
 
       if (withArtifacts.length === 0) {
-        console.error('Aucun artifact pour cette période.');
+        console.error('No artifacts for this period.');
         return;
       }
 
@@ -44,4 +49,4 @@ export function createDigestCommand(): Command {
     });
 
   return digest;
-}
+};

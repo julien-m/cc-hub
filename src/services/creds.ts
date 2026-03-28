@@ -1,18 +1,30 @@
 import { execFileSync } from 'node:child_process';
+import { ConfigError } from '../errors.ts';
 
-export function getCred(name: string): string {
+/**
+ * Retrieves a credential from the keychain.
+ * @param name - The credential entry name (e.g. "myapp/dev/api_key")
+ * @returns The credential value
+ * @throws ConfigError if the credential is missing or inaccessible
+ */
+export const getCred = (name: string): string => {
   try {
     return execFileSync('creds', ['get', name, '--no-newline'], {
       encoding: 'utf-8',
     });
   } catch {
-    console.error(`⚠️  Token manquant : ${name}`);
-    console.error(`   → Enregistre-le avec : creds set ${name}`);
-    process.exit(3);
+    throw new ConfigError(
+      `Missing credential: ${name}\n   Store it with: creds set ${name}`,
+    );
   }
-}
+};
 
-export function tryGetCred(name: string): string | null {
+/**
+ * Attempts to retrieve a credential without throwing on failure.
+ * @param name - The credential entry name
+ * @returns The credential value, or null if not found
+ */
+export const tryGetCred = (name: string): string | null => {
   try {
     return execFileSync('creds', ['get', name, '--no-newline'], {
       encoding: 'utf-8',
@@ -21,4 +33,4 @@ export function tryGetCred(name: string): string | null {
   } catch {
     return null;
   }
-}
+};

@@ -1,55 +1,61 @@
-import { join, dirname, isAbsolute } from 'node:path';
+/** Command handler for music generation via Poyo. */
+import { exitCode } from '../errors.ts';
+import { dirname } from 'node:path';
 import { mkdirSync } from 'node:fs';
 import { Command } from 'commander';
 import { generateMedia, downloadFile } from '../services/poyo-media.ts';
 import { getEnv } from '../services/env.ts';
 import { resolveForProvider } from '../services/models.ts';
-import { ARTIFACTS_DIR, ensureDirs } from '../utils/paths.ts';
+import { resolveOutputPath } from '../services/artifacts.ts';
 
-export function createMusicCommand(): Command {
-	const music = new Command('music').description('Générer de la musique via Poyo');
+/**
+ * Create the `music` command group.
+ * @returns The configured Commander command.
+ */
+export const createMusicCommand = (): Command => {
+  const music = new Command('music').description('Generate music via Poyo');
 
-	music
-		.command('generate')
-		.description("Générer de la musique à partir d'un prompt")
-		.argument('<prompt>', 'Description de la musique à générer')
-		.option('--model <model>', 'Modèle à utiliser (surcharge MUSIC_MODEL)')
-		.requiredOption('-o, --output <path>', 'Chemin ou nom du fichier de sortie')
-		.action(async (prompt: string, opts: { model?: string; output: string }) => {
-			try {
-				const rawModel = opts.model || getEnv('MUSIC_MODEL') || 'poyo/generate-music';
-				const model = resolveForProvider(rawModel, 'poyo');
+  music
+    .command('generate')
+    .description('Generate music from a prompt')
+    .argument('<prompt>', 'Description of the music to generate')
+    .option('--model <model>', 'Model override (replaces MUSIC_MODEL)')
+    .requiredOption('-o, --output <path>', 'Output file path or name')
+    .action(async (prompt: string, opts: { model?: string; output: string }) => {
+      try {
+        const rawModel = opts.model || getEnv('MUSIC_MODEL') || 'poyo/generate-music';
+        const model = resolveForProvider(rawModel, 'poyo');
 
-				console.error(`🎵 Génération de musique avec ${model}...`);
+        console.error(`Generating music with ${model}...`);
 
-				const task = await generateMedia({
-					model,
-					input: {
-						prompt,
-					},
-				});
+        const task = await generateMedia({
+          model,
+          input: {
+            prompt,
+          },
+        });
 
-				const audioFile = task.files?.find((f) => f.file_type === 'audio');
-				if (!audioFile) {
-					throw new Error('No audio file in task result');
-				}
+        const audioFile = task.files?.find((f) => f.file_type === 'audio');
+        if (!audioFile) {
+          throw new Error('No audio file in task result — the model may not support audio output');
+        }
 
-				const ext = audioFile.file_url.match(/\.(mp3|wav|ogg|flac)/i)?.[1] || 'mp3';
-				const hasPath = isAbsolute(opts.output) || opts.output.includes('/');
-				const name = opts.output.includes('.') ? opts.output : `${opts.output}.${ext}`;
-				const destPath = hasPath ? name : (ensureDirs(), join(ARTIFACTS_DIR, name));
-				mkdirSync(dirname(destPath), { recursive: true });
+        const destPath = resolveOutputPath(audioFile.file_url, opts.output, 'mp3');
+        mkdirSync(dirname(destPath), { recursive: true });
 
-				console.error('📥 Téléchargement...');
-				await downloadFile(audioFile.file_url, destPath);
+        console.error('Downloading...');
+        await downloadFile(audioFile.file_url, destPath);
 
-				console.error('✅ Musique sauvegardée');
-				console.log(destPath);
-			} catch (err) {
-				console.error(`❌ ${(err as Error).message}`);
-				process.exit(4);
-			}
-		});
+        console.error('Music saved');
+        console.log(destPath);
+      } catch (err) {
+        console.error(
+          `Music generation failed: ${(err as Error).message}. ` +
+          'Check the model name and Poyo API credentials.',
+        );
+        process.exit(exitCode(err, 4));
+      }
+    });
 
-	return music;
-}
+  return music;
+};

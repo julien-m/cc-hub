@@ -1,42 +1,51 @@
+/** Command handler for database synchronization with Turso cloud. */
+import { exitCode } from '../errors.ts';
 import { Command } from 'commander';
 import { getDb, syncDb, isTursoEnabled } from '../db/index.ts';
 
-export function createSyncCommand(): Command {
+/**
+ * Create the `sync` command group.
+ * @returns The configured Commander command.
+ */
+export const createSyncCommand = (): Command => {
   const sync = new Command('sync').description(
-    'Synchroniser la base de données dans le cloud',
+    'Synchronize the database with the cloud',
   );
 
   sync
     .command('run')
-    .description('Lancer une synchronisation manuelle')
+    .description('Run a manual synchronization')
     .action(async () => {
       try {
         const synced = await syncDb();
         if (synced) {
-          console.error('✅ Synchronisation Turso terminée');
+          console.error('Turso sync complete');
         } else {
-          console.error('⚠️  Turso non configuré — mode local uniquement');
-          console.error('   → Configure les credentials :');
+          console.error('Turso not configured — local-only mode');
+          console.error('   Set credentials with:');
           console.error('     creds set TURSO_DATABASE_URL');
           console.error('     creds set TURSO_AUTH_TOKEN');
         }
       } catch (err) {
-        console.error(`❌ Erreur de synchronisation: ${(err as Error).message}`);
-        process.exit(4);
+        console.error(
+          `Sync failed: ${(err as Error).message}. ` +
+          'Verify TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.',
+        );
+        process.exit(exitCode(err, 4));
       }
     });
 
   sync
     .command('status')
-    .description('Afficher le statut de la synchronisation')
+    .description('Show synchronization status')
     .action(async () => {
       await getDb();
       if (isTursoEnabled()) {
-        console.log('🔄 Turso Cloud activé — synchronisation disponible');
+        console.log('Turso Cloud enabled — sync available');
       } else {
-        console.log('💾 Mode local uniquement (pas de Turso configuré)');
+        console.log('Local-only mode (Turso not configured)');
       }
     });
 
   return sync;
-}
+};

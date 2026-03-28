@@ -1,14 +1,19 @@
+/** Command handler for managing per-model prompt engineering guides. */
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command } from 'commander';
-import { PROMPTS_DIR, ensureDirs } from '../utils/paths.ts';
+import { PROMPTS_DIR, ensureDirs } from '../infra/paths.ts';
 import { getConfig } from './config.ts';
 import { modelToSlug } from '../services/models.ts';
 import { VALID_TYPES, type ModelType } from '../data/models.ts';
 
-function slugToPath(slug: string): string {
-  return join(PROMPTS_DIR, `${slug}.md`);
-}
+/**
+ * Build the file path for a given model slug.
+ * @param slug - The model slug.
+ * @returns Absolute path to the prompt guide file.
+ */
+const slugToPath = (slug: string): string =>
+  join(PROMPTS_DIR, `${slug}.md`);
 
 const FALLBACK_MODEL_BY_TYPE: Record<ModelType, string> = {
   text: 'anthropic/claude-opus-4.6',
@@ -18,21 +23,36 @@ const FALLBACK_MODEL_BY_TYPE: Record<ModelType, string> = {
   music: 'poyo/generate-music',
 };
 
-function getDefaultModel(type: ModelType): string {
+/**
+ * Get the default model for a given type from config or fallback.
+ * @param type - The model type.
+ * @returns The model identifier string.
+ */
+const getDefaultModel = (type: ModelType): string => {
   const cfg = getConfig();
   const configKey = `prompt.default.${type}`;
   const fromConfig = cfg[configKey];
   if (typeof fromConfig === 'string' && fromConfig.length > 0) return fromConfig;
   return FALLBACK_MODEL_BY_TYPE[type];
-}
+};
 
+/**
+ * Validate that a string is a known model type.
+ * @param type - The type string to validate.
+ * @throws {Error} When the type is not recognized.
+ */
 function validateModelType(type: string): asserts type is ModelType {
   if (!VALID_TYPES.includes(type as ModelType)) {
-    throw new Error(`Type invalide: "${type}". Valeurs acceptées: ${VALID_TYPES.join(', ')}`);
+    throw new Error(`Invalid type: "${type}". Valid values: ${VALID_TYPES.join(', ')}`);
   }
 }
 
-function extractTypeFromGuide(filePath: string): string | null {
+/**
+ * Extract the type field from a prompt guide file.
+ * @param filePath - Path to the guide file.
+ * @returns The type string, or null if not found.
+ */
+const extractTypeFromGuide = (filePath: string): string | null => {
   try {
     const content = readFileSync(filePath, 'utf-8');
     const match = content.match(/^type:\s*(.+)$/m);
@@ -40,25 +60,29 @@ function extractTypeFromGuide(filePath: string): string | null {
   } catch {
     return null;
   }
-}
+};
 
-export function createPromptCommand(): Command {
+/**
+ * Create the `prompt` command group.
+ * @returns The configured Commander command.
+ */
+export const createPromptCommand = (): Command => {
   const prompt = new Command('prompt').description(
-    'Gérer les guides de prompting par modèle',
+    'Manage per-model prompt engineering guides',
   );
 
   prompt
     .command('get')
-    .description('Afficher le guide de prompting pour un modèle ou un type')
-    .option('--model <model>', 'Modèle (ex: anthropic/claude-opus-4.6)')
-    .option('--type <type>', 'Type (text, image, video, audio) — utilise le modèle par défaut du type')
+    .description('Show the prompt guide for a model or type')
+    .option('--model <model>', 'Model (e.g. anthropic/claude-opus-4.6)')
+    .option('--type <type>', 'Type (text, image, video, audio) — uses the default model for that type')
     .action((opts: { model?: string; type?: string }) => {
       if (!opts.model && !opts.type) {
-        console.error('⚠️  Précise --model ou --type');
-        console.error('   Exemples :');
+        console.error('Specify --model or --type');
+        console.error('   Examples:');
         console.error('     cc-hub prompt get --model "anthropic/claude-opus-4.6"');
         console.error('     cc-hub prompt get --type text');
-        process.exit(1);
+        process.exit(2);
       }
 
       let model: string;
@@ -67,16 +91,16 @@ export function createPromptCommand(): Command {
       } else {
         validateModelType(opts.type!);
         model = getDefaultModel(opts.type! as ModelType);
-        console.error(`📎 Type "${opts.type}" → modèle par défaut : ${model}`);
-        console.error(`   (modifiable : cc-hub config set prompt.default.${opts.type} "autre/modele")`);
+        console.error(`Type "${opts.type}" -> default model: ${model}`);
+        console.error(`   (configurable: cc-hub config set prompt.default.${opts.type} "other/model")`);
       }
 
       const slug = modelToSlug(model);
       const filePath = slugToPath(slug);
 
       if (!existsSync(filePath)) {
-        console.error(`⚠️  Aucun guide trouvé pour ${model}`);
-        console.error(`   → Utilise le skill /prompt-guide pour en générer un`);
+        console.error(`No guide found for ${model}`);
+        console.error('   Use the /prompt-guide skill to generate one');
         process.exit(2);
       }
 
@@ -85,8 +109,8 @@ export function createPromptCommand(): Command {
 
   prompt
     .command('list')
-    .description('Lister les guides disponibles')
-    .option('--type <type>', 'Filtrer par type (text, image, video, audio)')
+    .description('List available guides')
+    .option('--type <type>', 'Filter by type (text, image, video, audio)')
     .action((opts: { type?: string }) => {
       ensureDirs();
       if (opts.type) validateModelType(opts.type);
@@ -94,8 +118,8 @@ export function createPromptCommand(): Command {
       const files = readdirSync(PROMPTS_DIR).filter((f) => f.endsWith('.md'));
 
       if (files.length === 0) {
-        console.log('Aucun guide disponible.');
-        console.log('   → Utilise le skill /prompt-guide pour en générer');
+        console.log('No guides available.');
+        console.log('   Use the /prompt-guide skill to generate one');
         return;
       }
 
@@ -108,19 +132,19 @@ export function createPromptCommand(): Command {
         if (opts.type && type !== opts.type) continue;
 
         const stat = statSync(fullPath);
-        const updated = stat.mtime.toLocaleDateString('fr-FR');
+        const updated = stat.mtime.toLocaleDateString('en-US');
         const isDefault = VALID_TYPES.some(
           (t) => type === t && modelToSlug(getDefaultModel(t as ModelType)) === name,
         );
-        const marker = isDefault ? ' ★' : '';
-        console.log(`${name.padEnd(35)} [${type.padEnd(5)}] (mis à jour le ${updated})${marker}`);
+        const marker = isDefault ? ' *' : '';
+        console.log(`${name.padEnd(35)} [${type.padEnd(5)}] (updated ${updated})${marker}`);
         count++;
       }
 
       if (opts.type && count === 0) {
-        console.log(`Aucun guide de type "${opts.type}".`);
+        console.log(`No guides of type "${opts.type}".`);
       }
     });
 
   return prompt;
-}
+};

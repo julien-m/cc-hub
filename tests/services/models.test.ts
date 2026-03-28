@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 import {
   findModel,
   findByProviderName,
@@ -12,14 +12,14 @@ import {
 // findModel
 // ---------------------------------------------------------------------------
 describe('findModel', () => {
-  test('returns model by canonical ID', () => {
+  it('should return model by canonical ID', () => {
     const m = findModel('anthropic/claude-sonnet-4');
     expect(m).toBeDefined();
     expect(m!.id).toBe('anthropic/claude-sonnet-4');
     expect(m!.type).toBe('text');
   });
 
-  test('returns undefined for unknown ID', () => {
+  it('should return undefined for unknown ID', () => {
     expect(findModel('unknown/model-99')).toBeUndefined();
   });
 });
@@ -28,19 +28,19 @@ describe('findModel', () => {
 // findByProviderName
 // ---------------------------------------------------------------------------
 describe('findByProviderName', () => {
-  test('finds by copilot display name', () => {
+  it('should find by copilot display name', () => {
     const m = findByProviderName('copilot', 'claude-sonnet-4');
     expect(m).toBeDefined();
     expect(m!.id).toBe('anthropic/claude-sonnet-4');
   });
 
-  test('finds by poyo native name', () => {
+  it('should find by poyo native name', () => {
     const m = findByProviderName('poyo', 'kling-3.0/pro');
     expect(m).toBeDefined();
     expect(m!.id).toBe('kuaishou/kling-3.0-pro');
   });
 
-  test('returns undefined for unknown provider name', () => {
+  it('should return undefined for unknown provider name', () => {
     expect(findByProviderName('copilot', 'Nonexistent Model')).toBeUndefined();
   });
 });
@@ -49,25 +49,25 @@ describe('findByProviderName', () => {
 // toProviderName
 // ---------------------------------------------------------------------------
 describe('toProviderName', () => {
-  test('translates canonical ID to copilot name', () => {
+  it('should translate canonical ID to copilot name', () => {
     expect(toProviderName('openai/gpt-4.1', 'copilot')).toBe('gpt-4.1');
   });
 
-  test('translates canonical ID to poyo name', () => {
+  it('should translate canonical ID to poyo name', () => {
     expect(toProviderName('google/gemini-3-pro', 'poyo')).toBe('gemini-3-pro-preview');
   });
 
-  test('openrouter self-maps (ID equals provider name)', () => {
+  it('should self-map openrouter (ID equals provider name)', () => {
     expect(toProviderName('anthropic/claude-sonnet-4', 'openrouter')).toBe(
       'anthropic/claude-sonnet-4',
     );
   });
 
-  test('throws for unknown model ID', () => {
+  it('should throw for unknown model ID', () => {
     expect(() => toProviderName('unknown/model', 'copilot')).toThrow('Unknown model');
   });
 
-  test('throws for unavailable provider', () => {
+  it('should throw for unavailable provider', () => {
     // gemini-2.5-flash has no copilot entry
     expect(() => toProviderName('google/gemini-2.5-flash', 'copilot')).toThrow(
       'not available on copilot',
@@ -79,44 +79,44 @@ describe('toProviderName', () => {
 // resolveForProvider
 // ---------------------------------------------------------------------------
 describe('resolveForProvider', () => {
-  test('registered model resolves to copilot name', () => {
+  it('should resolve registered model to copilot name', () => {
     expect(resolveForProvider('openai/gpt-4.1', 'copilot')).toBe('gpt-4.1');
   });
 
-  test('registered model resolves to poyo name', () => {
+  it('should resolve registered model to poyo name', () => {
     expect(resolveForProvider('google/gemini-3.1-flash-image', 'poyo')).toBe('nano-banana-2-new');
   });
 
-  test('nano-banana-2 pro resolves to poyo name', () => {
+  it('should resolve nano-banana-2 pro to poyo name', () => {
     expect(resolveForProvider('google/nano-banana-2', 'poyo')).toBe('nano-banana-2');
   });
 
-  test('nano-banana-2-edit pro resolves to poyo name', () => {
+  it('should resolve nano-banana-2-edit pro to poyo name', () => {
     expect(resolveForProvider('google/nano-banana-2-edit', 'poyo')).toBe('nano-banana-2-edit');
   });
 
-  test('registered model resolves to openrouter name', () => {
+  it('should resolve registered model to openrouter name', () => {
     expect(resolveForProvider('anthropic/claude-sonnet-4', 'openrouter')).toBe(
       'anthropic/claude-sonnet-4',
     );
   });
 
-  test('unregistered model passes through for openrouter', () => {
+  it('should pass through unregistered model for openrouter', () => {
     expect(resolveForProvider('meta/llama-4-scout', 'openrouter')).toBe('meta/llama-4-scout');
   });
 
-  test('unregistered model throws for copilot', () => {
+  it('should throw for unregistered model on copilot', () => {
     expect(() => resolveForProvider('meta/llama-4-scout', 'copilot')).toThrow('Unknown model');
     expect(() => resolveForProvider('meta/llama-4-scout', 'copilot')).toThrow(
       'cc-hub models list',
     );
   });
 
-  test('unregistered model throws for poyo', () => {
+  it('should throw for unregistered model on poyo', () => {
     expect(() => resolveForProvider('meta/llama-4-scout', 'poyo')).toThrow('Unknown model');
   });
 
-  test('registered model unavailable on provider throws with helpful message', () => {
+  it('should throw with helpful message for registered model unavailable on provider', () => {
     // gemini-2.5-flash has only openrouter
     expect(() => resolveForProvider('google/gemini-2.5-flash', 'copilot')).toThrow(
       'not available on copilot',
@@ -131,27 +131,27 @@ describe('resolveForProvider', () => {
 // modelToSlug
 // ---------------------------------------------------------------------------
 describe('modelToSlug', () => {
-  test('standard ID with slash', () => {
+  it('should convert standard ID with slash', () => {
     expect(modelToSlug('anthropic/claude-sonnet-4')).toBe('anthropic-claude-sonnet-4');
   });
 
-  test('codex ID (already no dots)', () => {
+  it('should handle codex ID (already no dots)', () => {
     expect(modelToSlug('openai/gpt-53-codex')).toBe('openai-gpt-53-codex');
   });
 
-  test('poyo image model ID', () => {
+  it('should convert poyo image model ID', () => {
     expect(modelToSlug('google/gemini-3.1-flash-image')).toBe('google-gemini-31-flash-image');
   });
 
-  test('kling ID (dots stripped)', () => {
+  it('should strip dots from kling ID', () => {
     expect(modelToSlug('kuaishou/kling-3.0-pro')).toBe('kuaishou-kling-30-pro');
   });
 
-  test('empty string returns empty', () => {
+  it('should return empty for empty string', () => {
     expect(modelToSlug('')).toBe('');
   });
 
-  test('uppercase input is lowercased', () => {
+  it('should lowercase uppercase input', () => {
     expect(modelToSlug('OpenAI/GPT-4.1')).toBe('openai-gpt-41');
   });
 });
@@ -160,29 +160,29 @@ describe('modelToSlug', () => {
 // listModels
 // ---------------------------------------------------------------------------
 describe('listModels', () => {
-  test('returns all models when no filter', () => {
+  it('should return all models when no filter', () => {
     const all = listModels();
     expect(all.length).toBeGreaterThan(0);
   });
 
-  test('filters by type', () => {
+  it('should filter by type', () => {
     const images = listModels({ type: 'image' });
     expect(images.length).toBeGreaterThan(0);
     expect(images.every((m) => m.type === 'image')).toBe(true);
   });
 
-  test('filters by provider', () => {
+  it('should filter by provider', () => {
     const copilot = listModels({ provider: 'copilot' });
     expect(copilot.length).toBeGreaterThan(0);
     expect(copilot.every((m) => m.providers.copilot !== undefined)).toBe(true);
   });
 
-  test('combined type + provider filter', () => {
+  it('should apply combined type + provider filter', () => {
     const textPoyo = listModels({ type: 'text', provider: 'poyo' });
     expect(textPoyo.every((m) => m.type === 'text' && m.providers.poyo !== undefined)).toBe(true);
   });
 
-  test('returns empty array when no matches', () => {
+  it('should return empty array when no matches', () => {
     const result = listModels({ type: 'audio', provider: 'copilot' });
     expect(result).toEqual([]);
   });

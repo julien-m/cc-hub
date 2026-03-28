@@ -1,65 +1,68 @@
 /** CLI command for browsing the model registry. */
-import { Command } from "commander";
-import { listModels } from "../services/models.ts";
+import { Command } from 'commander';
+import { listModels } from '../services/models.ts';
 import {
-	VALID_TYPES,
-	type ModelType,
-	type ProviderName,
-} from "../data/models.ts";
+  VALID_TYPES,
+  type ModelType,
+  type ProviderName,
+} from '../data/models.ts';
 
-const VALID_PROVIDERS: ProviderName[] = ["openrouter", "copilot", "poyo"];
+const VALID_PROVIDERS: ProviderName[] = ['openrouter', 'copilot', 'poyo'];
 
-/** Create the `models` command group with the `list` subcommand. */
+/**
+ * Create the `models` command group with the `list` subcommand.
+ * @returns The configured Commander command.
+ */
 export const createModelsCommand = (): Command => {
-	const models = new Command("models").description(
-		"Gérer le registre des modèles",
-	);
+  const models = new Command('models').description(
+    'Manage the model registry',
+  );
 
-	models
-		.command("list")
-		.description("Lister les modèles disponibles")
-		.option(
-			"--provider <name>",
-			`Filtrer par provider (${VALID_PROVIDERS.join(", ")})`,
-		)
-		.option(
-			"--type <type>",
-			`Filtrer par type (${VALID_TYPES.join(", ")})`,
-		)
-		.action((opts: { provider?: string; type?: string }) => {
-			if (opts.type && !VALID_TYPES.includes(opts.type as ModelType)) {
-				console.error(
-					`Type invalide: "${opts.type}". Valeurs acceptées: ${VALID_TYPES.join(", ")}`,
-				);
-				process.exit(1);
-			}
-			if (
-				opts.provider &&
-				!VALID_PROVIDERS.includes(opts.provider as ProviderName)
-			) {
-				console.error(
-					`Provider invalide: "${opts.provider}". Valeurs acceptées: ${VALID_PROVIDERS.join(", ")}`,
-				);
-				process.exit(1);
-			}
+  models
+    .command('list')
+    .description('List available models')
+    .option(
+      '--provider <name>',
+      `Filter by provider (${VALID_PROVIDERS.join(', ')})`,
+    )
+    .option(
+      '--type <type>',
+      `Filter by type (${VALID_TYPES.join(', ')})`,
+    )
+    .action((opts: { provider?: string; type?: string }) => {
+      if (opts.type && !VALID_TYPES.includes(opts.type as ModelType)) {
+        console.error(
+          `Invalid type: "${opts.type}". Valid values: ${VALID_TYPES.join(', ')}`,
+        );
+        process.exit(2);
+      }
+      if (
+        opts.provider &&
+        !VALID_PROVIDERS.includes(opts.provider as ProviderName)
+      ) {
+        console.error(
+          `Invalid provider: "${opts.provider}". Valid values: ${VALID_PROVIDERS.join(', ')}`,
+        );
+        process.exit(2);
+      }
 
-			const results = listModels({
-				type: opts.type as ModelType | undefined,
-				provider: opts.provider as ProviderName | undefined,
-			});
+      const results = listModels({
+        type: opts.type as ModelType | undefined,
+        provider: opts.provider as ProviderName | undefined,
+      });
 
-			if (results.length === 0) {
-				console.log("Aucun modèle trouvé.");
-				return;
-			}
+      if (results.length === 0) {
+        console.log('No models found.');
+        return;
+      }
 
-			for (const m of results) {
-				const providers = Object.keys(m.providers).join(", ");
-				console.log(
-					`${m.id.padEnd(35)} ${m.type.padEnd(7)} [${providers}]`,
-				);
-			}
-		});
+      for (const m of results) {
+        const providers = Object.keys(m.providers).join(', ');
+        console.log(
+          `${m.id.padEnd(35)} ${m.type.padEnd(7)} [${providers}]`,
+        );
+      }
+    });
 
-	return models;
+  return models;
 };

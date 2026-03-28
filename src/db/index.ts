@@ -1,11 +1,17 @@
 import { createClient, type Client, type Config } from '@libsql/client';
-import { DB_PATH, ensureDirs } from '../utils/paths.ts';
+import { DB_PATH, ensureDirs } from '../infra/paths.ts';
 import { tryGetCred } from '../services/creds.ts';
 
 let client: Client | undefined;
-let tursoEnabled = false;
+let _tursoConfigured = false;
 
-export async function getDb(): Promise<Client> {
+/**
+ * Returns a singleton libSQL client, creating it on first call.
+ * Initializes the database schema and syncs with Turso if configured.
+ * @returns The libSQL client instance.
+ * @throws If the database client creation or schema initialization fails.
+ */
+export const getDb = async (): Promise<Client> => {
   if (client) return client;
 
   ensureDirs();
@@ -18,7 +24,7 @@ export async function getDb(): Promise<Client> {
   if (tursoUrl && tursoToken) {
     config.syncUrl = tursoUrl;
     config.authToken = tursoToken;
-    tursoEnabled = true;
+    _tursoConfigured = true;
   }
 
   client = createClient(config);
@@ -46,22 +52,32 @@ export async function getDb(): Promise<Client> {
     );
   `);
 
-  if (tursoEnabled) {
+  if (_tursoConfigured) {
     await client.sync();
   }
 
   return client;
-}
+};
 
-export async function syncDb(): Promise<boolean> {
+/**
+ * Syncs the local database with Turso remote.
+ * No-op if Turso is not configured.
+ * @returns True if sync was performed, false if Turso is not enabled.
+ * @throws If the database sync operation fails.
+ */
+export const syncDb = async (): Promise<boolean> => {
   const db = await getDb();
-  if (!tursoEnabled) {
+  if (!_tursoConfigured) {
     return false;
   }
   await db.sync();
   return true;
-}
+};
 
-export function isTursoEnabled(): boolean {
-  return tursoEnabled;
-}
+/**
+ * Checks whether Turso remote sync is configured.
+ * @returns True if Turso credentials were found during initialization.
+ */
+export const isTursoEnabled = (): boolean => {
+  return _tursoConfigured;
+};

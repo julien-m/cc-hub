@@ -23,7 +23,7 @@ const program = new Command();
 
 program
   .name('cc-hub')
-  .description('CLI couteau suisse IA — logs, digest, multi-modèles')
+  .description('All-in-one AI CLI — logs, digest, multi-model')
   .version('0.1.0');
 
 program.addCommand(createLogCommand());

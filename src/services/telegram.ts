@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';
+import { ConfigError } from '../errors.ts';
 import { getEnv } from './env.ts';
 
 interface TelegramCredentials {
@@ -14,17 +15,29 @@ interface MediaEntry {
   parse_mode?: string;
 }
 
-function getCredentials(): TelegramCredentials {
+interface TelegramResponse {
+  ok: boolean;
+  result: Record<string, unknown>;
+}
+
+const getCredentials = (): TelegramCredentials => {
   const token = getEnv('TELEGRAM_BOT_TOKEN');
   const chatId = getEnv('TELEGRAM_CHAT_ID');
   if (!token || !chatId) {
-    console.error('Telegram non configuré — vérifie TELEGRAM_BOT_TOKEN et TELEGRAM_CHAT_ID dans .env');
-    process.exit(3);
+    throw new ConfigError(
+      'Telegram not configured — check TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env',
+    );
   }
   return { token, chatId };
-}
+};
 
-export async function sendMessage(text: string): Promise<unknown> {
+/**
+ * Sends a text message via Telegram Bot API.
+ * @param text - The message text (Markdown supported)
+ * @returns The Telegram API response
+ * @throws ConfigError if credentials are missing
+ */
+export const sendMessage = async (text: string): Promise<TelegramResponse> => {
   const { token, chatId } = getCredentials();
 
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -35,6 +48,7 @@ export async function sendMessage(text: string): Promise<unknown> {
       text,
       parse_mode: 'Markdown',
     }),
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!res.ok) {
@@ -42,10 +56,17 @@ export async function sendMessage(text: string): Promise<unknown> {
     throw new Error(`Telegram sendMessage failed: ${err}`);
   }
 
-  return res.json();
-}
+  return res.json() as Promise<TelegramResponse>;
+};
 
-export async function sendDocument(filePath: string, caption?: string): Promise<unknown> {
+/**
+ * Sends a document file via Telegram Bot API.
+ * @param filePath - Absolute path to the file to send
+ * @param caption - Optional caption (Markdown supported)
+ * @returns The Telegram API response
+ * @throws ConfigError if credentials are missing
+ */
+export const sendDocument = async (filePath: string, caption?: string): Promise<TelegramResponse> => {
   const { token, chatId } = getCredentials();
 
   const fileContent = readFileSync(filePath);
@@ -62,6 +83,7 @@ export async function sendDocument(filePath: string, caption?: string): Promise<
   const res = await fetch(`https://api.telegram.org/bot${token}/sendDocument`, {
     method: 'POST',
     body: formData,
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!res.ok) {
@@ -69,10 +91,17 @@ export async function sendDocument(filePath: string, caption?: string): Promise<
     throw new Error(`Telegram sendDocument failed: ${err}`);
   }
 
-  return res.json();
-}
+  return res.json() as Promise<TelegramResponse>;
+};
 
-export async function sendMediaGroup(filePaths: string[], caption?: string): Promise<unknown> {
+/**
+ * Sends multiple files as a media group via Telegram Bot API.
+ * @param filePaths - Array of absolute file paths to send
+ * @param caption - Optional caption for the first file (Markdown supported)
+ * @returns The Telegram API response
+ * @throws ConfigError if credentials are missing
+ */
+export const sendMediaGroup = async (filePaths: string[], caption?: string): Promise<TelegramResponse> => {
   const { token, chatId } = getCredentials();
 
   const formData = new FormData();
@@ -95,6 +124,7 @@ export async function sendMediaGroup(filePaths: string[], caption?: string): Pro
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMediaGroup`, {
     method: 'POST',
     body: formData,
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (!res.ok) {
@@ -102,5 +132,5 @@ export async function sendMediaGroup(filePaths: string[], caption?: string): Pro
     throw new Error(`Telegram sendMediaGroup failed: ${err}`);
   }
 
-  return res.json();
-}
+  return res.json() as Promise<TelegramResponse>;
+};

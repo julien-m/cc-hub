@@ -1,60 +1,65 @@
-/** Motion control video generation — transfers movement from a reference video onto a character image. */
-import { join, dirname, isAbsolute } from 'node:path';
+/** Command handler for motion control video generation — transfers movement from a reference video onto a character image. */
+import { exitCode } from '../errors.ts';
+import { dirname } from 'node:path';
 import { mkdirSync } from 'node:fs';
 import { Command } from 'commander';
 import { generateMedia, downloadFile } from '../services/poyo-media.ts';
 import { resolveImageInput, resolveVideoInput } from '../services/image-input.ts';
-import { ARTIFACTS_DIR, ensureDirs } from '../utils/paths.ts';
+import { resolveOutputPath } from '../services/artifacts.ts';
 
-export function createMotionCommand(): Command {
-	const motion = new Command('motion')
-		.description('Générer une vidéo par transfert de mouvement (image + vidéo de référence)')
-		.argument('<prompt>', 'Description ou contexte pour la génération')
-		.requiredOption('-i, --image <path>', 'Image du personnage (chemin local ou URL)')
-		.requiredOption('-v, --video <path>', 'Vidéo de référence pour le mouvement (chemin local ou URL)')
-		.option('--character-orientation <value>', 'Orientation du personnage (character ou video)', 'character')
-		.requiredOption('-o, --output <path>', 'Chemin ou nom du fichier de sortie')
-		.action(async (prompt: string, opts: { image: string; video: string; characterOrientation: string; output: string }) => {
-			try {
-				console.error('🖼️  Résolution de l\'image de référence...');
-				const imageUrls = await resolveImageInput(opts.image);
+/**
+ * Create the `motion` command.
+ * @returns The configured Commander command.
+ */
+export const createMotionCommand = (): Command => {
+  const motion = new Command('motion')
+    .description('Generate a video via motion transfer (image + reference video)')
+    .argument('<prompt>', 'Description or context for generation')
+    .requiredOption('-i, --image <path>', 'Character image (local path or URL)')
+    .requiredOption('-v, --video <path>', 'Reference video for motion (local path or URL)')
+    .option('--character-orientation <value>', 'Character orientation (character or video)', 'character')
+    .requiredOption('-o, --output <path>', 'Output file path or name')
+    .action(async (prompt: string, opts: { image: string; video: string; characterOrientation: string; output: string }) => {
+      try {
+        console.error('Resolving reference image...');
+        const imageUrls = await resolveImageInput(opts.image);
 
-				console.error('🎞️  Résolution de la vidéo de référence...');
-				const videoUrl = await resolveVideoInput(opts.video);
+        console.error('Resolving reference video...');
+        const videoUrl = await resolveVideoInput(opts.video);
 
-				console.error('🎬 Génération motion control avec kling-3.0-motion-control...');
+        console.error('Generating motion control with kling-3.0-motion-control...');
 
-				const task = await generateMedia({
-					model: 'kling-3.0-motion-control',
-					input: {
-						prompt,
-						image_urls: imageUrls,
-						video_url: videoUrl,
-						character_orientation: opts.characterOrientation,
-					},
-				});
+        const task = await generateMedia({
+          model: 'kling-3.0-motion-control',
+          input: {
+            prompt,
+            image_urls: imageUrls,
+            video_url: videoUrl,
+            character_orientation: opts.characterOrientation,
+          },
+        });
 
-				const videoFile = task.files?.find((f) => f.file_type === 'video');
-				if (!videoFile) {
-					throw new Error('No video in task result');
-				}
+        const videoFile = task.files?.find((f) => f.file_type === 'video');
+        if (!videoFile) {
+          throw new Error('No video in task result — motion control generation may have failed');
+        }
 
-				const ext = videoFile.file_url.match(/\.(mp4|webm|mov)/i)?.[1] || 'mp4';
-				const hasPath = isAbsolute(opts.output) || opts.output.includes('/');
-				const name = opts.output.includes('.') ? opts.output : `${opts.output}.${ext}`;
-				const destPath = hasPath ? name : (ensureDirs(), join(ARTIFACTS_DIR, name));
-				mkdirSync(dirname(destPath), { recursive: true });
+        const destPath = resolveOutputPath(videoFile.file_url, opts.output, 'mp4');
+        mkdirSync(dirname(destPath), { recursive: true });
 
-				console.error('📥 Téléchargement...');
-				await downloadFile(videoFile.file_url, destPath);
+        console.error('Downloading...');
+        await downloadFile(videoFile.file_url, destPath);
 
-				console.error('✅ Vidéo sauvegardée');
-				console.log(destPath);
-			} catch (err) {
-				console.error(`❌ ${(err as Error).message}`);
-				process.exit(4);
-			}
-		});
+        console.error('Video saved');
+        console.log(destPath);
+      } catch (err) {
+        console.error(
+          `Motion control generation failed: ${(err as Error).message}. ` +
+          'Check image/video inputs and Poyo API credentials.',
+        );
+        process.exit(exitCode(err, 4));
+      }
+    });
 
-	return motion;
-}
+  return motion;
+};

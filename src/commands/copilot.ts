@@ -1,97 +1,79 @@
+/** Command handler for querying GitHub Copilot CLI. */
+import { exitCode } from '../errors.ts';
 import { Command } from 'commander';
 import { statSync } from 'node:fs';
 import { askCopilot, CopilotAuthError } from '../services/copilot.ts';
 import { resolveForProvider } from '../services/models.ts';
 import { getEnv } from '../services/env.ts';
-import { readStdin } from '../utils/stdin.ts';
-import {
-	resolveFilePaths,
-	readFileAsContext,
-	estimateTokens,
-	buildFileContext,
-} from '../utils/files.ts';
+import { readStdin } from '../infra/stdin.ts';
+import { loadFileContext } from '../services/files.ts';
 
-/** Expands directory entries to `dir/*` globs for non-recursive file listing. */
-function expandDirectories(patterns: string[]): string[] {
-	return patterns.map((pattern) => {
-		try {
-			const stat = statSync(pattern);
-			if (stat.isDirectory()) {
-				const normalized = pattern.endsWith('/') ? pattern : `${pattern}/`;
-				return `${normalized}*`;
-			}
-		} catch {
-			// Not a local path or doesn't exist — pass through (could be a glob)
-		}
-		return pattern;
-	});
-}
+/**
+ * Expand directory entries to non-recursive globs so that listing a directory
+ * includes its immediate children.
+ * @param patterns - File paths or glob patterns.
+ * @returns Expanded patterns with directories suffixed by `/*`.
+ */
+const expandDirectories = (patterns: string[]): string[] =>
+  patterns.map((pattern) => {
+    try {
+      const stat = statSync(pattern);
+      if (stat.isDirectory()) {
+        const normalized = pattern.endsWith('/') ? pattern : `${pattern}/`;
+        return `${normalized}*`;
+      }
+    } catch {
+      // Not a local path or doesn't exist — pass through (could be a glob)
+    }
+    return pattern;
+  });
 
-function collect(val: string, acc: string[]): string[] {
-	acc.push(val);
-	return acc;
-}
+/**
+ * Create the `copilot` command.
+ * @returns The configured Commander command.
+ */
+export const createCopilotCommand = (): Command =>
+  new Command('copilot')
+    .description('Ask a question via GitHub Copilot CLI')
+    .argument('<prompt>', 'Prompt to send to the model')
+    .option('--model <model>', 'Model override (default: gpt-5.4)')
+    .option('-f, --file <path>', 'File or glob to include as context (repeatable)', (val: string, acc: string[]) => [...acc, val], [])
+    .action(async (prompt: string, opts: {
+      model?: string;
+      file: string[];
+    }) => {
+      try {
+        let stdin: string | undefined;
+        if (!process.stdin.isTTY) {
+          stdin = await readStdin();
+        }
 
-export function createCopilotCommand(): Command {
-	const copilot = new Command('copilot')
-		.description('Poser une question via GitHub Copilot CLI')
-		.argument('<prompt>', 'Prompt à envoyer au modèle')
-		.option('--model <model>', 'Modèle à utiliser (défaut: gpt-5.4)')
-		.option('-f, --file <path>', 'File or glob to include as context (repeatable)', collect, [])
-		.action(async (prompt: string, opts: {
-			model?: string;
-			file: string[];
-		}) => {
-			try {
-				let stdin: string | undefined;
-				if (!process.stdin.isTTY) {
-					stdin = await readStdin();
-				}
+        const files = opts.file.length > 0
+          ? await loadFileContext(expandDirectories(opts.file))
+          : [];
 
-				const files: Array<{ path: string; content: string }> = [];
+        const rawModel = opts.model || getEnv('COPILOT_MODEL') || 'openai/gpt-5.4';
+        const nativeModel = resolveForProvider(rawModel, 'copilot');
 
-				if (opts.file.length > 0) {
-					const expanded = expandDirectories(opts.file);
-					const resolved = await resolveFilePaths(expanded);
+        const response = await askCopilot(prompt, {
+          model: nativeModel,
+          stdin,
+          files: files.length > 0 ? files : undefined,
+        });
 
-					for (const filePath of resolved) {
-						const ctx = await readFileAsContext(filePath);
-						if (ctx) files.push(ctx);
-					}
-
-					if (files.length > 0) {
-						const totalContent = buildFileContext(files);
-						const tokens = estimateTokens(totalContent);
-						if (tokens > 25000) {
-							console.error(`⚠ Large context (~${tokens} tokens estimated):`);
-							for (const f of files) {
-								console.error(`  ${f.path} (~${estimateTokens(f.content)} tokens)`);
-							}
-						}
-					}
-				}
-
-				const rawModel = opts.model || getEnv('COPILOT_MODEL') || 'openai/gpt-5.4';
-				const nativeModel = resolveForProvider(rawModel, 'copilot');
-
-				const response = await askCopilot(prompt, {
-					model: nativeModel,
-					stdin,
-					files: files.length > 0 ? files : undefined,
-				});
-
-				process.stdout.write(response);
-				if (!response.endsWith('\n')) process.stdout.write('\n');
-			} catch (err) {
-				if (err instanceof CopilotAuthError) {
-					console.error('❌ GitHub Copilot is not authenticated.');
-					console.error('   Run: gh auth login');
-					process.exit(3);
-				}
-				console.error(`❌ ${(err as Error).message}`);
-				process.exit(4);
-			}
-		});
-
-	return copilot;
-}
+        process.stdout.write(response);
+        if (!response.endsWith('\n')) process.stdout.write('\n');
+      } catch (err) {
+        if (err instanceof CopilotAuthError) {
+          console.error(
+            'GitHub Copilot is not authenticated. Run: gh auth login',
+          );
+          process.exit(3);
+        }
+        console.error(
+          `Copilot command failed: ${(err as Error).message}. ` +
+          'Check the model name and that gh copilot is installed.',
+        );
+        process.exit(exitCode(err, 4));
+      }
+    });

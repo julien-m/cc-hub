@@ -38,25 +38,45 @@ const STATUS_ICONS: Record<string, string> = {
   partial: '⏳',
 };
 
-export function typeIcon(type: string): string {
+/**
+ * Returns the icon for a given event type.
+ * @param type - The event type string.
+ * @returns The corresponding emoji icon, or a default pin icon.
+ */
+export const typeIcon = (type: string): string => {
   return TYPE_ICONS[type] || '📌';
-}
+};
 
-export function statusIcon(status: string): string {
+/**
+ * Returns the icon for a given event status.
+ * @param status - The event status string.
+ * @returns The corresponding emoji icon, or a question mark icon.
+ */
+export const statusIcon = (status: string): string => {
   return STATUS_ICONS[status] || '❓';
-}
+};
 
-export function formatEvent(event: EventRow): string {
+/**
+ * Formats an event row as a single-line summary string.
+ * @param event - The event row to format.
+ * @returns A formatted string with status icon, title, time, and optional artifact indicator.
+ */
+export const formatEvent = (event: EventRow): string => {
   const icon = statusIcon(event.status);
-  const time = new Date(event.created_at).toLocaleTimeString('fr-FR', {
+  const time = new Date(event.created_at).toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
   });
   const artifact = event.artifact_path ? ' 📎 artifact' : '';
   return `${icon} ${event.title} (${time})${artifact}`;
-}
+};
 
-export function formatEventDetail(event: EventRow): string {
+/**
+ * Formats an event row as a multi-line detail string.
+ * @param event - The event row to format.
+ * @returns A formatted multi-line string with all event fields.
+ */
+export const formatEventDetail = (event: EventRow): string => {
   const lines = [
     `${statusIcon(event.status)} ${event.title}`,
     `   Type: ${typeIcon(event.type)} ${event.type}`,
@@ -67,4 +87,4 @@ export function formatEventDetail(event: EventRow): string {
   if (event.details) lines.push(`   Details: ${event.details}`);
   if (event.artifact_path) lines.push(`   Artifact: ${event.artifact_path}`);
   return lines.join('\n');
-}
+};

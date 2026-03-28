@@ -1,3 +1,4 @@
+/** Shared logic for managing Claude Code skills, commands, rules, and agents via symlinks. */
 import { Command } from 'commander';
 import { homedir } from 'os';
 import { join, resolve, basename } from 'path';
@@ -13,85 +14,108 @@ import {
   statSync,
 } from 'fs';
 import { createInterface } from 'readline';
+import { exitCode } from '../errors.ts';
 
-function confirm(message: string): Promise<boolean> {
+/**
+ * Prompt the user for confirmation via stdin.
+ * @param message - The question to display.
+ * @returns True if the user confirmed.
+ */
+const confirm = (message: string): Promise<boolean> => {
   const rl = createInterface({ input: process.stdin, output: process.stderr });
   return new Promise((res) => {
-    rl.question(`${message} (o/N) `, (answer) => {
+    rl.question(`${message} (y/N) `, (answer) => {
       rl.close();
-      res(answer.toLowerCase() === 'o' || answer.toLowerCase() === 'y');
+      res(answer.toLowerCase() === 'y');
     });
   });
-}
+};
 
-/** Extrait le nom depuis le frontmatter d'un fichier SKILL.md */
-function extractNameFromFile(filePath: string): string {
+/**
+ * Extract the name from a SKILL.md frontmatter.
+ * @param filePath - Path to the SKILL.md file.
+ * @returns The extracted name.
+ * @throws {Error} When frontmatter is missing or lacks a name field.
+ */
+const extractNameFromFile = (filePath: string): string => {
   const content = readFileSync(filePath, 'utf-8');
   const match = content.match(/^---\s*\n([\s\S]*?)\n---/);
   if (!match) {
-    throw new Error(`Frontmatter invalide dans ${filePath}`);
+    throw new Error(`Invalid frontmatter in ${filePath} — expected YAML between --- delimiters`);
   }
   const nameMatch = match[1].match(/^name:\s*(.+)$/m);
   if (!nameMatch) {
-    throw new Error(`Champ "name" manquant dans le frontmatter de ${filePath}`);
+    throw new Error(`Missing "name" field in frontmatter of ${filePath}`);
   }
   return nameMatch[1].trim();
-}
+};
 
 export interface ClaudeLinkConfig {
   /** "skill" | "command" | "rule" | "agent" */
   type: 'skill' | 'command' | 'rule' | 'agent';
-  /** Sous-dossier dans ~/.claude/ ("skills", "commands", "rules", "agents") */
+  /** Subdirectory in ~/.claude/ ("skills", "commands", "rules", "agents") */
   subdir: string;
-  /** true = source est un dossier (skill), false = source est un fichier .md */
+  /** true = source is a directory (skill), false = source is a .md file */
   isDirectory: boolean;
-  /** Extrait le nom depuis la source (pour skill: frontmatter, pour command/rule: filename) */
+  /** Extract the name from the source (for skill: frontmatter, for command/rule: filename) */
   extractName: (sourcePath: string) => string;
-  /** Résout le chemin source depuis un nom simple */
+  /** Resolve source path from a simple name */
   resolveLocal: (name: string) => string;
 }
 
-function globalDir(config: ClaudeLinkConfig): string {
-  return join(homedir(), '.claude', config.subdir);
-}
+/**
+ * Get the global directory for a given config type.
+ * @param config - The link configuration.
+ * @returns Absolute path to the global directory.
+ */
+const globalDir = (config: ClaudeLinkConfig): string =>
+  join(homedir(), '.claude', config.subdir);
 
-function resolvePath(pathOrName: string, config: ClaudeLinkConfig): string {
+/**
+ * Resolve a user-provided path or name to an absolute source path.
+ * @param pathOrName - A relative/absolute path or a simple name.
+ * @param config - The link configuration.
+ * @returns Absolute path to the source.
+ * @throws {Error} When the resolved path does not exist.
+ */
+const resolvePath = (pathOrName: string, config: ClaudeLinkConfig): string => {
   if (pathOrName.includes('/') || pathOrName.startsWith('.')) {
     const abs = resolve(pathOrName);
     if (!existsSync(abs)) {
-      throw new Error(`Le chemin ${abs} n'existe pas`);
+      throw new Error(`Path ${abs} does not exist`);
     }
     return abs;
   }
   const local = config.resolveLocal(pathOrName);
   if (!existsSync(local)) {
     throw new Error(
-      `${config.type} "${pathOrName}" introuvable dans ${local}`,
+      `${config.type} "${pathOrName}" not found at ${local}`,
     );
   }
   return local;
-}
+};
 
-async function link(
-  pathOrName: string,
+/**
+ * Determine the destination path and whether wrapping is needed.
+ * @param source - Absolute path to the source.
+ * @param config - The link configuration.
+ * @param customName - Optional custom name override.
+ * @returns Object with name, dest path, destDir, and needsWrap flag.
+ */
+const resolveDestination = (
+  source: string,
   config: ClaudeLinkConfig,
   customName?: string,
-): Promise<void> {
-  const source = resolvePath(pathOrName, config);
-
-  // Skills: si la source est un fichier (SKILL.md), on crée le dossier
-  // et on symlinke le fichier à l'intérieur
+): { name: string; dest: string; destDir: string; needsWrap: boolean } => {
   const sourceIsFile = statSync(source).isFile();
   const needsWrap = config.isDirectory && sourceIsFile;
 
   let name: string;
   if (customName) {
     // For file-based types (commands/rules), ensure .md extension
-    if (!config.isDirectory && !customName.endsWith('.md')) {
-      name = `${customName}.md`;
-    } else {
-      name = customName;
-    }
+    name = !config.isDirectory && !customName.endsWith('.md')
+      ? `${customName}.md`
+      : customName;
   } else {
     name = needsWrap
       ? extractNameFromFile(source)
@@ -106,51 +130,109 @@ async function link(
     ? join(globalDir(config), name)
     : dest;
 
+  return { name, dest, destDir, needsWrap };
+};
+
+/**
+ * Handle an existing link/file at the destination, prompting the user to replace it.
+ * @param destDir - The destination directory or file path.
+ * @param dest - The exact symlink destination.
+ * @param name - Display name of the item.
+ * @param config - The link configuration.
+ * @param needsWrap - Whether the source needs wrapping in a directory.
+ * @returns True if we should proceed, false if cancelled.
+ */
+const handleExistingLink = async (
+  destDir: string,
+  dest: string,
+  name: string,
+  config: ClaudeLinkConfig,
+  needsWrap: boolean,
+): Promise<boolean> => {
   let destStat;
   try {
     destStat = lstatSync(destDir);
   } catch {
-    // n'existe pas
-  }
-  if (destStat) {
-    const info = destStat.isSymbolicLink()
-      ? `symlink → ${readlinkSync(destDir)}`
-      : config.isDirectory
-        ? 'dossier'
-        : 'fichier';
-    const ok = await confirm(
-      `${config.type} "${name}" existe déjà (${info}). Remplacer ?`,
-    );
-    if (!ok) {
-      console.error('Annulé.');
-      return;
-    }
-    if (needsWrap) {
-      // Ne supprimer que le symlink SKILL.md, pas le dossier entier
-      // au cas où il contient d'autres fichiers
-      try { rmSync(dest, { force: true }); } catch { /* */ }
-    } else {
-      rmSync(destDir, { recursive: true, force: true });
-    }
+    // Does not exist
+    return true;
   }
 
+  const info = destStat.isSymbolicLink()
+    ? `symlink -> ${readlinkSync(destDir)}`
+    : config.isDirectory
+      ? 'directory'
+      : 'file';
+  const ok = await confirm(
+    `${config.type} "${name}" already exists (${info}). Replace?`,
+  );
+  if (!ok) {
+    console.error('Cancelled.');
+    return false;
+  }
+  if (needsWrap) {
+    // Only remove the SKILL.md symlink, not the entire directory
+    try { rmSync(dest, { force: true }); } catch { /* */ }
+  } else {
+    rmSync(destDir, { recursive: true, force: true });
+  }
+  return true;
+};
+
+/**
+ * Create a symlink for the given source to the global Claude directory.
+ * @param source - Absolute source path.
+ * @param dest - Absolute destination path for the symlink.
+ * @param name - Display name.
+ * @param config - The link configuration.
+ * @param needsWrap - Whether to wrap in a directory first.
+ */
+const createSymlink = (
+  source: string,
+  dest: string,
+  name: string,
+  config: ClaudeLinkConfig,
+  needsWrap: boolean,
+): void => {
   if (needsWrap) {
     mkdirSync(join(globalDir(config), name), { recursive: true });
   }
-
   symlinkSync(source, dest);
-  console.error(`Lié ${name} → ${dest} (symlink → ${source})`);
-}
+  console.error(`Linked ${name} -> ${dest} (symlink -> ${source})`);
+};
 
-function list(config: ClaudeLinkConfig): void {
+/**
+ * Link a skill/command/rule/agent to the global Claude directory.
+ * @param pathOrName - Source path or name.
+ * @param config - The link configuration.
+ * @param customName - Optional custom name.
+ */
+const link = async (
+  pathOrName: string,
+  config: ClaudeLinkConfig,
+  customName?: string,
+): Promise<void> => {
+  const source = resolvePath(pathOrName, config);
+  const { name, dest, destDir, needsWrap } = resolveDestination(source, config, customName);
+
+  const shouldProceed = await handleExistingLink(destDir, dest, name, config, needsWrap);
+  if (!shouldProceed) return;
+
+  createSymlink(source, dest, name, config, needsWrap);
+};
+
+/**
+ * List all globally installed items of the given type.
+ * @param config - The link configuration.
+ */
+const list = (config: ClaudeLinkConfig): void => {
   const dir = globalDir(config);
   if (!existsSync(dir)) {
-    console.log(`Aucun ${config.type} installé globalement.`);
+    console.log(`No ${config.type} installed globally.`);
     return;
   }
   const entries = readdirSync(dir);
   if (entries.length === 0) {
-    console.log(`Aucun ${config.type} installé globalement.`);
+    console.log(`No ${config.type} installed globally.`);
     return;
   }
   for (const entry of entries) {
@@ -158,18 +240,23 @@ function list(config: ClaudeLinkConfig): void {
     try {
       const stat = lstatSync(full);
       if (stat.isSymbolicLink()) {
-        console.log(`${entry}\t→ symlink → ${readlinkSync(full)}`);
+        console.log(`${entry}\t-> symlink -> ${readlinkSync(full)}`);
       } else if (stat.isDirectory() || stat.isFile()) {
-        console.log(`${entry}\t→ local`);
+        console.log(`${entry}\t-> local`);
       }
     } catch {
       // skip
     }
   }
-}
+};
 
-function resolveUnlinkName(nameOrPath: string, config: ClaudeLinkConfig): string {
-  // Si c'est un chemin (contient / ou commence par .), on résout le nom
+/**
+ * Resolve the name to unlink from a path or name string.
+ * @param nameOrPath - A name or path to resolve.
+ * @param config - The link configuration.
+ * @returns The resolved name.
+ */
+const resolveUnlinkName = (nameOrPath: string, config: ClaudeLinkConfig): string => {
   if (nameOrPath.includes('/') || nameOrPath.startsWith('.')) {
     const abs = resolve(nameOrPath);
     if (existsSync(abs)) {
@@ -184,37 +271,47 @@ function resolveUnlinkName(nameOrPath: string, config: ClaudeLinkConfig): string
     }
   }
   return nameOrPath;
-}
+};
 
-async function unlink(nameOrPath: string, config: ClaudeLinkConfig): Promise<void> {
+/**
+ * Unlink a skill/command/rule/agent from the global Claude directory.
+ * @param nameOrPath - Name or path of the item to unlink.
+ * @param config - The link configuration.
+ */
+const unlink = async (nameOrPath: string, config: ClaudeLinkConfig): Promise<void> => {
   const name = resolveUnlinkName(nameOrPath, config);
   const dest = join(globalDir(config), name);
   try {
     lstatSync(dest);
   } catch {
     console.error(
-      `${config.type} "${name}" non trouvé dans ${globalDir(config)}`,
+      `${config.type} "${name}" not found in ${globalDir(config)}`,
     );
     process.exit(2);
   }
 
   rmSync(dest, { recursive: true, force: true });
-  console.error(`Supprimé ${name} de ${globalDir(config)}`);
-}
+  console.error(`Removed ${name} from ${globalDir(config)}`);
+};
 
-export function createClaudeLinkCommand(config: ClaudeLinkConfig): Command {
+/**
+ * Create a Claude link command group (link/list/unlink) for the given type.
+ * @param config - The link configuration defining the type behavior.
+ * @returns The configured Commander command.
+ */
+export const createClaudeLinkCommand = (config: ClaudeLinkConfig): Command => {
   const cmd = new Command(config.type).description(
-    `Gérer les ${config.type}s Claude Code installés globalement`,
+    `Manage globally installed Claude Code ${config.type}s`,
   );
 
   const linkCmd = cmd
     .command('link')
-    .description(`Installer un ${config.type} globalement (symlink)`)
-    .argument('<path>', `Chemin ou nom du ${config.type}`)
-    .option('--name <name>', 'Nom personnalisé pour le symlink');
+    .description(`Install a ${config.type} globally (symlink)`)
+    .argument('<path>', `Path or name of the ${config.type}`)
+    .option('--name <name>', 'Custom name for the symlink');
 
   if (!config.isDirectory) {
-    linkCmd.argument('[directory]', 'Répertoire associé à linker aussi');
+    linkCmd.argument('[directory]', 'Associated directory to link as well');
   }
 
   linkCmd.action(async (path: string, ...args: unknown[]) => {
@@ -228,23 +325,25 @@ export function createClaudeLinkCommand(config: ClaudeLinkConfig): Command {
         await link(directory, config);
       }
     } catch (err) {
-      console.error(`Erreur: ${(err as Error).message}`);
+      console.error(
+        `Failed to link ${config.type}: ${(err as Error).message}`,
+      );
       process.exit(1);
     }
   });
 
   cmd
     .command('list')
-    .description(`Lister les ${config.type}s installés globalement`)
+    .description(`List globally installed ${config.type}s`)
     .action(() => list(config));
 
   const unlinkCmd = cmd
     .command('unlink')
-    .description(`Désinstaller un ${config.type} global`)
-    .argument('<name>', `Nom du ${config.type} à désinstaller`);
+    .description(`Uninstall a global ${config.type}`)
+    .argument('<name>', `Name of the ${config.type} to uninstall`);
 
   if (!config.isDirectory) {
-    unlinkCmd.argument('[directory]', 'Répertoire associé à unliker aussi');
+    unlinkCmd.argument('[directory]', 'Associated directory to unlink as well');
   }
 
   unlinkCmd.action(async (name: string, directory?: string) => {
@@ -254,13 +353,15 @@ export function createClaudeLinkCommand(config: ClaudeLinkConfig): Command {
         await unlink(directory, config);
       }
     } catch (err) {
-      console.error(`Erreur: ${(err as Error).message}`);
+      console.error(
+        `Failed to unlink ${config.type}: ${(err as Error).message}`,
+      );
       process.exit(1);
     }
   });
 
   return cmd;
-}
+};
 
 // --- Configs ---
 
@@ -271,17 +372,17 @@ export const skillConfig: ClaudeLinkConfig = {
   extractName(sourcePath: string): string {
     const skillMd = join(sourcePath, 'SKILL.md');
     if (!existsSync(skillMd)) {
-      throw new Error(`Pas de SKILL.md trouvé dans ${sourcePath}`);
+      throw new Error(`No SKILL.md found in ${sourcePath}`);
     }
     const content = readFileSync(skillMd, 'utf-8');
     const match = content.match(/^---\s*\n([\s\S]*?)\n---/);
     if (!match) {
-      throw new Error(`Frontmatter invalide dans ${skillMd}`);
+      throw new Error(`Invalid frontmatter in ${skillMd}`);
     }
     const nameMatch = match[1].match(/^name:\s*(.+)$/m);
     if (!nameMatch) {
       throw new Error(
-        `Champ "name" manquant dans le frontmatter de ${skillMd}`,
+        `Missing "name" field in frontmatter of ${skillMd}`,
       );
     }
     return nameMatch[1].trim();

@@ -1,19 +1,19 @@
+import { ConfigError } from '../errors.ts';
+import type { AskOptions } from '../types/ask.ts';
 import { getEnv } from './env.ts';
 
-interface AskOptions {
-  model?: string;
-  stdin?: string;
-  files?: Array<{ path: string; content: string }>;
-  effort?: 'low' | 'medium' | 'high';
-  json?: boolean;
-  jsonSchema?: object;
-}
-
-export async function askLLM(prompt: string, opts: AskOptions = {}): Promise<string> {
+/**
+ * Sends a prompt to an LLM via the OpenRouter API.
+ * @param prompt - The user prompt to send
+ * @param opts - Options including model, files, stdin, JSON mode, and effort level
+ * @returns The model response text
+ * @throws ConfigError if OPENROUTER_API_KEY is not configured
+ * @throws Error if no model is specified or the API returns an error
+ */
+export const askLLM = async (prompt: string, opts: AskOptions = {}): Promise<string> => {
   const apiKey = getEnv('OPENROUTER_API_KEY');
   if (!apiKey) {
-    console.error('OPENROUTER_API_KEY non configuré dans .env');
-    process.exit(3);
+    throw new ConfigError('OPENROUTER_API_KEY not configured in .env');
   }
   const model = opts.model;
   if (!model) throw new Error('No model specified');
@@ -24,6 +24,10 @@ export async function askLLM(prompt: string, opts: AskOptions = {}): Promise<str
     messages.push({ role: 'system', content: 'Respond with valid JSON only. No markdown, no explanation, no code fences.' });
   }
 
+  if (opts.systemPrompt) {
+    messages.push({ role: 'system', content: opts.systemPrompt });
+  }
+
   // Message 1: the prompt (intent first)
   messages.push({ role: 'user', content: prompt });
 
@@ -31,7 +35,7 @@ export async function askLLM(prompt: string, opts: AskOptions = {}): Promise<str
   const contextParts: string[] = [];
 
   if (opts.files?.length) {
-    const { buildFileContext } = await import('../utils/files.ts');
+    const { buildFileContext } = await import('./files.ts');
     contextParts.push(buildFileContext(opts.files));
   }
 
@@ -68,6 +72,7 @@ export async function askLLM(prompt: string, opts: AskOptions = {}): Promise<str
         },
       }),
     }),
+    signal: AbortSignal.timeout(60_000),
   });
 
   if (!res.ok) {
@@ -81,4 +86,4 @@ export async function askLLM(prompt: string, opts: AskOptions = {}): Promise<str
   }
 
   return data.choices[0].message.content;
-}
+};

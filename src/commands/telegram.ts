@@ -1,42 +1,51 @@
+/** Command handler for sending messages and files via Telegram. */
+import { exitCode } from '../errors.ts';
 import { existsSync } from 'node:fs';
 import { Command } from 'commander';
 import { sendMessage, sendDocument, sendMediaGroup } from '../services/telegram.ts';
 
-export function createTelegramCommand(): Command {
+/**
+ * Create the `telegram` command group.
+ * @returns The configured Commander command.
+ */
+export const createTelegramCommand = (): Command => {
   const telegram = new Command('telegram').description(
-    'Envoyer des messages via Telegram',
+    'Send messages via Telegram',
   );
 
   telegram
     .command('send <message>')
-    .description('Envoyer un message texte (Markdown)')
+    .description('Send a text message (Markdown)')
     .action(async (message: string) => {
       try {
         await sendMessage(message);
-        console.error('✅ Message envoyé');
+        console.error('Message sent');
       } catch (err) {
-        console.error(`❌ ${(err as Error).message}`);
-        process.exit(4);
+        console.error(
+          `Failed to send Telegram message: ${(err as Error).message}. ` +
+          'Check TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.',
+        );
+        process.exit(exitCode(err, 4));
       }
     });
 
   telegram
     .command('send-file')
-    .description('Envoyer un ou plusieurs fichiers')
-    .argument('<files...>', 'Fichiers à envoyer')
-    .option('--caption <text>', 'Légende (Markdown)')
+    .description('Send one or more files')
+    .argument('<files...>', 'Files to send')
+    .option('--caption <text>', 'Caption (Markdown)')
     .action(async (files: string[], opts: { caption?: string }) => {
       const existing = files.filter((f) => {
         if (!existsSync(f)) {
-          console.error(`⚠️  Fichier introuvable: ${f}`);
+          console.error(`File not found: ${f}`);
           return false;
         }
         return true;
       });
 
       if (existing.length === 0) {
-        console.error('❌ Aucun fichier valide à envoyer');
-        process.exit(1);
+        console.error('No valid files to send');
+        process.exit(2);
       }
 
       try {
@@ -45,12 +54,15 @@ export function createTelegramCommand(): Command {
         } else {
           await sendMediaGroup(existing, opts.caption);
         }
-        console.error(`✅ ${existing.length} fichier${existing.length > 1 ? 's' : ''} envoyé${existing.length > 1 ? 's' : ''}`);
+        console.error(`${existing.length} file${existing.length > 1 ? 's' : ''} sent`);
       } catch (err) {
-        console.error(`❌ ${(err as Error).message}`);
-        process.exit(4);
+        console.error(
+          `Failed to send file(s) via Telegram: ${(err as Error).message}. ` +
+          'Check TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.',
+        );
+        process.exit(exitCode(err, 4));
       }
     });
 
   return telegram;
-}
+};

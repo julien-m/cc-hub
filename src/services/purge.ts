@@ -2,7 +2,12 @@ import { unlinkSync, existsSync } from 'node:fs';
 import { getDb } from '../db/index.ts';
 import { getConfig } from '../commands/config.ts';
 
-export async function purgeOldEvents(): Promise<void> {
+/**
+ * Purges events older than the configured retention period.
+ * Also removes associated artifact files from disk.
+ * Retention is configured via `purge.days` (default: 30).
+ */
+export const purgeOldEvents = async (): Promise<void> => {
   const config = getConfig();
   const days = (config['purge.days'] as number) || 30;
 
@@ -32,6 +37,6 @@ export async function purgeOldEvents(): Promise<void> {
   });
 
   if (result.rowsAffected > 0) {
-    console.error(`🗑️  Purgé ${result.rowsAffected} événements de plus de ${days} jours`);
+    console.error(`Purged ${result.rowsAffected} events older than ${days} days`);
   }
-}
+};
