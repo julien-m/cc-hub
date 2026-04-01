@@ -1,149 +1,120 @@
-# Template: Guide de prompting pour modèles Text/LLM
+# Template: Prompt Guide for Text/LLM Models
 
-## Sections obligatoires
+## Mandatory Sections
 
-Chaque guide pour un modèle de type `text` DOIT contenir ces sections dans cet ordre.
-Les minimums indiqués sont des **planchers** — en faire plus est toujours mieux.
+Each guide for a `text` model MUST contain these sections in this order.
+The guide is consumed by an AI assistant (Claude Code) to craft optimal prompts for the target model. Write as a parsable reference document, not a marketing page.
 
----
-
-### 1. Model Overview
-
-**Contenu requis :**
-- Context window en tokens (nombre exact, pas "large")
-- Max output tokens
-- Pricing (input/output par million de tokens)
-- Model ID(s) (API, Bedrock, Vertex si applicable)
-- Knowledge cutoff (reliable + training data)
-- Positionnement dans la gamme du provider (vs modèles frères)
-- 3+ forces vérifiées du modèle (sourcées)
-- Limites connues
-- Cas d'usage idéaux
-- Disponibilité (API, cloud providers)
-
-**Contenu enrichi (si applicable) :**
-- **Behavioral shifts** : ce qui a changé vs le modèle précédent. Ex: "Claude 4.6 takes instructions literally — previous versions would infer and expand." C'est crucial pour les utilisateurs qui migrent.
-
-**Critères qualité :**
-- Les specs doivent venir de la doc officielle, pas d'estimation
-- Ne pas écrire "typically" ou "usually" pour des specs — être précis ou dire "à vérifier"
-- Inclure les IDs exacts du modèle pour chaque plateforme
+**Critical rule:** No pricing, benchmarks, release dates, or capability lists. Only information that directly affects how to write prompts.
 
 ---
 
-### 2. Key Prompting Techniques
+### 1. Prompting Identity
 
-**Contenu requis :**
-- Techniques SPÉCIFIQUES au provider/modèle (pas de générique)
-- Pour chaque technique : description + exemple de code/prompt
-- 8+ techniques minimum
+**Content (3-8 lines max):**
+- What makes prompting THIS model unique vs its siblings/predecessors
+- Behavioral shifts from previous version (migration-critical)
+- The single most important thing to know before writing a prompt
+- Anti-patterns specific to this model (what triggers bad results)
 
-**Exemples de techniques par provider (à adapter selon la recherche) :**
+**Quality criteria:**
+- Every line must affect how you write prompts
+- No specs, no benchmarks, no "strengths and limitations" lists
+- If migrating from a previous model, lead with what changed
 
-| Provider | Techniques spécifiques |
-|----------|----------------------|
-| Anthropic | XML tags (`<context>`, `<instructions>`), adaptive thinking, effort parameter, structured outputs API (Pydantic), strict tool use, vision, context compaction, interleaved thinking, system prompt sensitivity |
-| OpenAI | JSON mode, structured outputs, function calling, system/user/assistant roles, response format |
-| Google | Grounding avec Google Search, system instructions, code execution intégrée, 1M context |
+---
 
-**Critères qualité :**
-- INTERDICTION de lister des techniques génériques (ex: "be clear and specific")
-- Chaque technique doit être propre au modèle ou au provider
-- Inclure un snippet d'exemple pour chaque technique
-- Pour les features API (structured outputs, tool use), inclure du code Python SDK — pas seulement du prompt texte
+### 2. Prompt Recipe by Task Type
+
+**Content:**
+- 4+ task-type recipes minimum
+- Each recipe is a prompt template with tagged blocks
+
+**Standard recipes (adapt to model):**
+
+| Task Type | Required Blocks |
+|-----------|----------------|
+| Coding / debugging | `<task>`, `<output_contract>`, `<verification_loop>`, `<completeness_contract>` |
+| Review / analysis | `<task>`, `<output_contract>`, `<grounding_rules>`, `<dig_deeper_nudge>` |
+| Research / synthesis | `<task>`, `<research_mode>`, `<citation_rules>`, `<output_contract>` |
+| Agentic / tool-use | `<task>`, `<action_safety>`, `<default_follow_through_policy>`, `<verification_loop>` |
+
+**Each recipe must include:**
+- The tagged block template (copy-paste ready)
+- When to use this recipe
+- What the model does differently with these blocks vs without
+
+**Quality criteria:**
+- Recipes must be specific to this model's behavior (not generic)
+- Use the model's native tag/message conventions (XML for Claude, developer messages for OpenAI, system instructions for Gemini)
+- Each recipe is self-contained and copy-paste ready
 
 ---
 
 ### 3. Prompt Structure
 
-**Contenu requis :**
-- Structure de messages réelle (system/user/assistant) avec la terminologie du provider
-- Rôle de chaque partie du prompt
-- Exemple concret et complet d'un prompt bien structuré
-- Comment organiser les informations dans le contexte
-- Règle d'ordering pour le long contexte (documents en haut, query en bas si applicable)
+**Content:**
+- Message structure (system/developer/user/assistant — use the model's terminology)
+- Tag conventions if applicable (XML tags for Claude, etc.)
+- Ordering rules: where to place context, instructions, examples, constraints
+- Long-context ordering (documents first, query last — or model-specific rule)
+- One complete copy-paste example showing optimal structure
 
-**Critères qualité :**
-- L'exemple doit être copy-paste ready
-- Montrer la hiérarchie : system prompt → context → instructions → exemples → contraintes
-
----
-
-### 4. Advanced Techniques
-
-**Contenu requis :**
-- Chain-of-thought / raisonnement étape par étape (avec la syntaxe du modèle)
-- Few-shot prompting (avec exemples XML-tagged si Claude)
-- Structured output (JSON, XML, markdown) — y compris via API native
-- Tool use / function calling (si supporté) — avec strict mode si disponible
-- Paramètres de sampling (temperature, top_p, effort, etc.)
-- Techniques avancées spécifiques au modèle
-- Context management (compaction, multi-window si applicable)
-- Vision / multimodal (si supporté)
-- Interleaved thinking / tool reflection (si supporté)
-
-**Critères qualité :**
-- Chaque technique avec un exemple concret (code ou prompt)
-- Indiquer quand utiliser chaque technique (cas d'usage)
-- Mentionner les paramètres recommandés avec justification
-- Inclure un tableau effort recommandé par type de tâche
+**Quality criteria:**
+- The example must be realistic and non-trivial
+- Show hierarchy: system/developer → context → instructions → examples → constraints
 
 ---
 
-### 5. Best Practices
+### 4. Model-Specific Techniques
 
-**Contenu requis :**
-- 6+ pratiques actionnables avec exemples copy-paste
-- Chaque pratique avec un avant/après ou un snippet
-- Couvrir : explicité, contexte/motivation, formulation positive, contraintes anti-over-engineering, contrôle du thinking, ordering du contexte
+**Content:**
+- API features that change how you prompt:
+  - Structured outputs / JSON mode (with Python SDK code)
+  - Tool use / function calling (with strict mode if available)
+  - Thinking / reasoning modes (effort levels, adaptive thinking)
+  - Vision / multimodal (if supported — how to structure image+text)
+  - Context management (compaction, caching, multi-turn)
+- Effort/reasoning level table: task type → recommended level
+- Each technique with a Python SDK snippet
 
-**Critères qualité :**
-- Spécifique au modèle, pas des conseils universels
-- Actionnable immédiatement (pas théorique)
-
----
-
-### 6. Common Mistakes
-
-**Contenu requis :**
-- 8+ erreurs documentées (pas des erreurs universelles)
-- Pour chaque erreur : avant (mauvais) → après (corrigé) + explication
-- Couvrir : prefilling deprecated, over-prompting, vague instructions, document ordering, temperature misuse, XML tags ignorés, effort parameter ignoré, aggressive language, LaTeX default, subagent overuse
-
-**Critères qualité :**
-- Basé sur des retours réels (doc officielle, forums, expérience)
-- Chaque erreur avec un snippet avant/après complet
-- Format consistant pour chaque erreur
+**Quality criteria:**
+- Only features that change prompting behavior (not generic API calls)
+- Code must be copy-paste ready with correct model IDs
+- Effort table must map to concrete task types
 
 ---
 
-### 7. Examples
+### 5. Do / Don't
 
-**Contenu requis :**
-- 5+ exemples avant/après
-- Chaque exemple avec : prompt faible → prompt optimisé → explication du POURQUOI
-- Couvrir des cas d'usage variés :
-  - Code review / coding
-  - Data analysis / extraction
-  - Anti-over-engineering (constraining output)
-  - Vision + structured output (si multimodal)
-  - Agentic / tool use scoped task
+**Content:**
+- 8+ before/after pairs minimum
+- Format: bad prompt → good prompt → one-line explanation
+- Must be model-specific (not "be clear and specific")
 
-**Critères qualité :**
-- Les exemples doivent illustrer des techniques décrites dans le guide
-- Le "pourquoi" doit référencer une technique spécifique du modèle
-- Exemples variés (simple, intermédiaire, avancé)
+**Categories to cover:**
+- Over-prompting / under-prompting
+- Wrong reasoning effort
+- Poor output contracts
+- Vague vs structured instructions
+- Context ordering mistakes
+- Model-specific anti-patterns
+
+**Quality criteria:**
+- Each pair must reference a technique from the guide
+- The "why" must be specific to this model's behavior
+- Mix simple and advanced examples
 
 ---
 
-### 8. Sources
+### 6. Sources
 
-**Contenu requis :**
-- 10+ URLs consultées pendant la recherche
-- Format : `- [Titre descriptif](URL)`
-- Classées par pertinence (doc officielle en premier)
+**Content:**
+- URLs consulted during research
+- Format: `- [Descriptive title](URL)`
+- Official docs first, community resources second
 
-**Critères qualité :**
-- UNIQUEMENT des URLs réellement consultées
-- Ne JAMAIS inventer une URL
-- Inclure les pages de doc officielle, blog posts, et articles communauté
+**Quality criteria:**
+- Only actually consulted URLs
+- Never invent a URL
+- 5+ minimum

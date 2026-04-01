@@ -1,126 +1,79 @@
-# Template: Guide de prompting pour modèles Video
+# Template: Prompt Guide for Video Models
 
-## Sections obligatoires
+## Mandatory Sections
 
-Chaque guide pour un modèle de type `video` DOIT contenir ces sections dans cet ordre.
-Les minimums indiqués sont des **planchers** — en faire plus est toujours mieux.
+Each guide for a `video` model MUST contain these sections in this order.
+The guide is consumed by an AI assistant to craft optimal video generation prompts.
 
----
-
-### 1. Model Overview
-
-**Contenu requis :**
-- Durée(s) de vidéo supportée(s) (exactes)
-- Résolution(s) et FPS
-- Pricing (si applicable)
-- Styles et types de contenu supportés
-- Limites connues (durée max, sujets, cohérence)
-- Input accepté (texte seul, image + texte, vidéo + texte)
-- Provider réel
-
-**Critères qualité :**
-- Specs vérifiées via doc officielle
-- Ne pas inventer de durées ou résolutions
+**Critical rule:** No pricing, FPS tables, or benchmark scores. Only information that directly affects how to write prompts. Duration and resolution constraints are kept ONLY when they affect prompt strategy.
 
 ---
 
-### 2. Key Principles
+### 1. Prompting Identity
 
-**Contenu requis :**
-- Philosophie du prompting vidéo pour CE modèle
-- Comment décrire le mouvement efficacement
-- Flow temporel : début → milieu → fin
-- Gestion de la caméra
-- Cohérence temporelle (comment maintenir la consistance)
+**Content (3-8 lines max):**
+- How this model interprets motion/temporal descriptions
+- Duration constraints that affect prompt strategy (e.g., "5s max means one action per clip")
+- Input modes that change prompting (text-only vs image-to-video vs multi-shot)
+- Anti-patterns specific to this model
 
-**Critères qualité :**
-- Spécifique au modèle, pas des conseils génériques de vidéo
-- Basé sur la doc et les retours communauté
-
----
-
-### 3. Prompt Structure
-
-**Contenu requis :**
-- Ordre recommandé des éléments :
-  1. Sujet principal
-  2. Mouvement / action (CRUCIAL pour la vidéo)
-  3. Setting / environnement
-  4. Mouvement de caméra
-  5. Style visuel
-  6. Durée souhaitée (si applicable)
-- Syntaxe spécifique au modèle
-
-**Critères qualité :**
-- L'ordre doit être validé par la doc ou l'expérience
-- Inclure un exemple complet
+**Quality criteria:**
+- Every line must affect how you write prompts
+- Keep duration/resolution only if they change prompt strategy
 
 ---
 
-### 4. Motion & Camera Keywords
+### 2. Prompt Structure
 
-**Contenu requis :**
-- Keywords de mouvement vérifiés pour ce modèle :
-  - Mouvements de caméra (pan, tilt, dolly, tracking, crane, orbit)
-  - Mouvements de sujet (walk, run, turn, gesture)
+**Content:**
+- Recommended element order:
+  1. Subject
+  2. Movement / action (CRITICAL for video)
+  3. Setting / environment
+  4. Camera movement
+  5. Style
+  6. Temporal flow (start → middle → end)
+- Model-specific syntax (shot separators, reference image syntax like `@image_1`)
+- How to describe temporal progression
+- One complete copy-paste example
+
+**Quality criteria:**
+- Temporal flow description is mandatory (video, not image)
+- Include model-specific syntax, not generic advice
+
+---
+
+### 3. Motion & Camera Keywords
+
+**Content:**
+- Keywords VERIFIED for this model:
+  - Camera movements (pan, tilt, dolly, tracking, crane, orbit)
+  - Subject movements (walk, run, turn, gesture)
   - Transitions (fade, cut, morph)
-  - Vitesse (slow motion, time-lapse, speed ramp)
-- Impact de chaque keyword
+  - Speed effects (slow motion, time-lapse, speed ramp)
+- Impact of each keyword on the output
 
-**Critères qualité :**
-- UNIQUEMENT des keywords vérifiés pour ce modèle
-- Ne PAS copier une liste générique
-- Si les keywords ne sont pas documentés, le mentionner
-
----
-
-### 5. Best Practices
-
-**Contenu requis :**
-- 5+ pratiques actionnables
-- Consistency entre frames
-- Gestion des transitions
-- Durée optimale vs qualité
-- Aspect ratios supportés
-- Techniques de raffinement
-
-**Critères qualité :**
-- Spécifique au modèle
-- Actionnable avec exemples
+**Quality criteria:**
+- ONLY keywords verified for this model
+- Note if keywords are undocumented
 
 ---
 
-### 6. Common Mistakes
+### 4. Do / Don't
 
-**Contenu requis :**
-- 5+ erreurs spécifiques à la génération vidéo avec avant/après
-- Exemples : trop de sujets, mouvements contradictoires, descriptions statiques
-- Correction pour chaque erreur
+**Content:**
+- 5+ before/after prompt pairs
+- Format: weak prompt → optimized prompt → explanation
+- Cover: static descriptions, too many subjects, contradictory movements, missing temporal flow
 
-**Critères qualité :**
-- Basé sur des retours réels
-
----
-
-### 7. Examples
-
-**Contenu requis :**
-- 5+ exemples avant/après
-- Prompt faible → prompt optimisé → explication
-- Montrer l'impact sur le mouvement et la cohérence
-
-**Critères qualité :**
-- Illustrer les techniques du guide
-- Couvrir différents types de contenu vidéo
+**Quality criteria:**
+- Video-specific problems (not image advice repackaged)
+- Show impact on motion and coherence
 
 ---
 
-### 8. Sources
+### 5. Sources
 
-**Contenu requis :**
-- 5+ URLs consultées
-- Format : `- [Titre descriptif](URL)`
-
-**Critères qualité :**
-- UNIQUEMENT des URLs réellement consultées
-- Ne JAMAIS inventer une URL
+- 5+ URLs consulted
+- Format: `- [Descriptive title](URL)`
+- Only actually consulted URLs

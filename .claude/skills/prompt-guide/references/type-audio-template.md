@@ -1,105 +1,52 @@
-# Template: Guide de prompting pour modèles Audio
+# Template: Prompt Guide for Audio Models
 
-## Sections obligatoires
+## Mandatory Sections
 
-Chaque guide pour un modèle de type `audio` DOIT contenir ces sections dans cet ordre.
-Les minimums indiqués sont des **planchers** — en faire plus est toujours mieux.
+Each guide for an `audio` model MUST contain these sections in this order.
+The guide is consumed by an AI assistant to configure optimal audio processing.
 
----
-
-### 1. Model Overview
-
-**Contenu requis :**
-- Tâches supportées (transcription, TTS, music generation, sound effects, etc.)
-- Formats audio supportés (entrée et sortie)
-- Langues supportées (avec liste si disponible)
-- Qualité / précision (WER si disponible)
-- Pricing (si applicable)
-- Limites connues (durée max, bruit, accents)
-- Provider réel
-
-**Critères qualité :**
-- Specs vérifiées via doc officielle
-- Distinguer clairement les tâches supportées vs non supportées
+**Critical rule:** No pricing or marketing claims. Only parameters and practices that affect output quality.
 
 ---
 
-### 2. Key Principles
+### 1. Prompting Identity
 
-**Contenu requis :**
-- Philosophie d'utilisation pour CE modèle
-- Préparation optimale de l'input audio
-- Importance de la qualité audio source
-- Comment le modèle gère le multilingual
-
-**Critères qualité :**
-- Spécifique au modèle et à ses tâches
-- Basé sur la doc officielle
+**Content (3-8 lines max):**
+- What this model does (transcription, TTS, music generation, etc.)
+- How input quality affects output quality
+- Key differentiator vs other audio models
+- Anti-patterns to avoid
 
 ---
 
-### 3. Configuration
+### 2. Configuration
 
-**Contenu requis :**
-- Paramètres API spécifiques au modèle
-- Format d'entrée recommandé (sample rate, encoding, channels)
-- Options de sortie (format, langue, timestamps)
-- Paramètres de qualité/vitesse
+**Content:**
+- API parameters that affect output quality (with defaults and recommended values)
+- Input format requirements (sample rate, encoding, channels)
+- Output options (format, language, timestamps)
+- Quality vs speed trade-offs
 
-**Critères qualité :**
-- Paramètres exacts avec valeurs par défaut
-- Syntaxe d'appel API si applicable
-
----
-
-### 4. Best Practices
-
-**Contenu requis :**
-- 5+ pratiques actionnables
-- Preprocessing audio (normalisation, débruitage, format)
-- Chunking pour les fichiers longs
-- Gestion du multilingual
-- Optimisation latence vs qualité
-- Post-processing des résultats
-
-**Critères qualité :**
-- Techniques actionnables avec exemples
-- Spécifique au modèle
+**Quality criteria:**
+- Parameters must be exact with default values
+- Include API call syntax if applicable
 
 ---
 
-### 5. Common Mistakes
+### 3. Do / Don't
 
-**Contenu requis :**
-- 5+ erreurs spécifiques avec avant/après
-- Exemples : mauvais format, input bruité, mauvais paramètres de langue
-- Correction pour chaque erreur
+**Content:**
+- 5+ before/after pairs
+- Cover: wrong format, noisy input, bad parameters, chunking mistakes, language detection
 
-**Critères qualité :**
-- Basé sur des retours réels
-- Inclure la solution pour chaque erreur
-
----
-
-### 6. Examples
-
-**Contenu requis :**
-- 3+ exemples concrets d'utilisation
-- Configuration optimale vs configuration par défaut
-- Montrer l'impact sur la qualité/précision
-
-**Critères qualité :**
-- Exemples copy-paste ready (code ou config)
-- Couvrir les cas d'usage principaux du modèle
+**Quality criteria:**
+- Specific to this model
+- Include corrected configuration for each error
 
 ---
 
-### 7. Sources
+### 4. Sources
 
-**Contenu requis :**
-- 5+ URLs consultées
-- Format : `- [Titre descriptif](URL)`
-
-**Critères qualité :**
-- UNIQUEMENT des URLs réellement consultées
-- Ne JAMAIS inventer une URL
+- 5+ URLs consulted
+- Format: `- [Descriptive title](URL)`
+- Only actually consulted URLs

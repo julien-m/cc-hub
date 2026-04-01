@@ -1,125 +1,83 @@
-# Template: Guide de prompting pour modèles Image
+# Template: Prompt Guide for Image Models
 
-## Sections obligatoires
+## Mandatory Sections
 
-Chaque guide pour un modèle de type `image` DOIT contenir ces sections dans cet ordre.
-Les minimums indiqués sont des **planchers** — en faire plus est toujours mieux.
+Each guide for an `image` model MUST contain these sections in this order.
+The guide is consumed by an AI assistant to craft optimal image generation prompts. Write as a parsable reference, not a product page.
 
----
-
-### 1. Model Overview
-
-**Contenu requis :**
-- Résolution(s) supportée(s) (exactes, pas "high resolution")
-- Aspect ratios supportés
-- Styles visuels dans lesquels le modèle excelle
-- Vitesse de génération (si connue)
-- Pricing (si applicable)
-- Limites connues (sujets, styles, résolution)
-- API ou interface utilisée
-- Provider réel (pas "PlaceholderAI")
-
-**Critères qualité :**
-- Les specs doivent venir de la doc officielle
-- Ne pas inventer de résolutions ou de capabilities
+**Critical rule:** No pricing, resolution tables, or generation speed benchmarks. Only information that directly affects how to write prompts.
 
 ---
 
-### 2. Key Principles
+### 1. Prompting Identity
 
-**Contenu requis :**
-- Philosophie de prompting pour CE modèle spécifiquement
-- Comment le modèle interprète les prompts (littéral vs créatif)
-- Longueur de prompt optimale
-- Langue(s) supportée(s)
-- Ce qui distingue ce modèle des autres (Midjourney, DALL-E, Stable Diffusion)
+**Content (3-8 lines max):**
+- How this model interprets prompts (literal vs creative, long vs short prompts)
+- What distinguishes its prompt style from other image models
+- Supported languages for prompts
+- Anti-patterns that produce bad results
 
-**Critères qualité :**
-- Basé sur la doc et les retours communauté, pas sur des suppositions
-- Spécifique au modèle (pas de "soyez descriptif" générique)
+**Quality criteria:**
+- Every line must affect how you write prompts
+- No specs or capability lists
 
 ---
 
-### 3. Prompt Structure
+### 2. Prompt Structure
 
-**Contenu requis :**
-- Ordre recommandé des éléments dans le prompt :
-  1. Sujet principal
+**Content:**
+- Recommended element order for prompts:
+  1. Subject (who/what)
   2. Action / pose
-  3. Setting / environnement
-  4. Style artistique
-  5. Éclairage
-  6. Angle caméra
-  7. Mood / atmosphère
-- Syntaxe spécifique si applicable (poids, séparateurs, parenthèses)
+  3. Setting / environment
+  4. Style
+  5. Lighting
+  6. Camera angle
+  7. Mood / atmosphere
+- Syntax rules (weight syntax, separators, parentheses — if supported)
+- Optimal prompt length for this model
+- One complete copy-paste example
 
-**Critères qualité :**
-- L'ordre doit être validé par la doc ou l'expérience communauté
-- Inclure un exemple complet structuré
-
----
-
-### 4. Style Keywords
-
-**Contenu requis :**
-- Keywords VÉRIFIÉS qui fonctionnent avec ce modèle
-- Classés par catégorie : style artistique, éclairage, caméra, mood, medium
-- Impact de chaque keyword sur le résultat
-
-**Critères qualité :**
-- UNIQUEMENT des keywords vérifiés pour ce modèle
-- Ne PAS copier une liste générique de Stable Diffusion/Midjourney
-- Si les keywords ne sont pas documentés, le mentionner et suggérer des tests
+**Quality criteria:**
+- Order must be validated by docs or community experience
+- Include model-specific syntax (not generic Stable Diffusion syntax)
 
 ---
 
-### 5. Best Practices
+### 3. Style & Keywords
 
-**Contenu requis :**
-- 5+ pratiques actionnables
-- Negative prompts (si supportés par le modèle)
-- Syntaxe de poids (si supportée)
-- Aspect ratios supportés
-- Seeds / reproductibilité
-- Techniques de raffinement itératif
+**Content:**
+- Keywords VERIFIED to work with this model, categorized:
+  - Art style (photorealistic, illustration, watercolor, etc.)
+  - Lighting (golden hour, rim light, studio, etc.)
+  - Camera (close-up, aerial, fisheye, etc.)
+  - Mood (cinematic, ethereal, dramatic, etc.)
+  - Medium (oil painting, digital art, pencil sketch, etc.)
+- Negative prompt keywords (if supported)
+- Weight/emphasis syntax (if supported)
 
-**Critères qualité :**
-- Ne mentionner que les fonctionnalités réellement supportées
-- Inclure la syntaxe exacte (pas de pseudo-code)
-
----
-
-### 6. Common Mistakes
-
-**Contenu requis :**
-- 5+ erreurs spécifiques à ce modèle avec avant/après
-- Exemples de prompts problématiques → corrigés
-
-**Critères qualité :**
-- Basé sur des retours réels, pas théoriques
-- Inclure le prompt corrigé pour chaque erreur
+**Quality criteria:**
+- ONLY keywords verified for this model
+- Do NOT copy generic keyword lists from other models
+- Note if keywords are undocumented (suggest testing)
 
 ---
 
-### 7. Examples
+### 4. Do / Don't
 
-**Contenu requis :**
-- 5+ exemples avant/après
-- Prompt vague → prompt optimisé → explication du changement
-- Couvrir des styles différents (photo, illustration, concept art, etc.)
+**Content:**
+- 5+ before/after prompt pairs
+- Format: weak prompt → optimized prompt → explanation
+- Cover: vague descriptions, style conflicts, over-stuffing, resolution mismatches
 
-**Critères qualité :**
-- Les exemples doivent illustrer les techniques du guide
-- Montrer l'impact concret de chaque amélioration
+**Quality criteria:**
+- Model-specific, not generic advice
+- Show concrete visual impact of each improvement
 
 ---
 
-### 8. Sources
+### 5. Sources
 
-**Contenu requis :**
-- 5+ URLs consultées
-- Format : `- [Titre descriptif](URL)`
-
-**Critères qualité :**
-- UNIQUEMENT des URLs réellement consultées
-- Ne JAMAIS inventer une URL
+- 5+ URLs consulted
+- Format: `- [Descriptive title](URL)`
+- Only actually consulted URLs

@@ -9,7 +9,7 @@ argument-hint: --model "provider/model" --type text|image|video|audio
 
 # Skill: prompt-guide
 
-Tu es un expert en prompt engineering. Ta mission est de générer un guide de prompting **précis, sourcé et spécifique** pour un modèle IA donné, en t'appuyant sur de la recherche web réelle.
+Tu es un expert en prompt engineering. Ta mission est de générer un guide de prompting **opérationnel et actionnable** pour un modèle IA donné. Le guide doit dire **comment prompter** le modèle, pas décrire ce qu'il sait faire. Zéro pricing, zéro benchmarks, zéro specs techniques — uniquement des instructions de prompting.
 
 ## Workflow
 
@@ -69,14 +69,14 @@ C'est le coeur du skill. Tu DOIS faire des recherches web réelles pour chaque g
 2. **Best practices de prompting** — Chercher les techniques de prompting recommandées
    - Query exemple : `"{model name}" prompt engineering best practices`
 
-3. **Capabilities et specs** — Chercher les specs techniques (context window, paramètres, limites)
-   - Query exemple : `"{model name}" context window parameters capabilities`
+3. **Prompt recipes and patterns** — Chercher les patterns de prompting recommandés par type de tâche
+   - Query exemple : `"{model name}" prompt recipe template coding review`
 
-4. **Retours communauté** — Chercher les gotchas et astuces de la communauté
-   - Query exemple : `"{model name}" prompting tips tricks common mistakes`
+4. **Common mistakes** — Chercher les anti-patterns et erreurs de prompting
+   - Query exemple : `"{model name}" prompting mistakes anti-patterns gotchas`
 
-5. **Features API** — Chercher les features API natives du provider (structured outputs, tool use, vision, compaction, etc.)
-   - Query exemple : `"{provider}" API structured outputs tool use features`
+5. **API features that change prompting** — Chercher les features API qui affectent la construction de prompts
+   - Query exemple : `"{provider}" structured outputs tool use reasoning effort`
 
 **Extraction détaillée (utiliser WebFetch) :**
 - Récupérer le contenu des 3-5 pages les plus pertinentes trouvées
@@ -107,32 +107,28 @@ Synthétiser toute la recherche en suivant le template de type.
 **Règles de rédaction :**
 
 1. **Langue** : Anglais
-2. **Spécificité** : Chaque recommandation DOIT être spécifique au modèle, pas générique
+2. **Public cible** : Le guide est consommé par un assistant IA (Claude Code) pour crafter des prompts optimisés. Écrire comme un document de référence parsable, pas une fiche marketing.
+3. **Spécificité** : Chaque recommandation DOIT être spécifique au modèle, pas générique
    - MAL : "Use clear instructions"
    - BIEN : "Claude responds best to XML-tagged sections like `<context>...</context>`"
-3. **Traçabilité** : Chaque technique doit être traçable à une source (doc officielle, benchmark, retour communauté)
-4. **Exemples concrets** : Inclure des exemples copy-paste, pas des descriptions abstraites
-5. **Format de sortie** : Suivre le template `templates/guide-output.md`
-6. **Frontmatter** : Utiliser `---` comme délimiteurs (PAS ` ```yaml `). C'est critique pour la compatibilité.
-7. **Date** : Utiliser la date du jour pour `last_updated`
-8. **Public cible** : Le guide sera consommé par un assistant IA (Claude Code) pour crafter des prompts optimisés. Écrire comme un document de référence parsable.
+4. **Recipes** : Pour les modèles text, structurer le contenu par type de tâche (coding, review, research, agentic) avec des prompt templates tagged copy-paste ready
+5. **Exemples concrets** : Inclure des exemples copy-paste, pas des descriptions abstraites
+6. **Format de sortie** : Suivre le template **Read** [`templates/guide-output.md`](templates/guide-output.md)
+7. **Frontmatter** : Utiliser `---` comme délimiteurs (PAS ` ```yaml `). C'est critique pour la compatibilité.
+8. **Date** : Utiliser la date du jour pour `last_updated`
 
-**Contenu enrichi — Leçons apprises :**
-
-9. **Behavioral shifts** : Si le modèle est une nouvelle version (ex: Claude 4.6 vs 4.5), documenter explicitement ce qui a changé et comment adapter ses prompts. Les utilisateurs qui migrent ont besoin de comprendre les ruptures.
-10. **Features API natives** : Ne pas se limiter au prompting textuel. Documenter aussi les features API qui changent la façon de prompter :
-    - Structured Outputs (JSON schema garanti)
-    - Tool use avec strict mode
-    - Vision / multimodal
-    - Context compaction / management
-    - Thinking modes (adaptive, extended, interleaved)
-11. **Effort/pricing table** : Pour les modèles text, inclure un tableau effort recommandé par type de tâche
-12. **Code API** : Inclure des snippets de code API (Python SDK) pour les features clés, pas seulement des prompts texte
+**Ce que le guide DOIT contenir :**
+- Behavioral shifts vs modèle précédent (migration-critical)
+- Features API qui changent le prompting : structured outputs, tool use strict, thinking modes, vision, compaction
+- Effort/reasoning level table par type de tâche (modèles text)
+- Code API Python SDK pour les features clés
+- 8+ paires Do/Don't avant/après spécifiques au modèle
 
 **Ce que le guide NE DOIT PAS contenir :**
-- Des informations non vérifiées présentées comme des faits
-- Des techniques génériques applicables à tous les LLMs sans valeur ajoutée
-- Des dates ou specs inventées
+- Pricing, benchmarks, release dates, capability lists
+- Specs techniques (context window, max output, etc.) sauf si elles changent la stratégie de prompting
+- Techniques génériques applicables à tous les LLMs
+- "Ideal Use Cases", "Strengths", "Limitations" (descriptions de capacités)
 - Un provider incorrect (ex: "PlaceholderAI")
 
 ### Étape 7 — Sauvegarde
@@ -150,13 +146,12 @@ Un guide est noté sur 5 selon ces critères. L'objectif est **5/5 à chaque gé
 
 | Critère | Poids | 5/5 signifie |
 |---|---|---|
-| **Exactitude des specs** | 15% | Toutes les specs (context window, pricing, model ID, etc.) viennent de la doc officielle et sont correctes |
-| **Techniques spécifiques** | 20% | 8+ techniques propres au modèle/provider documentées avec code/snippets |
-| **Exemples concrets** | 20% | 5+ exemples avant/après variés couvrant différents cas d'usage |
-| **Actionnable / copy-paste** | 15% | Tout code et prompt est prêt à copier-coller, avec les bons model IDs et paramètres |
-| **Sources** | 10% | 10+ URLs réelles consultées, toutes vérifiables |
-| **Couverture des mistakes** | 10% | 8+ erreurs documentées avec avant/après et correction |
-| **Format / compatibilité** | 10% | Frontmatter `---`, slug correct, `cc-hub prompt get/list` fonctionnent |
+| **Recipes par type de tâche** | 25% | 4+ recipes copy-paste ready avec tagged blocks adaptés au modèle |
+| **Do / Don't avant/après** | 25% | 8+ paires spécifiques au modèle (pas de conseils génériques) |
+| **Techniques model-specific** | 20% | API features + effort table + code SDK, uniquement ce qui change le prompting |
+| **Actionnable / copy-paste** | 15% | Tout code et prompt est prêt à copier-coller, zéro prose descriptive |
+| **Zéro specs inutiles** | 10% | Aucun pricing, benchmark, release date, capability list |
+| **Format / compatibilité** | 5% | Frontmatter `---`, slug correct, `cc-hub prompt get/list` fonctionnent |
 
 ## Rappels critiques
 
