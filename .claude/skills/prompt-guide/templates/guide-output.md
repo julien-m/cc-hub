@@ -14,13 +14,15 @@ last_updated: {YYYY-MM-DD}
 
 # Prompt Guide: {Model Display Name}
 
-## 1. Prompting Identity
+## 1. Core Prompting Rules
 
-{3-8 lines: what makes this model's prompting unique, behavioral shifts, anti-patterns}
+{5-10 operational rules for text, 3-8 for non-text}
 
-## 2. Prompt Recipe by Task Type          ← text only
+## 2. Block Catalog                         ← text only
 OR
-## 2. Prompt Structure                     ← image/video/audio
+## 2. Prompt Structure                       ← image/video
+OR
+## 2. Configuration                          ← audio
 
 {See type-specific template for content}
 
@@ -35,10 +37,11 @@ OR
 
 | Type | Sections |
 |------|----------|
-| text | 1. Prompting Identity → 2. Prompt Recipe by Task Type → 3. Prompt Structure → 4. Model-Specific Techniques → 5. Do / Don't → 6. Sources |
-| image | 1. Prompting Identity → 2. Prompt Structure → 3. Style & Keywords → 4. Do / Don't → 5. Sources |
-| video | 1. Prompting Identity → 2. Prompt Structure → 3. Motion & Camera Keywords → 4. Do / Don't → 5. Sources |
-| audio | 1. Prompting Identity → 2. Configuration → 3. Do / Don't → 4. Sources |
+| text | 1. Core Prompting Rules → 2. Block Catalog (2a. Prompt Blocks + 2b. API Controls) → 3. Task Recipes → 4. Anti-Patterns → 5. Sources |
+| image | 1. Core Prompting Rules → 2. Prompt Structure → 3. Style & Keywords → 4. Anti-Patterns → 5. Sources |
+| video | 1. Core Prompting Rules → 2. Prompt Structure → 3. Motion & Camera Keywords → 4. Anti-Patterns → 5. Sources |
+| audio | 1. Core Prompting Rules → 2. Configuration → 3. Anti-Patterns → 4. Sources |
+| music | Uses audio template (type=audio in frontmatter) |
 
 ## Critical Rules
 
@@ -56,20 +59,28 @@ OR
 
 - Language: English
 - H1 title: `# Prompt Guide: {Model Display Name}`
-- Numbered sections with H2: `## 1. Prompting Identity`, `## 2. ...`
+- Numbered sections with H2: `## 1. Core Prompting Rules`, `## 2. ...`
 - Last section always: `## N. Sources`
 - No `---` separators in body (reserved for frontmatter)
 - Code examples in fenced code blocks with language tag
-- Include Python SDK code for API features (not just prompt text)
+- Python SDK code for API controls (not just prompt text)
 - **No pricing, benchmarks, release dates, or capability lists**
+
+### Size Budget
+
+- **Text guides:** max 200 lines
+- **Non-text guides (image/video/audio):** max 120 lines
 
 ### Mandatory Minimums
 
 | Element | text | image | video | audio |
 |---------|------|-------|-------|-------|
-| Task recipes (with tagged blocks) | 4 | — | — | — |
-| Do / Don't pairs (before/after) | 8 | 5 | 5 | 5 |
-| Sources (real URLs) | 5 | 5 | 5 | 5 |
+| Core Prompting Rules | 5+ | 4+ | 4+ | 3+ |
+| Block Catalog entries (prompt blocks) | 6+ | — | — | — |
+| API Controls entries | 4+ | — | — | — |
+| Task Recipes (with block references) | 4+ | — | — | — |
+| Anti-Patterns (bad/better/why) | 8+ | 5+ | 5+ | 5+ |
+| Sources (real URLs) | 5+ | 5+ | 5+ | 5+ |
 
 ### Slug and Output Path
 

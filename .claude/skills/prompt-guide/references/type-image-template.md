@@ -9,16 +9,16 @@ The guide is consumed by an AI assistant to craft optimal image generation promp
 
 ---
 
-### 1. Prompting Identity
+### 1. Core Prompting Rules
 
 **Content (3-8 lines max):**
-- How this model interprets prompts (literal vs creative, long vs short prompts)
-- What distinguishes its prompt style from other image models
-- Supported languages for prompts
+- Hard constraints on prompt syntax or length
+- How the model interprets prompts (literal vs creative, long vs short)
+- What distinguishes its prompt behavior from other image models
 - Anti-patterns that produce bad results
 
 **Quality criteria:**
-- Every line must affect how you write prompts
+- Every line must be an operational rule that governs how to prompt this model
 - No specs or capability lists
 
 ---
@@ -63,11 +63,10 @@ The guide is consumed by an AI assistant to craft optimal image generation promp
 
 ---
 
-### 4. Do / Don't
+### 4. Anti-Patterns
 
 **Content:**
-- 5+ before/after prompt pairs
-- Format: weak prompt → optimized prompt → explanation
+- 5+ entries, each with: anti-pattern name, Bad prompt example, Better prompt example, Why (one-line explanation)
 - Cover: vague descriptions, style conflicts, over-stuffing, resolution mismatches
 
 **Quality criteria:**

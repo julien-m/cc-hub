@@ -1,120 +1,123 @@
-# Template: Prompt Guide for Text/LLM Models
+# Template: Text Model Prompt Guide
 
-## Mandatory Sections
-
-Each guide for a `text` model MUST contain these sections in this order.
-The guide is consumed by an AI assistant (Claude Code) to craft optimal prompts for the target model. Write as a parsable reference document, not a marketing page.
-
-**Critical rule:** No pricing, benchmarks, release dates, or capability lists. Only information that directly affects how to write prompts.
+> This guide is consumed by an AI assistant (Claude Code) to craft optimal prompts. Write as a parsable operator reference.
+> **Critical rule:** No pricing, benchmarks, release dates, or capability lists. Only information that directly affects how to write prompts.
+> **Size budget:** Max 200 lines per generated guide.
 
 ---
 
-### 1. Prompting Identity
+## 1. Core Prompting Rules
 
-**Content (3-8 lines max):**
-- What makes prompting THIS model unique vs its siblings/predecessors
-- Behavioral shifts from previous version (migration-critical)
-- The single most important thing to know before writing a prompt
-- Anti-patterns specific to this model (what triggers bad results)
+**Content (5-10 operational rules max):**
+- Behavioral shifts from predecessor (migration-critical — lead with these)
+- Hard constraints (things that cause errors or degraded output)
+- The model's native prompt conventions (XML tags, developer messages, system instructions)
+- Optional: 2-line role preamble IF the model's docs show it improves output
 
 **Quality criteria:**
-- Every line must affect how you write prompts
-- No specs, no benchmarks, no "strengths and limitations" lists
+- Every rule must directly affect prompting behavior
+- No specs, benchmarks, marketing, or capability descriptions
+- NOT a personality description — operational rules only
 - If migrating from a previous model, lead with what changed
 
 ---
 
-### 2. Prompt Recipe by Task Type
+## 2. Block Catalog
 
-**Content:**
-- 4+ task-type recipes minimum
-- Each recipe is a prompt template with tagged blocks
+Two subsections, clearly separated.
 
-**Standard recipes (adapt to model):**
+### 2a. Prompt Blocks
 
-| Task Type | Required Blocks |
-|-----------|----------------|
-| Coding / debugging | `<task>`, `<output_contract>`, `<verification_loop>`, `<completeness_contract>` |
-| Review / analysis | `<task>`, `<output_contract>`, `<grounding_rules>`, `<dig_deeper_nudge>` |
-| Research / synthesis | `<task>`, `<research_mode>`, `<citation_rules>`, `<output_contract>` |
-| Agentic / tool-use | `<task>`, `<action_safety>`, `<default_follow_through_policy>`, `<verification_loop>` |
+Tags/structures that go **inside the prompt text**.
 
-**Each recipe must include:**
-- The tagged block template (copy-paste ready)
-- When to use this recipe
-- What the model does differently with these blocks vs without
+**Format — table:**
+
+| Block | Purpose | When to use |
+|-------|---------|-------------|
+| ... | One-line description | Trigger condition |
+
+- Minimum 6 blocks
+- Use the model's native tag conventions (XML for Claude, developer messages for OpenAI, system instructions for Gemini)
+
+**After the table:** 2-3 line example content for each block showing realistic usage.
+
+### 2b. API Controls
+
+Parameters in the **API call envelope** (NOT in prompt text).
+
+**Format — table:**
+
+| Control | Values | Default | When to change |
+|---------|--------|---------|----------------|
+| ... | ... | ... | ... |
+
+- Minimum 4 controls (reasoning effort, structured outputs, thinking mode, vision detail, compaction, etc.)
+
+**After the table:** One Python SDK snippet per control showing how to set it.
 
 **Quality criteria:**
-- Recipes must be specific to this model's behavior (not generic)
-- Use the model's native tag/message conventions (XML for Claude, developer messages for OpenAI, system instructions for Gemini)
-- Each recipe is self-contained and copy-paste ready
+- Clear separation between "what goes in prompt text" (2a) vs "what goes in API call" (2b)
+- Every block/control must be model-specific, not generic
 
 ---
 
-### 3. Prompt Structure
+## 3. Task Recipes
 
-**Content:**
-- Message structure (system/developer/user/assistant — use the model's terminology)
-- Tag conventions if applicable (XML tags for Claude, etc.)
-- Ordering rules: where to place context, instructions, examples, constraints
-- Long-context ordering (documents first, query last — or model-specific rule)
-- One complete copy-paste example showing optimal structure
+**Content:** 4+ complete recipes minimum.
+
+**Each recipe format:**
+```
+### {Task Type} (Coding | Review | Research | Agentic | ...)
+Blocks: {list block names from Block Catalog}
+API: {effort/control recommendation}
+
+{Complete prompt template with dynamic slots}
+```
+
+**Dynamic slots use semantic names:** `{user_task}`, `{code_to_review}`, `{documents}`, `{repository_context}`, `{error_output}`, etc.
 
 **Quality criteria:**
-- The example must be realistic and non-trivial
-- Show hierarchy: system/developer → context → instructions → examples → constraints
+- Recipes must be model-specific and self-contained
+- Copy-paste ready with slot substitution
+- NOT zero-placeholder concrete examples
+- NOT vague `{placeholder}` without semantic meaning
+- Each recipe references blocks from Section 2a by name
 
 ---
 
-### 4. Model-Specific Techniques
+## 4. Anti-Patterns
 
-**Content:**
-- API features that change how you prompt:
-  - Structured outputs / JSON mode (with Python SDK code)
-  - Tool use / function calling (with strict mode if available)
-  - Thinking / reasoning modes (effort levels, adaptive thinking)
-  - Vision / multimodal (if supported — how to structure image+text)
-  - Context management (compaction, caching, multi-turn)
-- Effort/reasoning level table: task type → recommended level
-- Each technique with a Python SDK snippet
+**Content:** 8+ entries minimum.
 
-**Quality criteria:**
-- Only features that change prompting behavior (not generic API calls)
-- Code must be copy-paste ready with correct model IDs
-- Effort table must map to concrete task types
-
----
-
-### 5. Do / Don't
-
-**Content:**
-- 8+ before/after pairs minimum
-- Format: bad prompt → good prompt → one-line explanation
-- Must be model-specific (not "be clear and specific")
+**Each entry format:**
+```
+### {Anti-pattern name}
+Bad:
+{problematic prompt or API call}
+Better:
+{corrected version}
+Why: {one-line model-specific explanation}
+```
 
 **Categories to cover:**
-- Over-prompting / under-prompting
-- Wrong reasoning effort
+- Over-prompting (redundant instructions the model handles natively)
+- Under-prompting (missing structure the model needs)
+- Wrong reasoning effort level
 - Poor output contracts
-- Vague vs structured instructions
+- Vague instructions where structure is needed
 - Context ordering mistakes
-- Model-specific anti-patterns
+- Model-specific pitfalls (hallucination triggers, refusal patterns, format degradation)
 
 **Quality criteria:**
-- Each pair must reference a technique from the guide
-- The "why" must be specific to this model's behavior
+- Must be model-specific, not generic advice
+- Each entry references a concrete model behavior
 - Mix simple and advanced examples
 
 ---
 
-### 6. Sources
+## 5. Sources
 
-**Content:**
-- URLs consulted during research
-- Format: `- [Descriptive title](URL)`
+**Content:** Real URLs only, 5+ minimum.
+**Format:** `- [Descriptive title](URL)`
 - Official docs first, community resources second
-
-**Quality criteria:**
-- Only actually consulted URLs
 - Never invent a URL
-- 5+ minimum

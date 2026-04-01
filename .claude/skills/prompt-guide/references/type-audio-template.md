@@ -9,12 +9,12 @@ The guide is consumed by an AI assistant to configure optimal audio processing.
 
 ---
 
-### 1. Prompting Identity
+### 1. Core Prompting Rules
 
 **Content (3-8 lines max):**
 - What this model does (transcription, TTS, music generation, etc.)
-- How input quality affects output quality
-- Key differentiator vs other audio models
+- Hard constraints on input format/quality that affect output
+- Key operational rules vs other audio models
 - Anti-patterns to avoid
 
 ---
@@ -33,15 +33,19 @@ The guide is consumed by an AI assistant to configure optimal audio processing.
 
 ---
 
-### 3. Do / Don't
+### 3. Anti-Patterns
 
 **Content:**
-- 5+ before/after pairs
+- 5+ entries, each with: anti-pattern name, Bad example, Better example, Why (one-line explanation)
 - Cover: wrong format, noisy input, bad parameters, chunking mistakes, language detection
 
 **Quality criteria:**
 - Specific to this model
 - Include corrected configuration for each error
+
+---
+
+> **Note:** Music guides (`type: music`) use this template.
 
 ---
 

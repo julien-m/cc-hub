@@ -192,7 +192,7 @@ Uses `crontab` internally.
 ```bash
 cc-hub ask "Summarize this text"
 cc-hub ask "Explain this bug" --model openai/gpt-5.4
-cc-hub ask "Translate to English" --model google/gemini-3-pro
+cc-hub ask "Translate to English" --model google/gemini-3.1-pro-preview
 ```
 
 Supports piping and file context:

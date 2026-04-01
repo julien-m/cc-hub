@@ -9,16 +9,16 @@ The guide is consumed by an AI assistant to craft optimal video generation promp
 
 ---
 
-### 1. Prompting Identity
+### 1. Core Prompting Rules
 
 **Content (3-8 lines max):**
+- Hard constraints on duration/input that affect prompt strategy (e.g., "5s max means one action per clip")
 - How this model interprets motion/temporal descriptions
-- Duration constraints that affect prompt strategy (e.g., "5s max means one action per clip")
 - Input modes that change prompting (text-only vs image-to-video vs multi-shot)
 - Anti-patterns specific to this model
 
 **Quality criteria:**
-- Every line must affect how you write prompts
+- Every line is a rule that directly changes how you write prompts
 - Keep duration/resolution only if they change prompt strategy
 
 ---
@@ -59,11 +59,10 @@ The guide is consumed by an AI assistant to craft optimal video generation promp
 
 ---
 
-### 4. Do / Don't
+### 4. Anti-Patterns
 
 **Content:**
-- 5+ before/after prompt pairs
-- Format: weak prompt → optimized prompt → explanation
+- 5+ entries, each with: anti-pattern name, Bad prompt, Better prompt, Why (one-line explanation)
 - Cover: static descriptions, too many subjects, contradictory movements, missing temporal flow
 
 **Quality criteria:**

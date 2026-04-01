@@ -143,7 +143,6 @@ export const MODELS: Model[] = [
     id: 'google/gemini-3-pro',
     type: 'text',
     providers: {
-      openrouter: 'google/gemini-3-pro',
       poyo: 'gemini-3-pro-preview',
     },
   },
@@ -151,7 +150,7 @@ export const MODELS: Model[] = [
     id: 'google/gemini-3-flash',
     type: 'text',
     providers: {
-      openrouter: 'google/gemini-3-flash',
+      openrouter: 'google/gemini-3-flash-preview',
       poyo: 'gemini-3-flash-preview',
     },
   },

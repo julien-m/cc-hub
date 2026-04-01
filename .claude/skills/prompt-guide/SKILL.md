@@ -93,16 +93,21 @@ C'est le coeur du skill. Tu DOIS faire des recherches web réelles pour chaque g
 
 ### Étape 5 — Chargement du template de type
 
-Lire le fichier `references/type-{type}-template.md` correspondant au type demandé.
+**Read** [`references/type-{type}-template.md`](references/type-{type}-template.md) correspondant au type demandé.
 
-Ce fichier contient :
-- Les sections obligatoires du guide
-- Les critères de qualité pour chaque section
-- Les minimums à respecter (nombre d'exemples, d'erreurs, etc.)
+Ce fichier définit la structure block-based du guide :
+- Pour `text` : Core Prompting Rules → Block Catalog (Prompt Blocks + API Controls) → Task Recipes → Anti-Patterns → Sources
+- Pour `image` : Core Prompting Rules → Prompt Structure → Style & Keywords → Anti-Patterns → Sources
+- Pour `video` : Core Prompting Rules → Prompt Structure → Motion & Camera Keywords → Anti-Patterns → Sources
+- Pour `audio` : Core Prompting Rules → Configuration → Anti-Patterns → Sources
+
+Chaque section a ses critères de qualité et minimums. Suivre le template exactement.
 
 ### Étape 6 — Rédaction du guide
 
 Synthétiser toute la recherche en suivant le template de type.
+
+**Philosophie : block-based operator style.** Structure guides as operator references, not personality descriptions. Prompt Blocks go in prompt text, API Controls go in API call envelope — never mix.
 
 **Règles de rédaction :**
 
@@ -111,25 +116,30 @@ Synthétiser toute la recherche en suivant le template de type.
 3. **Spécificité** : Chaque recommandation DOIT être spécifique au modèle, pas générique
    - MAL : "Use clear instructions"
    - BIEN : "Claude responds best to XML-tagged sections like `<context>...</context>`"
-4. **Recipes** : Pour les modèles text, structurer le contenu par type de tâche (coding, review, research, agentic) avec des prompt templates tagged copy-paste ready
-5. **Exemples concrets** : Inclure des exemples copy-paste, pas des descriptions abstraites
-6. **Format de sortie** : Suivre le template **Read** [`templates/guide-output.md`](templates/guide-output.md)
-7. **Frontmatter** : Utiliser `---` comme délimiteurs (PAS ` ```yaml `). C'est critique pour la compatibilité.
-8. **Date** : Utiliser la date du jour pour `last_updated`
+4. **Recipes** : Pour les modèles text, chaque recette référence des blocs du Block Catalog par nom, avec des slots dynamiques (`{user_task}`, `{code_to_review}`) — pas de templates vagues, pas d'exemples concrets sans slots
+5. **Block Catalog** : Séparer clairement Prompt Blocks (dans le texte du prompt) et API Controls (dans l'enveloppe API). Chaque contrôle avec un snippet SDK Python.
+6. **Anti-Patterns** : Format bad/better/why — chaque entrée doit être spécifique au modèle
+7. **Format de sortie** : Suivre le template **Read** [`templates/guide-output.md`](templates/guide-output.md)
+8. **Frontmatter** : Utiliser `---` comme délimiteurs (PAS ` ```yaml `). C'est critique pour la compatibilité.
+9. **Date** : Utiliser la date du jour pour `last_updated`
+10. **Size budget** : Max 200 lignes (text), 120 lignes (non-text)
 
 **Ce que le guide DOIT contenir :**
-- Behavioral shifts vs modèle précédent (migration-critical)
-- Features API qui changent le prompting : structured outputs, tool use strict, thinking modes, vision, compaction
-- Effort/reasoning level table par type de tâche (modèles text)
-- Code API Python SDK pour les features clés
-- 8+ paires Do/Don't avant/après spécifiques au modèle
+- Core Prompting Rules : 5-10 règles opérationnelles incluant les shifts de comportement vs modèle précédent
+- Block Catalog (text) : 6+ prompt blocks avec exemples + 4+ API controls avec snippets SDK Python
+- Task Recipes (text) : 4+ recettes complètes avec slots dynamiques et références aux blocs
+- Anti-Patterns : 8+ entrées bad/better/why (text), 5+ (non-text)
+- Effort/reasoning level table intégrée dans API Controls
 
 **Ce que le guide NE DOIT PAS contenir :**
 - Pricing, benchmarks, release dates, capability lists
 - Specs techniques (context window, max output, etc.) sauf si elles changent la stratégie de prompting
 - Techniques génériques applicables à tous les LLMs
+- Identity/personality descriptions ("you are a world-class expert", "GPT-5.4 is OpenAI's most capable model")
 - "Ideal Use Cases", "Strengths", "Limitations" (descriptions de capacités)
 - Un provider incorrect (ex: "PlaceholderAI")
+- Templates avec placeholders vagues sans sémantique
+- API techniques séparées des blocs de prompt (les intégrer dans Block Catalog)
 
 ### Étape 7 — Sauvegarde
 
@@ -146,12 +156,13 @@ Un guide est noté sur 5 selon ces critères. L'objectif est **5/5 à chaque gé
 
 | Critère | Poids | 5/5 signifie |
 |---|---|---|
-| **Recipes par type de tâche** | 25% | 4+ recipes copy-paste ready avec tagged blocks adaptés au modèle |
-| **Do / Don't avant/après** | 25% | 8+ paires spécifiques au modèle (pas de conseils génériques) |
-| **Techniques model-specific** | 20% | API features + effort table + code SDK, uniquement ce qui change le prompting |
-| **Actionnable / copy-paste** | 15% | Tout code et prompt est prêt à copier-coller, zéro prose descriptive |
-| **Zéro specs inutiles** | 10% | Aucun pricing, benchmark, release date, capability list |
-| **Format / compatibilité** | 5% | Frontmatter `---`, slug correct, `cc-hub prompt get/list` fonctionnent |
+| **Core Prompting Rules** | 15% | Règles opérationnelles uniquement, pas d'identity/marketing, shifts de migration |
+| **Block Catalog** | 20% | Catalogue complet : prompt blocks + API controls avec snippets SDK Python |
+| **Task Recipes** | 25% | 4+ recettes complètes avec slots dynamiques et références aux blocs |
+| **Anti-Patterns** | 20% | 8+ entrées bad/better/why spécifiques au modèle |
+| **Actionnable / copy-paste** | 10% | Tout code et prompt prêt à utiliser, zéro prose descriptive |
+| **Zéro specs inutiles** | 5% | Aucun pricing, benchmark, release date, capability list, identity |
+| **Format / compatibilité** | 5% | Frontmatter `---`, slug correct, max 200 lignes (text) / 120 (non-text) |
 
 ## Rappels critiques
 

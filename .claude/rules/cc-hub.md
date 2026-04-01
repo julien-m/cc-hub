@@ -6,7 +6,7 @@
 
 Tous les modèles se passent au **format canonical ID** (identique aux IDs OpenRouter) : `provider/model-name`.
 
-Exemples : `openai/gpt-5.4`, `anthropic/claude-sonnet-4.6`, `google/gemini-3-pro`.
+Exemples : `openai/gpt-5.4`, `anthropic/claude-sonnet-4.6`, `google/gemini-3.1-pro-preview`.
 
 Utiliser `cc-hub models list` pour voir les modèles disponibles et leurs providers.
 
@@ -238,6 +238,17 @@ Pour `ask` et `copilot`, utiliser le modèle exact passé en `--model`. Pour les
 - Charger le guide **une seule fois par modèle** dans la conversation
 - Réutiliser le guide déjà chargé pour les appels suivants au même modèle
 - Si le modèle change (ex: `--model` différent), charger le nouveau guide
+
+### Comment utiliser le guide chargé
+
+Le guide peut être en ancien format (Prompting Identity, Do/Don't) ou nouveau format (Core Prompting Rules, Block Catalog, Anti-Patterns). Les étapes s'adaptent :
+
+1. Lire la première section (Core Prompting Rules ou Prompting Identity) — appliquer à TOUS les prompts
+2. Identifier le type de tâche (coding, review, research, agentic, extraction)
+3. Sélectionner la recette correspondante (Task Recipe ou Prompt Recipe by Task Type)
+4. Remplacer les slots dynamiques (`{user_task}`, `{code_to_review}`, etc.) avec le contenu réel
+5. Si Block Catalog présent : ajuster les API Controls selon la recommandation de la recette. Sinon : appliquer les Model-Specific Techniques pertinentes.
+6. Vérifier les Anti-Patterns ou Do/Don't avant envoi — aucun ne doit s'appliquer au prompt
 
 ### Exemple de workflow
 
