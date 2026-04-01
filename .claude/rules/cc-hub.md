@@ -46,10 +46,12 @@ cc-hub ask "Question" --provider poyo --model gemini-3-flash-preview
 cc-hub ask "3 capitales européennes en JSON" --json --model openai/gpt-5.4
 cc-hub ask "3 European capitals" --schema '{"name":"caps","strict":true,"schema":{...}}'
 cc-hub ask "3 European capitals" --schema ./capitals.schema.json
+cc-hub ask "Deep analysis question" --effort high --model openai/gpt-5.4
 ```
 
 - `--json` : sortie JSON libre (le modèle choisit la structure)
 - `--schema <json_or_file>` : sortie JSON contrainte par un JSON Schema (inline ou chemin vers fichier `.json`). Implique `--json`
+- `--effort <level>` : niveau d'effort de raisonnement (modèles avec pensée étendue) : `low`, `medium`, `high`
 
 ### Générer une image (via Poyo)
 

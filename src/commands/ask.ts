@@ -37,7 +37,8 @@ export const createAskCommand = (): Command =>
     .option('--provider <name>', 'LLM provider (openrouter, poyo)')
     .option('--json', 'Request JSON output from the model')
     .option('--schema <json_or_file>', 'JSON schema for structured output (inline JSON or path to .json file)')
-    .action(async (prompt: string, opts: { model?: string; file: string[]; provider?: string; json?: boolean; schema?: string }) => {
+    .option('--effort <level>', 'Reasoning effort level (low, medium, high)')
+    .action(async (prompt: string, opts: { model?: string; file: string[]; provider?: string; json?: boolean; schema?: string; effort?: string }) => {
       try {
         let stdin: string | undefined;
         if (!process.stdin.isTTY) {
@@ -63,12 +64,15 @@ export const createAskCommand = (): Command =>
         const model = resolveForProvider(rawModel, providerName);
         const askFn = provider === 'poyo' ? askPoyo : askLLM;
 
+        const effort = opts.effort as 'low' | 'medium' | 'high' | undefined;
+
         const response = await askFn(prompt, {
           model,
           stdin,
           files: files.length > 0 ? files : undefined,
           json: opts.json || !!jsonSchema,
           jsonSchema,
+          effort,
         });
 
         process.stdout.write(response);

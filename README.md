@@ -223,6 +223,7 @@ cc-hub ask "3 European capitals" --schema ./capitals.schema.json
 | `--provider <name>` | `openrouter` (default) or `poyo` |
 | `--json` | Free-form JSON output |
 | `--schema <json_or_file>` | Structured output with JSON Schema (inline string or `.json` file path). Implies `--json` |
+| `--effort <level>` | Reasoning effort level (models with extended thinking): `low`, `medium`, `high` |
 
 Output goes to stdout. Silent by default (no auto-logging).
 

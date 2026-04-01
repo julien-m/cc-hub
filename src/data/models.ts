@@ -138,6 +138,24 @@ export const MODELS: Model[] = [
     },
   },
 
+  // --- Qwen ---
+  {
+    id: 'qwen/qwen3.5-flash',
+    type: 'text',
+    providers: {
+      openrouter: 'qwen/qwen3.5-flash-02-23',
+    },
+  },
+
+  // --- xAI ---
+  {
+    id: 'xai/grok-4.1-fast',
+    type: 'text',
+    providers: {
+      openrouter: 'x-ai/grok-4.1-fast',
+    },
+  },
+
   // --- Google ---
   {
     id: 'google/gemini-3-pro',
