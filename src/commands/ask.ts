@@ -66,17 +66,27 @@ export const createAskCommand = (): Command =>
 
         const effort = opts.effort as 'low' | 'medium' | 'high' | undefined;
 
-        const response = await askFn(prompt, {
-          model,
-          stdin,
-          files: files.length > 0 ? files : undefined,
-          json: opts.json || !!jsonSchema,
-          jsonSchema,
-          effort,
-        });
+        let seconds = 0;
+        const heartbeat = setInterval(() => {
+          seconds++;
+          process.stderr.write(`[cc-hub] waiting... ${seconds}s\n`);
+        }, 1000);
 
-        process.stdout.write(response);
-        if (!response.endsWith('\n')) process.stdout.write('\n');
+        try {
+          const response = await askFn(prompt, {
+            model,
+            stdin,
+            files: files.length > 0 ? files : undefined,
+            json: opts.json || !!jsonSchema,
+            jsonSchema,
+            effort,
+          });
+
+          process.stdout.write(response);
+          if (!response.endsWith('\n')) process.stdout.write('\n');
+        } finally {
+          clearInterval(heartbeat);
+        }
       } catch (err) {
         console.error(
           `Ask command failed: ${(err as Error).message}. ` +
