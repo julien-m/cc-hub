@@ -55,6 +55,14 @@ export const createAskCommand = (): Command =>
         }
 
         const provider = opts.provider || getEnv('ASK_PROVIDER') || 'openrouter';
+        if (provider === 'copilot') {
+          console.error('Use "cc-hub copilot" instead of "cc-hub ask --provider copilot"');
+          process.exit(2);
+        }
+        if (provider === 'codex') {
+          console.error('Use "cc-hub codex" instead of "cc-hub ask --provider codex"');
+          process.exit(2);
+        }
         const rawModel = opts.model || getEnv('ASK_MODEL');
         if (!rawModel) {
           console.error('No model specified — use --model <model> or set ASK_MODEL');
@@ -64,6 +72,11 @@ export const createAskCommand = (): Command =>
         const model = resolveForProvider(rawModel, providerName);
         const askFn = provider === 'poyo' ? askPoyo : askLLM;
 
+        const validEfforts = ['low', 'medium', 'high'];
+        if (opts.effort && !validEfforts.includes(opts.effort)) {
+          console.error(`Invalid effort level: ${opts.effort}. Must be one of: low, medium, high`);
+          process.exit(2);
+        }
         const effort = opts.effort as 'low' | 'medium' | 'high' | undefined;
 
         const spinner = new Spinner('waiting...', { elapsed: true }).start();

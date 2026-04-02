@@ -1,7 +1,7 @@
 export type ModelType = 'text' | 'image' | 'video' | 'audio' | 'music';
 export const VALID_TYPES: readonly ModelType[] = ['text', 'image', 'video', 'audio', 'music'];
 
-export type ProviderName = 'openrouter' | 'copilot' | 'poyo';
+export type ProviderName = 'openrouter' | 'copilot' | 'poyo' | 'codex';
 
 export interface Model {
   id: string;
@@ -71,6 +71,14 @@ export const MODELS: Model[] = [
     providers: {
       openrouter: 'openai/gpt-5.4',
       copilot: 'gpt-5.4',
+      codex: 'gpt-5.4',
+    },
+  },
+  {
+    id: 'openai/gpt-5.4-mini',
+    type: 'text',
+    providers: {
+      codex: 'gpt-5.4-mini',
     },
   },
   {
@@ -79,6 +87,14 @@ export const MODELS: Model[] = [
     providers: {
       openrouter: 'openai/gpt-53-codex',
       copilot: 'gpt-5.3-codex',
+      codex: 'gpt-5.3-codex',
+    },
+  },
+  {
+    id: 'openai/gpt-53-codex-spark',
+    type: 'text',
+    providers: {
+      codex: 'gpt-5.3-codex-spark',
     },
   },
   {

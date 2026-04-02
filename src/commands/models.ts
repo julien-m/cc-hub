@@ -7,7 +7,7 @@ import {
   type ProviderName,
 } from '../data/models.ts';
 
-const VALID_PROVIDERS: ProviderName[] = ['openrouter', 'copilot', 'poyo'];
+const VALID_PROVIDERS: ProviderName[] = ['openrouter', 'copilot', 'poyo', 'codex'];
 
 /**
  * Create the `models` command group with the `list` subcommand.

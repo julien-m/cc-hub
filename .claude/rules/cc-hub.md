@@ -103,6 +103,27 @@ cc-hub motion "Gesture transfer" -i ./avatar.png -v ./gesture.mp4 --character-or
 - `--character-orientation <value>` (optionnel) : `character` (défaut) ou `video`
 - `-o, --output <path>` (**obligatoire**) : chemin complet → respecté tel quel, nom seul → dans `~/.claude-hub/artifacts/`
 
+### Poser une question via OpenAI Codex CLI
+
+```bash
+cc-hub codex "Explique ce code"
+cc-hub codex "Analyse ce fichier" -f src/api.ts
+cc-hub codex "Compare" -f src/a.ts -f src/b.ts
+cat fichier.ts | cc-hub codex "Analyse"
+cc-hub codex "Deep analysis" --effort high
+cc-hub codex "Question" --model openai/gpt-53-codex
+cc-hub codex review                          # review uncommitted changes
+cc-hub codex review --base main              # review against base branch
+```
+
+- Provider : OpenAI Codex CLI (`codex exec`)
+- Modèle par défaut : `openai/gpt-5.4`
+- Modèles disponibles : `openai/gpt-5.4`, `openai/gpt-5.4-mini`, `openai/gpt-53-codex`, `openai/gpt-53-codex-spark`
+- Auth gérée par Codex (`codex login`), pas de clé API dans creds
+- `--effort <level>` : niveau d'effort de raisonnement : `low`, `medium`, `high`
+- `--sandbox <mode>` : `read-only` (défaut), `workspace-write`
+- `--schema <path>` : JSON Schema pour sortie structurée
+
 ### Poser une question via GitHub Copilot CLI
 
 ```bash
@@ -125,12 +146,13 @@ cc-hub models list                          # tous les modèles
 cc-hub models list --provider copilot       # modèles disponibles sur Copilot
 cc-hub models list --provider openrouter    # modèles disponibles sur OpenRouter
 cc-hub models list --provider poyo          # modèles disponibles sur Poyo
+cc-hub models list --provider codex        # modèles disponibles sur Codex
 cc-hub models list --type text              # modèles texte uniquement
 cc-hub models list --type image             # modèles image uniquement
 cc-hub models list --type video             # modèles vidéo uniquement
 ```
 
-- Providers : `openrouter`, `copilot`, `poyo`
+- Providers : `openrouter`, `copilot`, `poyo`, `codex`
 - Types : `text`, `image`, `video`, `audio`, `music`
 - Combinable : `--provider copilot --type text`
 

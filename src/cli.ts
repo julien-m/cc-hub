@@ -16,6 +16,7 @@ import { createCommandCommand } from './commands/command.ts';
 import { createRuleCommand } from './commands/rule.ts';
 import { createAgentCommand } from './commands/agent.ts';
 import { createCopilotCommand } from './commands/copilot.ts';
+import { createCodexCommand } from './commands/codex.ts';
 import { createModelsCommand } from './commands/models.ts';
 import { createMusicCommand } from './commands/music.ts';
 
@@ -43,6 +44,7 @@ program.addCommand(createCommandCommand());
 program.addCommand(createRuleCommand());
 program.addCommand(createAgentCommand());
 program.addCommand(createCopilotCommand());
+program.addCommand(createCodexCommand());
 program.addCommand(createModelsCommand());
 program.addCommand(createMusicCommand());
 

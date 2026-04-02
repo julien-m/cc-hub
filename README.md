@@ -56,6 +56,9 @@ LLM_MODEL=anthropic/claude-sonnet-4.6
 # Copilot — via GitHub Copilot CLI
 COPILOT_MODEL=openai/gpt-5.4
 
+# Codex — via OpenAI Codex CLI
+CODEX_MODEL=openai/gpt-5.4
+
 # Image — via Poyo
 IMAGE_PROVIDER=poyo
 IMAGE_MODEL=google/gemini-3.1-flash-image
@@ -310,6 +313,46 @@ cc-hub transcribe ./meeting.mp3
 
 Transcription via Soniox. Outputs the transcription to stdout.
 
+### `codex` — LLM via OpenAI Codex CLI
+
+LLM access via the `codex` CLI. Uses `codex exec` in non-interactive mode.
+
+```bash
+cc-hub codex "Summarize this text"
+cc-hub codex "Explain this code" -f src/cli.ts
+cc-hub codex "Compare these files" -f src/a.ts -f src/b.ts
+cat file.ts | cc-hub codex "Analyze"
+cc-hub codex "Question" --model openai/gpt-53-codex
+cc-hub codex "Deep analysis" --effort high
+```
+
+Default model: `openai/gpt-5.4`. Authentication is managed by the Codex CLI itself (`codex login`).
+
+| Option | Description |
+| --- | --- |
+| `--model <model>` | Model canonical ID (default: `openai/gpt-5.4`) |
+| `-f, --file <path>` | File or glob to inject as context in the prompt (repeatable) |
+| `--effort <level>` | Reasoning effort level: `low`, `medium`, `high` |
+| `--sandbox <mode>` | Sandbox mode: `read-only` (default), `workspace-write` |
+| `--schema <path>` | JSON Schema file for structured output |
+
+#### `cc-hub codex review`
+
+Run a code review on the current repository:
+
+```bash
+cc-hub codex review                    # review uncommitted changes
+cc-hub codex review --base main        # review against a base branch
+cc-hub codex review --model openai/gpt-53-codex
+```
+
+| Option | Description |
+| --- | --- |
+| `--model <model>` | Model canonical ID (default: `openai/gpt-5.4`) |
+| `--base <ref>` | Git base reference for review (e.g. `main`) |
+
+Available Codex models: `openai/gpt-5.4` (default), `openai/gpt-5.4-mini`, `openai/gpt-53-codex`, `openai/gpt-53-codex-spark`.
+
 ### `copilot` — LLM via GitHub Copilot CLI
 
 LLM access via `gh copilot` CLI. Ideal for background/cron tasks.
@@ -427,7 +470,7 @@ cc-hub models list --type video             # video models only
 cc-hub models list --provider copilot --type text  # combine filters
 ```
 
-Providers: `openrouter`, `copilot`, `poyo`. Types: `text`, `image`, `video`, `audio`, `music`.
+Providers: `openrouter`, `copilot`, `poyo`, `codex`. Types: `text`, `image`, `video`, `audio`, `music`.
 
 All models across cc-hub use **canonical IDs** (OpenRouter format): `provider/model-name` (e.g. `openai/gpt-5.4`, `anthropic/claude-sonnet-4.6`).
 
@@ -548,6 +591,7 @@ cc-hub/
 | **Phase 7** | `copilot` via GitHub Copilot CLI           | done        |
 | **Phase 8** | `models` registry, `motion` control        | done        |
 | **Phase 9** | Full Poyo model catalog, `music generate`  | done        |
+| **Phase 10** | `codex` via OpenAI Codex CLI              | done        |
 
 ## Usage with Claude Code
 

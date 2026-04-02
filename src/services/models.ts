@@ -54,7 +54,12 @@ export const resolveForProvider = (userInput: string, provider: ProviderName): s
         `Use 'cc-hub models list --provider ${provider}' to see available models.`,
     );
   }
-  if (provider === 'openrouter') return userInput;
+  if (provider === 'openrouter' || provider === 'copilot' || provider === 'codex') {
+    if (provider !== 'openrouter' && userInput.includes('/')) {
+      return userInput.split('/')[1];
+    }
+    return userInput;
+  }
   throw new Error(
     `Unknown model: ${userInput}. ` +
       `Use 'cc-hub models list --provider ${provider}' to see available models.`,
