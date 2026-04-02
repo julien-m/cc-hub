@@ -9,6 +9,7 @@ import { resolveForProvider } from '../services/models.ts';
 import { resolveImageInput } from '../services/image-input.ts';
 import { resolveOutputPath } from '../services/artifacts.ts';
 import { resolvePrompt } from '../infra/prompt.ts';
+import { Spinner } from '../infra/spinner.ts';
 
 /**
  * Create the `video` command.
@@ -31,11 +32,12 @@ export const createVideoCommand = (): Command => {
 
         let imageUrls: string[] | undefined;
         if (opts.image) {
-          console.error('Resolving reference image...');
+          const resolveSpinner = new Spinner('Resolving reference image...').start();
           imageUrls = await resolveImageInput(opts.image);
+          resolveSpinner.succeed('Reference image resolved');
         }
 
-        console.error(`Generating video with ${model}...`);
+        const spinner = new Spinner(`Generating video with ${model}...`, { elapsed: true }).start();
 
         const task = await generateMedia({
           model,
@@ -46,20 +48,21 @@ export const createVideoCommand = (): Command => {
             sound: true,
             ...(imageUrls && { image_urls: imageUrls }),
           },
-        });
+        }, (progress) => spinner.update(`Generating video... ${progress}%`));
 
         const videoFile = task.files?.find((f) => f.file_type === 'video');
         if (!videoFile) {
+          spinner.fail('No video in task result');
           throw new Error('No video in task result — the model may not support video output');
         }
 
+        spinner.update('Downloading...');
+
         const destPath = resolveOutputPath(videoFile.file_url, opts.output, 'mp4');
         mkdirSync(dirname(destPath), { recursive: true });
-
-        console.error('Downloading...');
         await downloadFile(videoFile.file_url, destPath);
 
-        console.error('Video saved');
+        spinner.succeed('Video saved');
         console.log(destPath);
       } catch (err) {
         console.error(

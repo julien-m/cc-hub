@@ -45,11 +45,15 @@ const getApiKey = (): string => {
 /**
  * Submits a generation task and polls until completion. Returns file URLs.
  * @param request - The submission request containing model and input parameters
+ * @param onProgress - Optional callback invoked with the progress percentage (0-100).
  * @returns The completed task status with file URLs
  * @throws ConfigError if POYO_API_KEY is not configured
  * @throws Error if the submission fails, the task fails, or polling times out
  */
-export const generateMedia = async (request: SubmitRequest): Promise<TaskStatus> => {
+export const generateMedia = async (
+  request: SubmitRequest,
+  onProgress?: (progress: number) => void,
+): Promise<TaskStatus> => {
   const apiKey = getApiKey();
   const headers = {
     'Authorization': `Bearer ${apiKey}`,
@@ -78,19 +82,21 @@ export const generateMedia = async (request: SubmitRequest): Promise<TaskStatus>
   const taskId = json.data.task_id;
   console.error(`   Task: ${taskId}`);
 
-  return pollTask(taskId, headers);
+  return pollTask(taskId, headers, onProgress);
 };
 
 /**
  * Polls a Poyo task until completion or failure.
  * @param taskId - The task ID to poll
  * @param headers - Request headers including authorization
+ * @param onProgress - Optional callback invoked with the progress percentage (0-100).
  * @returns The completed task status
  * @throws Error if polling fails, the task fails, or polling times out
  */
 const pollTask = async (
   taskId: string,
   headers: Record<string, string>,
+  onProgress?: (progress: number) => void,
 ): Promise<TaskStatus> => {
   const maxAttempts = 180;
   const intervalMs = 3000;
@@ -113,8 +119,8 @@ const pollTask = async (
     const json = await res.json() as StatusResponse;
     const task = json.data;
 
-    if (task.progress !== undefined && task.progress > 0) {
-      console.error(`   Progress: ${task.progress}%`);
+    if (task.progress !== undefined && task.progress > 0 && onProgress) {
+      onProgress(task.progress);
     }
 
     if (task.status === 'finished') {

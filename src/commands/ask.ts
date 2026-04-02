@@ -7,6 +7,7 @@ import { getEnv } from '../services/env.ts';
 import { resolveForProvider } from '../services/models.ts';
 import type { ProviderName } from '../data/models.ts';
 import { resolvePrompt } from '../infra/prompt.ts';
+import { Spinner } from '../infra/spinner.ts';
 import { loadFileContext } from '../services/files.ts';
 import { exitCode } from '../errors.ts';
 
@@ -65,11 +66,7 @@ export const createAskCommand = (): Command =>
 
         const effort = opts.effort as 'low' | 'medium' | 'high' | undefined;
 
-        let seconds = 0;
-        const heartbeat = setInterval(() => {
-          seconds++;
-          process.stderr.write(`[cc-hub] waiting... ${seconds}s\n`);
-        }, 1000);
+        const spinner = new Spinner('waiting...', { elapsed: true }).start();
 
         try {
           const response = await askFn(prompt, {
@@ -81,10 +78,11 @@ export const createAskCommand = (): Command =>
             effort,
           });
 
+          spinner.stop();
           process.stdout.write(response);
           if (!response.endsWith('\n')) process.stdout.write('\n');
         } finally {
-          clearInterval(heartbeat);
+          spinner.stop();
         }
       } catch (err) {
         console.error(

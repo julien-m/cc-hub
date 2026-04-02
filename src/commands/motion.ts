@@ -7,6 +7,7 @@ import { generateMedia, downloadFile } from '../services/poyo-media.ts';
 import { resolveImageInput, resolveVideoInput } from '../services/image-input.ts';
 import { resolveOutputPath } from '../services/artifacts.ts';
 import { resolvePrompt } from '../infra/prompt.ts';
+import { Spinner } from '../infra/spinner.ts';
 
 /**
  * Create the `motion` command.
@@ -23,13 +24,16 @@ export const createMotionCommand = (): Command => {
     .action(async (promptArg: string | undefined, opts: { image: string; video: string; characterOrientation: string; output: string }) => {
       try {
         const { prompt } = await resolvePrompt(promptArg);
-        console.error('Resolving reference image...');
+
+        const resolveSpinner = new Spinner('Resolving reference image...').start();
         const imageUrls = await resolveImageInput(opts.image);
+        resolveSpinner.succeed('Reference image resolved');
 
-        console.error('Resolving reference video...');
+        const videoSpinner = new Spinner('Resolving reference video...').start();
         const videoUrl = await resolveVideoInput(opts.video);
+        videoSpinner.succeed('Reference video resolved');
 
-        console.error('Generating motion control with kling-3.0-motion-control...');
+        const spinner = new Spinner('Generating motion control...', { elapsed: true }).start();
 
         const task = await generateMedia({
           model: 'kling-3.0-motion-control',
@@ -39,20 +43,21 @@ export const createMotionCommand = (): Command => {
             video_url: videoUrl,
             character_orientation: opts.characterOrientation,
           },
-        });
+        }, (progress) => spinner.update(`Generating motion control... ${progress}%`));
 
         const videoFile = task.files?.find((f) => f.file_type === 'video');
         if (!videoFile) {
+          spinner.fail('No video in task result');
           throw new Error('No video in task result — motion control generation may have failed');
         }
 
+        spinner.update('Downloading...');
+
         const destPath = resolveOutputPath(videoFile.file_url, opts.output, 'mp4');
         mkdirSync(dirname(destPath), { recursive: true });
-
-        console.error('Downloading...');
         await downloadFile(videoFile.file_url, destPath);
 
-        console.error('Video saved');
+        spinner.succeed('Video saved');
         console.log(destPath);
       } catch (err) {
         console.error(

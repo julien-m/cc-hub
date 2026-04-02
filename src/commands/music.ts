@@ -8,6 +8,7 @@ import { getEnv } from '../services/env.ts';
 import { resolveForProvider } from '../services/models.ts';
 import { resolveOutputPath } from '../services/artifacts.ts';
 import { resolvePrompt } from '../infra/prompt.ts';
+import { Spinner } from '../infra/spinner.ts';
 
 /**
  * Create the `music` command group.
@@ -28,27 +29,28 @@ export const createMusicCommand = (): Command => {
         const rawModel = opts.model || getEnv('MUSIC_MODEL') || 'poyo/generate-music';
         const model = resolveForProvider(rawModel, 'poyo');
 
-        console.error(`Generating music with ${model}...`);
+        const spinner = new Spinner(`Generating music with ${model}...`, { elapsed: true }).start();
 
         const task = await generateMedia({
           model,
           input: {
             prompt,
           },
-        });
+        }, (progress) => spinner.update(`Generating music... ${progress}%`));
 
         const audioFile = task.files?.find((f) => f.file_type === 'audio');
         if (!audioFile) {
+          spinner.fail('No audio file in task result');
           throw new Error('No audio file in task result — the model may not support audio output');
         }
 
+        spinner.update('Downloading...');
+
         const destPath = resolveOutputPath(audioFile.file_url, opts.output, 'mp3');
         mkdirSync(dirname(destPath), { recursive: true });
-
-        console.error('Downloading...');
         await downloadFile(audioFile.file_url, destPath);
 
-        console.error('Music saved');
+        spinner.succeed('Music saved');
         console.log(destPath);
       } catch (err) {
         console.error(
