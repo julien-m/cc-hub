@@ -5,7 +5,7 @@ import { statSync } from 'node:fs';
 import { askCopilot, CopilotAuthError } from '../services/copilot.ts';
 import { resolveForProvider } from '../services/models.ts';
 import { getEnv } from '../services/env.ts';
-import { readStdin } from '../infra/stdin.ts';
+import { resolvePrompt } from '../infra/prompt.ts';
 import { loadFileContext } from '../services/files.ts';
 
 /**
@@ -35,18 +35,17 @@ const expandDirectories = (patterns: string[]): string[] =>
 export const createCopilotCommand = (): Command =>
   new Command('copilot')
     .description('Ask a question via GitHub Copilot CLI')
-    .argument('<prompt>', 'Prompt to send to the model')
+    .argument('[prompt]', 'Prompt to send to the model (or pipe via stdin)')
     .option('--model <model>', 'Model override (default: gpt-5.4)')
     .option('-f, --file <path>', 'File or glob to include as context (repeatable)', (val: string, acc: string[]) => [...acc, val], [])
-    .action(async (prompt: string, opts: {
+    .action(async (promptArg: string | undefined, opts: {
       model?: string;
       file: string[];
     }) => {
       try {
-        let stdin: string | undefined;
-        if (!process.stdin.isTTY) {
-          stdin = await readStdin();
-        }
+        const resolved = await resolvePrompt(promptArg);
+        const { prompt } = resolved;
+        const stdin = resolved.stdin;
 
         const files = opts.file.length > 0
           ? await loadFileContext(expandDirectories(opts.file))

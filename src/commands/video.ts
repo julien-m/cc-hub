@@ -8,6 +8,7 @@ import { getEnv } from '../services/env.ts';
 import { resolveForProvider } from '../services/models.ts';
 import { resolveImageInput } from '../services/image-input.ts';
 import { resolveOutputPath } from '../services/artifacts.ts';
+import { resolvePrompt } from '../infra/prompt.ts';
 
 /**
  * Create the `video` command.
@@ -16,14 +17,15 @@ import { resolveOutputPath } from '../services/artifacts.ts';
 export const createVideoCommand = (): Command => {
   const video = new Command('video')
     .description('Generate a video from a prompt')
-    .argument('<prompt>', 'Description of the video to generate')
+    .argument('[prompt]', 'Description of the video to generate (or pipe via stdin)')
     .option('--model <model>', 'Model override (replaces VIDEO_MODEL)')
     .option('--duration <seconds>', 'Duration in seconds (3-15)', '5')
     .option('--aspect-ratio <ratio>', 'Ratio (16:9, 1:1, 9:16)', '16:9')
     .option('-i, --image <path>', 'Starting image for animation (local path or URL)')
     .requiredOption('-o, --output <path>', 'Output file path or name')
-    .action(async (prompt: string, opts: { model?: string; duration: string; aspectRatio: string; image?: string; output: string }) => {
+    .action(async (promptArg: string | undefined, opts: { model?: string; duration: string; aspectRatio: string; image?: string; output: string }) => {
       try {
+        const { prompt } = await resolvePrompt(promptArg);
         const rawModel = opts.model || getEnv('VIDEO_MODEL') || 'kuaishou/kling-3.0-pro';
         const model = resolveForProvider(rawModel, 'poyo');
 

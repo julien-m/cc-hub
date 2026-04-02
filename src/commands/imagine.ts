@@ -8,6 +8,7 @@ import { getEnv } from '../services/env.ts';
 import { resolveForProvider } from '../services/models.ts';
 import { resolveImageInput } from '../services/image-input.ts';
 import { resolveOutputPath } from '../services/artifacts.ts';
+import { resolvePrompt } from '../infra/prompt.ts';
 
 /**
  * Create the `imagine` command.
@@ -16,14 +17,15 @@ import { resolveOutputPath } from '../services/artifacts.ts';
 export const createImagineCommand = (): Command => {
   const imagine = new Command('imagine')
     .description('Generate an image from a prompt')
-    .argument('<prompt>', 'Description of the image to generate')
+    .argument('[prompt]', 'Description of the image to generate (or pipe via stdin)')
     .option('--model <model>', 'Model override (replaces IMAGINE_MODEL)')
     .option('--size <ratio>', 'Ratio (1:1, 16:9, 9:16, 3:2, 2:3, 4:3, 3:4, 4:5, 5:4, 21:9)', '1:1')
     .option('--resolution <res>', 'Resolution (1K, 2K, 4K)', '1K')
     .option('-i, --image <path>', 'Reference image (local path or URL)')
     .requiredOption('-o, --output <path>', 'Output file path or name')
-    .action(async (prompt: string, opts: { model?: string; size: string; resolution: string; image?: string; output: string }) => {
+    .action(async (promptArg: string | undefined, opts: { model?: string; size: string; resolution: string; image?: string; output: string }) => {
       try {
+        const { prompt } = await resolvePrompt(promptArg);
         const rawModel = opts.model || getEnv('IMAGINE_MODEL') || 'google/gemini-3.1-flash-image';
         const model = resolveForProvider(rawModel, 'poyo');
 

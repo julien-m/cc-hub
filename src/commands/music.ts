@@ -7,6 +7,7 @@ import { generateMedia, downloadFile } from '../services/poyo-media.ts';
 import { getEnv } from '../services/env.ts';
 import { resolveForProvider } from '../services/models.ts';
 import { resolveOutputPath } from '../services/artifacts.ts';
+import { resolvePrompt } from '../infra/prompt.ts';
 
 /**
  * Create the `music` command group.
@@ -18,11 +19,12 @@ export const createMusicCommand = (): Command => {
   music
     .command('generate')
     .description('Generate music from a prompt')
-    .argument('<prompt>', 'Description of the music to generate')
+    .argument('[prompt]', 'Description of the music to generate (or pipe via stdin)')
     .option('--model <model>', 'Model override (replaces MUSIC_MODEL)')
     .requiredOption('-o, --output <path>', 'Output file path or name')
-    .action(async (prompt: string, opts: { model?: string; output: string }) => {
+    .action(async (promptArg: string | undefined, opts: { model?: string; output: string }) => {
       try {
+        const { prompt } = await resolvePrompt(promptArg);
         const rawModel = opts.model || getEnv('MUSIC_MODEL') || 'poyo/generate-music';
         const model = resolveForProvider(rawModel, 'poyo');
 

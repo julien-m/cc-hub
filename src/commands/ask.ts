@@ -6,7 +6,7 @@ import { askPoyo } from '../services/poyo.ts';
 import { getEnv } from '../services/env.ts';
 import { resolveForProvider } from '../services/models.ts';
 import type { ProviderName } from '../data/models.ts';
-import { readStdin } from '../infra/stdin.ts';
+import { resolvePrompt } from '../infra/prompt.ts';
 import { loadFileContext } from '../services/files.ts';
 import { exitCode } from '../errors.ts';
 
@@ -31,19 +31,18 @@ const parseSchema = async (value: string): Promise<Record<string, unknown>> => {
 export const createAskCommand = (): Command =>
   new Command('ask')
     .description('Ask a question to an LLM')
-    .argument('<prompt>', 'Prompt to send to the model')
+    .argument('[prompt]', 'Prompt to send to the model (or pipe via stdin)')
     .option('--model <model>', 'Model override (replaces ASK_MODEL)')
     .option('-f, --file <path>', 'File or glob to include as context (repeatable)', (val: string, acc: string[]) => [...acc, val], [])
     .option('--provider <name>', 'LLM provider (openrouter, poyo)')
     .option('--json', 'Request JSON output from the model')
     .option('--schema <json_or_file>', 'JSON schema for structured output (inline JSON or path to .json file)')
     .option('--effort <level>', 'Reasoning effort level (low, medium, high)')
-    .action(async (prompt: string, opts: { model?: string; file: string[]; provider?: string; json?: boolean; schema?: string; effort?: string }) => {
+    .action(async (promptArg: string | undefined, opts: { model?: string; file: string[]; provider?: string; json?: boolean; schema?: string; effort?: string }) => {
       try {
-        let stdin: string | undefined;
-        if (!process.stdin.isTTY) {
-          stdin = await readStdin();
-        }
+        const resolved = await resolvePrompt(promptArg);
+        const { prompt } = resolved;
+        const stdin = resolved.stdin;
 
         const files = opts.file.length > 0
           ? await loadFileContext(opts.file)
