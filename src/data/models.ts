@@ -155,6 +155,13 @@ export const MODELS: Model[] = [
       openrouter: 'x-ai/grok-4.1-fast',
     },
   },
+  {
+    id: 'xai/grok-4.20',
+    type: 'text',
+    providers: {
+      openrouter: 'x-ai/grok-4.20',
+    },
+  },
 
   // --- Google ---
   {
