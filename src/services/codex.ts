@@ -94,7 +94,7 @@ export const askCodex = async (prompt: string, opts: CodexOptions = {}): Promise
  * @throws Error when CLI returns an error.
  */
 export const reviewCodex = async (opts: { model?: string; base?: string } = {}): Promise<string> => {
-  const args = ['exec', 'review', '--ephemeral', '-s', 'read-only'];
+  const args = ['exec', 'review', '--ephemeral'];
 
   if (opts.model) {
     args.push('-m', opts.model);
