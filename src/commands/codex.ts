@@ -1,8 +1,9 @@
 /** Command handler for querying OpenAI Codex CLI. */
+import readline from 'node:readline';
 import { exitCode } from '../errors.ts';
 import { Command } from 'commander';
 import { askCodex, reviewCodex, CodexAuthError, CodexNotFoundError } from '../services/codex.ts';
-import { CodexTimeoutError, CodexSessionError } from '../services/codex-session.ts';
+import { CodexSession, CodexTimeoutError, CodexSessionError } from '../services/codex-session.ts';
 import { resolveForProvider } from '../services/models.ts';
 import { getEnv } from '../services/env.ts';
 import { resolvePrompt } from '../infra/prompt.ts';
@@ -22,12 +23,16 @@ export const createCodexCommand = (): Command => {
     .option('--effort <level>', 'Reasoning effort level (low, medium, high)')
     .option('--sandbox <mode>', 'Sandbox mode (read-only, workspace-write)', 'read-only')
     .option('--schema <path>', 'JSON Schema file for structured output')
+    .option('--interactive', 'Start an interactive REPL session via codex app-server')
+    .option('--persist', 'Keep thread history across turns (ephemeral: false)')
     .action(async (promptArg: string | undefined, opts: {
       model?: string;
       file: string[];
       effort?: string;
       sandbox?: string;
       schema?: string;
+      interactive?: boolean;
+      persist?: boolean;
     }) => {
       try {
         const validEfforts = ['low', 'medium', 'high'];
@@ -40,6 +45,112 @@ export const createCodexCommand = (): Command => {
           console.error(`Invalid sandbox mode: ${opts.sandbox}. Must be one of: read-only, workspace-write`);
           process.exit(2);
         }
+
+        // ── Interactive mode ─────────────────────────────────────────────
+        if (opts.interactive) {
+          if (opts.schema) {
+            console.error('Error: --schema is not compatible with --interactive');
+            process.exit(2);
+          }
+
+          const rawModel = opts.model || getEnv('CODEX_MODEL') || 'openai/gpt-5.4';
+          const nativeModel = resolveForProvider(rawModel, 'codex');
+
+          const initSpinner = new Spinner('connecting...', { elapsed: true }).start();
+          let session: CodexSession;
+          try {
+            session = await CodexSession.create(process.cwd(), {
+              model: nativeModel,
+              sandbox: (opts.sandbox ?? 'read-only') as 'read-only' | 'workspace-write',
+              persist: opts.persist,
+            });
+            initSpinner.stop();
+          } catch (err) {
+            initSpinner.stop();
+            handleError(err);
+          }
+
+          process.stderr.write('Codex session ready. Type "exit" or Ctrl-C to quit.\n\n');
+
+          // Send initial prompt if provided as argument (before readline takes over stdin)
+          if (promptArg) {
+            const firstSpinner = new Spinner('thinking...', { elapsed: true }).start();
+            try {
+              const response = await session!.ask(promptArg);
+              firstSpinner.stop();
+              process.stdout.write(`Codex: ${response}\n\n`);
+            } catch (err) {
+              firstSpinner.stop();
+              console.error(`Error: ${(err as Error).message}`);
+              await session!.close();
+              process.exit(exitCode(err, 1));
+            }
+          }
+
+          // Set up readline REPL
+          process.stdin.resume();
+          process.stdin.setEncoding('utf8');
+
+          const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+          });
+
+          const sigintHandler = () => {
+            process.stderr.write('\n');
+            rl.close();
+          };
+          process.once('SIGINT', sigintHandler);
+
+          /** Ask a line from the user. Returns null if readline closes (Ctrl-D or exit). */
+          const askLine = (prompt: string): Promise<string | null> =>
+            new Promise((resolve) => {
+              let settled = false;
+              const onAnswer = (answer: string) => {
+                if (settled) return;
+                settled = true;
+                resolve(answer);
+              };
+              const onClose = () => {
+                if (settled) return;
+                settled = true;
+                resolve(null);
+              };
+              rl.once('close', onClose);
+              rl.question(prompt, (answer) => {
+                rl.removeListener('close', onClose);
+                onAnswer(answer);
+              });
+            });
+
+          try {
+            while (true) {
+              const input = await askLine('You: ');
+              if (input === null) break;
+              const trimmed = input.trim();
+              if (!trimmed) continue;
+              if (['exit', 'quit', 'q'].includes(trimmed.toLowerCase())) break;
+
+              const turnSpinner = new Spinner('thinking...', { elapsed: true }).start();
+              try {
+                const response = await session!.ask(trimmed);
+                turnSpinner.stop();
+                process.stdout.write(`\nCodex: ${response}\n\n`);
+              } catch (err) {
+                turnSpinner.stop();
+                console.error(`\nError: ${(err as Error).message}`);
+                break;
+              }
+            }
+          } finally {
+            process.removeListener('SIGINT', sigintHandler);
+            rl.close();
+            await session!.close();
+          }
+
+          return;
+        }
+        // ── End interactive mode ──────────────────────────────────────────
 
         const resolved = await resolvePrompt(promptArg);
         const { prompt } = resolved;
