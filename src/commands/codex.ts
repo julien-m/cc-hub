@@ -56,19 +56,21 @@ export const createCodexCommand = (): Command => {
           const rawModel = opts.model || getEnv('CODEX_MODEL') || 'openai/gpt-5.4';
           const nativeModel = resolveForProvider(rawModel, 'codex');
 
-          const initSpinner = new Spinner('connecting...', { elapsed: true }).start();
-          let session: CodexSession;
-          try {
-            session = await CodexSession.create(process.cwd(), {
-              model: nativeModel,
-              sandbox: (opts.sandbox ?? 'read-only') as 'read-only' | 'workspace-write',
-              persist: opts.persist,
-            });
-            initSpinner.stop();
-          } catch (err) {
-            initSpinner.stop();
-            handleError(err);
-          }
+          const session = await (async (): Promise<CodexSession> => {
+            const initSpinner = new Spinner('connecting...', { elapsed: true }).start();
+            try {
+              const s = await CodexSession.create(process.cwd(), {
+                model: nativeModel,
+                sandbox: (opts.sandbox ?? 'read-only') as 'read-only' | 'workspace-write',
+                persist: opts.persist,
+              });
+              initSpinner.stop();
+              return s;
+            } catch (err) {
+              initSpinner.stop();
+              return handleError(err);
+            }
+          })();
 
           process.stderr.write('Codex session ready. Type "exit" or Ctrl-C to quit.\n\n');
 
@@ -76,13 +78,13 @@ export const createCodexCommand = (): Command => {
           if (promptArg) {
             const firstSpinner = new Spinner('thinking...', { elapsed: true }).start();
             try {
-              const response = await session!.ask(promptArg);
+              const response = await session.ask(promptArg);
               firstSpinner.stop();
               process.stdout.write(`Codex: ${response}\n\n`);
             } catch (err) {
               firstSpinner.stop();
               console.error(`Error: ${(err as Error).message}`);
-              await session!.close();
+              await session.close();
               process.exit(exitCode(err, 1));
             }
           }
@@ -133,7 +135,7 @@ export const createCodexCommand = (): Command => {
 
               const turnSpinner = new Spinner('thinking...', { elapsed: true }).start();
               try {
-                const response = await session!.ask(trimmed);
+                const response = await session.ask(trimmed);
                 turnSpinner.stop();
                 process.stdout.write(`\nCodex: ${response}\n\n`);
               } catch (err) {
@@ -145,7 +147,7 @@ export const createCodexCommand = (): Command => {
           } finally {
             process.removeListener('SIGINT', sigintHandler);
             rl.close();
-            await session!.close();
+            await session.close();
           }
 
           return;
