@@ -21,7 +21,7 @@ export const createMusicCommand = (): Command => {
     .command('generate')
     .description('Generate music from a prompt')
     .argument('[prompt]', 'Description of the music to generate (or pipe via stdin)')
-    .option('--model <model>', 'Model override (replaces MUSIC_MODEL)')
+    .option('-m, --model <model>', 'Model override (replaces MUSIC_MODEL)')
     .requiredOption('-o, --output <path>', 'Output file path or name')
     .action(async (promptArg: string | undefined, opts: { model?: string; output: string }) => {
       try {

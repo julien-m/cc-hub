@@ -22,11 +22,11 @@ export const createModelsCommand = (): Command => {
     .command('list')
     .description('List available models')
     .option(
-      '--provider <name>',
+      '-p, --provider <name>',
       `Filter by provider (${VALID_PROVIDERS.join(', ')})`,
     )
     .option(
-      '--type <type>',
+      '-t, --type <type>',
       `Filter by type (${VALID_TYPES.join(', ')})`,
     )
     .action((opts: { provider?: string; type?: string }) => {

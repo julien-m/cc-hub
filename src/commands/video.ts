@@ -19,9 +19,9 @@ export const createVideoCommand = (): Command => {
   const video = new Command('video')
     .description('Generate a video from a prompt')
     .argument('[prompt]', 'Description of the video to generate (or pipe via stdin)')
-    .option('--model <model>', 'Model override (replaces VIDEO_MODEL)')
-    .option('--duration <seconds>', 'Duration in seconds (3-15)', '5')
-    .option('--aspect-ratio <ratio>', 'Ratio (16:9, 1:1, 9:16)', '16:9')
+    .option('-m, --model <model>', 'Model override (replaces VIDEO_MODEL)')
+    .option('-d, --duration <seconds>', 'Duration in seconds (3-15)', '5')
+    .option('-a, --aspect-ratio <ratio>', 'Ratio (16:9, 1:1, 9:16)', '16:9')
     .option('-i, --image <path>', 'Starting image for animation (local path or URL)')
     .requiredOption('-o, --output <path>', 'Output file path or name')
     .action(async (promptArg: string | undefined, opts: { model?: string; duration: string; aspectRatio: string; image?: string; output: string }) => {

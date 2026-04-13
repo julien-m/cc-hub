@@ -59,13 +59,13 @@ export const createLogCommand = (): Command => {
   log
     .command('add')
     .description('Add an activity log')
-    .requiredOption('--type <type>', `Event type (${VALID_TYPES.join(', ')})`)
-    .requiredOption('--title <title>', 'Event title')
-    .requiredOption('--status <status>', `Status (${VALID_STATUSES.join(', ')})`)
-    .option('--details <details>', 'Additional details')
-    .option('--file <path>', 'Artifact file to attach')
+    .requiredOption('-t, --type <type>', `Event type (${VALID_TYPES.join(', ')})`)
+    .requiredOption('-n, --title <title>', 'Event title')
+    .requiredOption('-s, --status <status>', `Status (${VALID_STATUSES.join(', ')})`)
+    .option('-d, --details <details>', 'Additional details')
+    .option('-f, --file <path>', 'Artifact file to attach')
     .option('--source <source>', 'Source', 'claude-code')
-    .option('--important', 'Mark as important', false)
+    .option('-i, --important', 'Mark as important', false)
     .action(async (opts: { type: string; title: string; status: string; details?: string; file?: string; source: string; important: boolean }) => {
       if (!(VALID_TYPES as readonly string[]).includes(opts.type)) {
         console.error(`Invalid type: "${opts.type}". Valid types: ${VALID_TYPES.join(', ')}`);
@@ -107,9 +107,9 @@ export const createLogCommand = (): Command => {
     .command('list')
     .description('List logs')
     .option('--today', 'Today only')
-    .option('--failed', 'Failed events only')
-    .option('--type <type>', 'Filter by type')
-    .option('--limit <n>', 'Max results', '50')
+    .option('-F, --failed', 'Failed events only')
+    .option('-t, --type <type>', 'Filter by type')
+    .option('-l, --limit <n>', 'Max results', '50')
     .action(async (opts: { today?: boolean; failed?: boolean; type?: string; limit: string }) => {
       const db = await getDb();
       const conditions: string[] = [];

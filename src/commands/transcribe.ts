@@ -20,7 +20,7 @@ export const createTranscribeCommand = (): Command => {
   const transcribe = new Command('transcribe')
     .description('Transcribe an audio file to text')
     .argument('<file>', 'Audio file to transcribe')
-    .option('--model <model>', 'Model override (replaces TRANSCRIBE_MODEL)')
+    .option('-m, --model <model>', 'Model override (replaces TRANSCRIBE_MODEL)')
     .action(async (file: string, opts: { model?: string }) => {
       try {
         const filePath = resolve(file);

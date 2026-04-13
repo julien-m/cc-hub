@@ -308,7 +308,7 @@ export const createClaudeLinkCommand = (config: ClaudeLinkConfig): Command => {
     .command('link')
     .description(`Install a ${config.type} globally (symlink)`)
     .argument('<path>', `Path or name of the ${config.type}`)
-    .option('--name <name>', 'Custom name for the symlink');
+    .option('-n, --name <name>', 'Custom name for the symlink');
 
   if (!config.isDirectory) {
     linkCmd.argument('[directory]', 'Associated directory to link as well');

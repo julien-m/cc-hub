@@ -18,13 +18,13 @@ export const createCodexCommand = (): Command => {
   const cmd = new Command('codex')
     .description('Ask a question or run a review via OpenAI Codex CLI')
     .argument('[prompt]', 'Prompt to send to the model (or pipe via stdin)')
-    .option('--model <model>', 'Model override (default: gpt-5.4)')
+    .option('-m, --model <model>', 'Model override (default: gpt-5.4)')
     .option('-f, --file <path>', 'File or glob to include as context (repeatable)', (val: string, acc: string[]) => [...acc, val], [])
-    .option('--effort <level>', 'Reasoning effort level (low, medium, high)')
-    .option('--sandbox <mode>', 'Sandbox mode (read-only, workspace-write)', 'read-only')
-    .option('--schema <path>', 'JSON Schema file for structured output')
-    .option('--interactive', 'Start an interactive REPL session via codex app-server')
-    .option('--persist', 'Keep thread history across turns (ephemeral: false)')
+    .option('-e, --effort <level>', 'Reasoning effort level (low, medium, high)')
+    .option('-s, --sandbox <mode>', 'Sandbox mode (read-only, workspace-write)', 'read-only')
+    .option('-x, --schema <path>', 'JSON Schema file for structured output')
+    .option('-i, --interactive', 'Start an interactive REPL session via codex app-server')
+    .option('-p, --persist', 'Keep thread history across turns (ephemeral: false)')
     .action(async (promptArg: string | undefined, opts: {
       model?: string;
       file: string[];
@@ -191,8 +191,8 @@ export const createCodexCommand = (): Command => {
   cmd
     .command('review')
     .description('Run a code review on the current repository')
-    .option('--model <model>', 'Model override (default: gpt-5.4)')
-    .option('--base <ref>', 'Git base reference for review (e.g. main)')
+    .option('-m, --model <model>', 'Model override (default: gpt-5.4)')
+    .option('-b, --base <ref>', 'Git base reference for review (e.g. main)')
     .action(async (opts: { model?: string; base?: string }) => {
       try {
         const rawModel = opts.model || getEnv('CODEX_MODEL') || 'openai/gpt-5.4';

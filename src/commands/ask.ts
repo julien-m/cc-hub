@@ -33,12 +33,12 @@ export const createAskCommand = (): Command =>
   new Command('ask')
     .description('Ask a question to an LLM')
     .argument('[prompt]', 'Prompt to send to the model (or pipe via stdin)')
-    .option('--model <model>', 'Model override (replaces ASK_MODEL)')
+    .option('-m, --model <model>', 'Model override (replaces ASK_MODEL)')
     .option('-f, --file <path>', 'File or glob to include as context (repeatable)', (val: string, acc: string[]) => [...acc, val], [])
-    .option('--provider <name>', 'LLM provider (openrouter, poyo)')
-    .option('--json', 'Request JSON output from the model')
-    .option('--schema <json_or_file>', 'JSON schema for structured output (inline JSON or path to .json file)')
-    .option('--effort <level>', 'Reasoning effort level (low, medium, high)')
+    .option('-p, --provider <name>', 'LLM provider (openrouter, poyo)')
+    .option('-j, --json', 'Request JSON output from the model')
+    .option('-s, --schema <json_or_file>', 'JSON schema for structured output (inline JSON or path to .json file)')
+    .option('-e, --effort <level>', 'Reasoning effort level (low, medium, high)')
     .action(async (promptArg: string | undefined, opts: { model?: string; file: string[]; provider?: string; json?: boolean; schema?: string; effort?: string }) => {
       try {
         const resolved = await resolvePrompt(promptArg);

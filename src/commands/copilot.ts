@@ -36,7 +36,7 @@ export const createCopilotCommand = (): Command =>
   new Command('copilot')
     .description('Ask a question via GitHub Copilot CLI')
     .argument('[prompt]', 'Prompt to send to the model (or pipe via stdin)')
-    .option('--model <model>', 'Model override (default: gpt-5.4)')
+    .option('-m, --model <model>', 'Model override (default: gpt-5.4)')
     .option('-f, --file <path>', 'File or glob to include as context (repeatable)', (val: string, acc: string[]) => [...acc, val], [])
     .action(async (promptArg: string | undefined, opts: {
       model?: string;

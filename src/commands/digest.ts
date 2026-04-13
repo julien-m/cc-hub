@@ -18,7 +18,7 @@ export const createDigestCommand = (): Command => {
   digest
     .command('preview')
     .description('Show raw events')
-    .option('--since <date>', 'Start date (ISO)')
+    .option('-s, --since <date>', 'Start date (ISO)')
     .action(async (opts: { since?: string }) => {
       const events = await getEventsForDigest(opts.since);
       console.log(formatDigestPreview(events));
@@ -27,8 +27,8 @@ export const createDigestCommand = (): Command => {
   digest
     .command('files')
     .description('List artifact files')
-    .option('--since <date>', 'Start date (ISO)')
-    .option('--important', 'Only important artifacts')
+    .option('-s, --since <date>', 'Start date (ISO)')
+    .option('-i, --important', 'Only important artifacts')
     .action(async (opts: { since?: string; important?: boolean }) => {
       const events = await getEventsForDigest(opts.since);
       const withArtifacts = events.filter(

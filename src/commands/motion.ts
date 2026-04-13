@@ -19,7 +19,7 @@ export const createMotionCommand = (): Command => {
     .argument('[prompt]', 'Description or context for generation (or pipe via stdin)')
     .requiredOption('-i, --image <path>', 'Character image (local path or URL)')
     .requiredOption('-v, --video <path>', 'Reference video for motion (local path or URL)')
-    .option('--character-orientation <value>', 'Character orientation (character or video)', 'character')
+    .option('-c, --character-orientation <value>', 'Character orientation (character or video)', 'character')
     .requiredOption('-o, --output <path>', 'Output file path or name')
     .action(async (promptArg: string | undefined, opts: { image: string; video: string; characterOrientation: string; output: string }) => {
       try {

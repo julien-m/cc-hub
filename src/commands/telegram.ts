@@ -33,7 +33,7 @@ export const createTelegramCommand = (): Command => {
     .command('send-file')
     .description('Send one or more files')
     .argument('<files...>', 'Files to send')
-    .option('--caption <text>', 'Caption (Markdown)')
+    .option('-c, --caption <text>', 'Caption (Markdown)')
     .action(async (files: string[], opts: { caption?: string }) => {
       const existing = files.filter((f) => {
         if (!existsSync(f)) {

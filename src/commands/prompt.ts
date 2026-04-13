@@ -74,8 +74,8 @@ export const createPromptCommand = (): Command => {
   prompt
     .command('get')
     .description('Show the prompt guide for a model or type')
-    .option('--model <model>', 'Model (e.g. anthropic/claude-opus-4.6)')
-    .option('--type <type>', 'Type (text, image, video, audio) — uses the default model for that type')
+    .option('-m, --model <model>', 'Model (e.g. anthropic/claude-opus-4.6)')
+    .option('-t, --type <type>', 'Type (text, image, video, audio) — uses the default model for that type')
     .action((opts: { model?: string; type?: string }) => {
       if (!opts.model && !opts.type) {
         console.error('Specify --model or --type');
@@ -110,7 +110,7 @@ export const createPromptCommand = (): Command => {
   prompt
     .command('list')
     .description('List available guides')
-    .option('--type <type>', 'Filter by type (text, image, video, audio)')
+    .option('-t, --type <type>', 'Filter by type (text, image, video, audio)')
     .action((opts: { type?: string }) => {
       ensureDirs();
       if (opts.type) validateModelType(opts.type);
