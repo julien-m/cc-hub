@@ -43,18 +43,18 @@ export interface CodexSessionOptions {
 }
 
 // Internal types
-export interface PendingRequest {
+interface PendingRequest {
   resolve: (value: unknown) => void;
   reject: (error: Error) => void;
   method: string;
 }
 
-export interface JsonRpcNotification {
+interface JsonRpcNotification {
   method: string;
   params: Record<string, unknown>;
 }
 
-export type NotificationHandler = (msg: JsonRpcNotification) => void;
+type NotificationHandler = (msg: JsonRpcNotification) => void;
 
 export class CodexSession {
   private proc!: ChildProcess;
@@ -64,6 +64,7 @@ export class CodexSession {
   private notificationHandler: NotificationHandler | null = null;
   private stderrBuffer = '';
   private closed = false;
+  private busy = false;
   private exitHandled = false;
   private exitPromise!: Promise<void>;
   private resolveExit!: () => void;
@@ -89,15 +90,18 @@ export class CodexSession {
     }
 
     const session = new CodexSession(opts);
-    await Promise.race([
-      session._initialize(cwd),
-      new Promise<never>((_, reject) =>
-        setTimeout(
-          () => reject(new CodexSessionError('app-server handshake timed out — check codex version')),
-          10_000,
-        ).unref?.(),
-      ),
-    ]);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new CodexSessionError('app-server handshake timed out — check codex version')),
+        10_000,
+      ).unref?.(),
+    );
+    try {
+      await Promise.race([session._initialize(cwd), timeoutPromise]);
+    } catch (err) {
+      session._abort();
+      throw err;
+    }
     return session;
   }
 
@@ -227,17 +231,22 @@ export class CodexSession {
     }
     this.pending.clear();
 
+    this.notificationHandler = null;
+    this.rl?.close();
     this.resolveExit();
   }
 
   async ask(prompt: string): Promise<string> {
     if (this.closed) throw new CodexSessionClosedError();
+    if (this.busy) throw new CodexSessionError('A turn is already in progress. Wait for the current ask() to complete.');
+    this.busy = true;
 
     return new Promise<string>((resolve, reject) => {
       const accumulated: string[] = [];
       let timer: ReturnType<typeof setTimeout> | null = null;
 
       const cleanup = () => {
+        this.busy = false;
         this.notificationHandler = null;
         if (timer !== null) {
           clearTimeout(timer);
@@ -261,15 +270,30 @@ export class CodexSession {
         cleanup();
         reject(new CodexTimeoutError(`Codex turn timed out after ${this.timeoutMs}ms.`));
       }, this.timeoutMs);
+      (timer as unknown as { unref?: () => void }).unref?.();
 
       this._request('turn/start', {
         threadId: this.threadId,
+        // required by the Codex app-server protocol schema
         input: [{ type: 'text', text: prompt, text_elements: [] }],
       }).catch((err: Error) => {
         cleanup();
         reject(err);
       });
     });
+  }
+
+  private _abort(): void {
+    if (this.closed) return;
+    this.closed = true;
+    this.rl?.close();
+    this.proc?.stdin?.end();
+    const t = setTimeout(() => {
+      if (this.proc?.exitCode === null && !this.proc?.killed) {
+        this.proc.kill('SIGTERM');
+      }
+    }, 50);
+    (t as unknown as { unref?: () => void }).unref?.();
   }
 
   async close(): Promise<void> {
