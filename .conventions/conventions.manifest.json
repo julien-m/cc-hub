@@ -1,0 +1,64 @@
+{
+  "generated": "2026-04-13",
+  "project": "cc-hub",
+  "aiResourcesPath": "/Users/julienm/projects/ai-ressources",
+  "domains": {
+    "code": {
+      "file": ".conventions/code.md",
+      "sources": [
+        "code-conventions/general.md",
+        "code-conventions/javascript.md",
+        "code-conventions/cli.md"
+      ],
+      "hashes": {
+        "code-conventions/general.md": "b6ea4ded2133443d",
+        "code-conventions/javascript.md": "f28e761d06855934",
+        "code-conventions/cli.md": "b79b345b2d7db75b"
+      },
+      "outputHash": "a39002e23bf42b10"
+    },
+    "architecture": {
+      "file": ".conventions/architecture.md",
+      "sources": [
+        "architecture/background-jobs.md"
+      ],
+      "hashes": {
+        "architecture/background-jobs.md": "3fd232bd95b5a4e1"
+      },
+      "outputHash": "850865d703ec133e"
+    },
+    "stack": {
+      "file": ".conventions/stack.md",
+      "sources": [
+        "stack-ref/ai/openrouter.md",
+        "stack-ref/ai/pyo.md",
+        "stack-ref/databases/turso.md",
+        "stack-ref/frontend/cli.md"
+      ],
+      "hashes": {
+        "stack-ref/ai/openrouter.md": "9aae45082f1d7fb1",
+        "stack-ref/ai/pyo.md": "5761e3268b07c920",
+        "stack-ref/databases/turso.md": "a2567967628f919e",
+        "stack-ref/frontend/cli.md": "227ab8274a83de0a"
+      },
+      "outputHash": "280ea9bf7a7403f3"
+    },
+    "design": {
+      "file": ".conventions/design.md",
+      "sources": [
+        "design/systems/cli-patterns.md"
+      ],
+      "hashes": {
+        "design/systems/cli-patterns.md": "47e5d17371ebc78a"
+      },
+      "outputHash": "e92b7282b80df5e7"
+    }
+  },
+  "stack": {
+    "labels": ["TypeScript + Biome"],
+    "markers": ["tsconfig.json", "biome.json"],
+    "hookGenerated": true,
+    "ciGenerated": ["ci.yml", "security.yml"],
+    "dependabotGenerated": true
+  }
+}
