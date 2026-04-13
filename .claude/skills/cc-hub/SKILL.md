@@ -90,15 +90,54 @@ cc-hub motion "Dance" -i ./character.png -v ./dance.mp4 -o result.mp4
 cc-hub codex "Question"
 cc-hub codex "Analyse" -f src/api.ts
 cc-hub codex "Deep" -e high
-cc-hub codex -i                       # interactive REPL session
-cc-hub codex -i "prompt"              # start session with initial prompt
-cc-hub codex -i -p                    # create a non-ephemeral thread (no automatic resume of prior sessions)
 cc-hub codex review                   # review uncommitted changes
 cc-hub codex review -b main
 ```
 
-Auth via `codex login`. Options : `-e/--effort low|medium|high`, `-s/--sandbox read-only|workspace-write`, `-x/--schema <path>`, `-i/--interactive`, `-p/--persist` (create a non-ephemeral thread; no automatic resume).
+Auth via `codex login`. Options : `-e/--effort low|medium|high`, `-s/--sandbox read-only|workspace-write`, `-x/--schema <path>`, `-p/--persist` (create a non-ephemeral thread; no automatic resume).
 Modèles : **Read** [`references/models.md`](references/models.md)
+
+#### Mode interactif machine (`-i`)
+
+Protocol JSON lines pour scripts et agents IA. **Jamais utilisé directement par un humain.**
+
+- stdin : une ligne par prompt ; `exit`/`quit`/`q` ou EOF (Ctrl-D) ferme la session
+- stdout : une ligne JSON par événement
+
+| Événement | JSON stdout |
+|-----------|-------------|
+| Session prête | `{"ready":true}` |
+| Réponse | `{"response":"..."}` |
+| Erreur (fatale, session terminée) | `{"error":"..."}` |
+
+- stderr : vide en fonctionnement normal
+- Exit codes : 0 (OK), 1 (erreur générale), 3 (auth/non trouvé), 4 (timeout)
+
+**Exemple Python :**
+
+```python
+import subprocess, json
+
+proc = subprocess.Popen(
+    ['cc-hub', 'codex', '-i'],
+    stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
+)
+
+# Attendre le signal ready avant d'envoyer le premier prompt
+json.loads(proc.stdout.readline())  # {"ready": true}
+
+proc.stdin.write('Explain quicksort\n')
+proc.stdin.flush()
+result = json.loads(proc.stdout.readline())  # {"response": "..."}
+print(result['response'])
+
+proc.stdin.write('exit\n')
+proc.stdin.flush()
+proc.wait()
+```
+
+Avec prompt initial : `cc-hub codex -i "first prompt"` → `{"ready":true}` puis `{"response":"..."}` avant la boucle.
+Avec thread persistant : `cc-hub codex -i -p`
 
 ### Copilot CLI (GitHub)
 

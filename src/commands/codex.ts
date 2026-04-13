@@ -23,7 +23,7 @@ export const createCodexCommand = (): Command => {
     .option('-e, --effort <level>', 'Reasoning effort level (low, medium, high)')
     .option('-s, --sandbox <mode>', 'Sandbox mode (read-only, workspace-write)', 'read-only')
     .option('-x, --schema <path>', 'JSON Schema file for structured output')
-    .option('-i, --interactive', 'Start an interactive REPL session via codex app-server')
+    .option('-i, --interactive', 'Machine-readable interactive session (JSON lines on stdout). One prompt per stdin line, one {"response":"..."} per stdout line. For scripts and AI agents only.')
     .option('-p, --persist', 'Keep thread history across turns (ephemeral: false)')
     .action(async (promptArg: string | undefined, opts: {
       model?: string;
@@ -47,6 +47,8 @@ export const createCodexCommand = (): Command => {
         }
 
         // ── Interactive mode ─────────────────────────────────────────────
+        // Machine-readable JSON-lines protocol. Never used by humans directly.
+        // stdout: {"ready":true} at startup, {"response":"..."} per turn, {"error":"..."} on failure.
         if (opts.interactive) {
           if (opts.schema) {
             console.error('Error: --schema is not compatible with --interactive');
@@ -57,96 +59,57 @@ export const createCodexCommand = (): Command => {
           const nativeModel = resolveForProvider(rawModel, 'codex');
 
           const session = await (async (): Promise<CodexSession> => {
-            const initSpinner = new Spinner('connecting...', { elapsed: true }).start();
             try {
-              const s = await CodexSession.create(process.cwd(), {
+              return await CodexSession.create(process.cwd(), {
                 model: nativeModel,
                 sandbox: (opts.sandbox ?? 'read-only') as 'read-only' | 'workspace-write',
                 persist: opts.persist,
               });
-              initSpinner.stop();
-              return s;
             } catch (err) {
-              initSpinner.stop();
               return handleError(err);
             }
           })();
 
-          process.stderr.write('Codex session ready. Type "exit" or Ctrl-C to quit.\n\n');
+          // Signal readiness — consumer waits for this before sending first prompt
+          process.stdout.write('{"ready":true}\n');
 
-          // Send initial prompt if provided as argument (before readline takes over stdin)
+          // Process initial prompt arg if provided
           if (promptArg) {
-            const firstSpinner = new Spinner('thinking...', { elapsed: true }).start();
             try {
               const response = await session.ask(promptArg);
-              firstSpinner.stop();
-              process.stdout.write(`Codex: ${response}\n\n`);
+              process.stdout.write(JSON.stringify({ response }) + '\n');
             } catch (err) {
-              firstSpinner.stop();
-              console.error(`Error: ${(err as Error).message}`);
+              process.stdout.write(JSON.stringify({ error: (err as Error).message }) + '\n');
               await session.close();
               process.exit(exitCode(err, 1));
             }
           }
 
-          // Set up readline REPL
-          process.stdin.resume();
-          process.stdin.setEncoding('utf8');
+          // for-await-of is sequential: reads one line, awaits body, then reads next
+          const rl = readline.createInterface({ input: process.stdin, output: null });
 
-          const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout,
-          });
-
-          const sigintHandler = () => {
-            process.stderr.write('\n');
-            rl.close();
-          };
+          const sigintHandler = () => { rl.close(); };
           process.once('SIGINT', sigintHandler);
 
-          /** Ask a line from the user. Returns null if readline closes (Ctrl-D or exit). */
-          const askLine = (prompt: string): Promise<string | null> =>
-            new Promise((resolve) => {
-              let settled = false;
-              const onAnswer = (answer: string) => {
-                if (settled) return;
-                settled = true;
-                resolve(answer);
-              };
-              const onClose = () => {
-                if (settled) return;
-                settled = true;
-                resolve(null);
-              };
-              rl.once('close', onClose);
-              rl.question(prompt, (answer) => {
-                rl.removeListener('close', onClose);
-                onAnswer(answer);
-              });
-            });
-
           try {
-            while (true) {
-              const input = await askLine('You: ');
-              if (input === null) break;
-              const trimmed = input.trim();
+            // Note: SIGINT closes readline but an in-flight session.ask() continues until
+            // the turn completes. CodexSession has no abort — pre-existing limitation.
+            // The controlling process should send SIGTERM/SIGKILL for immediate termination.
+            for await (const line of rl) {
+              const trimmed = line.trim();
               if (!trimmed) continue;
               if (['exit', 'quit', 'q'].includes(trimmed.toLowerCase())) break;
-
-              const turnSpinner = new Spinner('thinking...', { elapsed: true }).start();
               try {
                 const response = await session.ask(trimmed);
-                turnSpinner.stop();
-                process.stdout.write(`\nCodex: ${response}\n\n`);
+                process.stdout.write(JSON.stringify({ response }) + '\n');
               } catch (err) {
-                turnSpinner.stop();
-                console.error(`\nError: ${(err as Error).message}`);
+                process.stdout.write(JSON.stringify({ error: (err as Error).message }) + '\n');
                 break;
               }
             }
           } finally {
             process.removeListener('SIGINT', sigintHandler);
-            rl.close();
+            rl.close(); // idempotent — safe if already closed by sigintHandler
             await session.close();
           }
 
