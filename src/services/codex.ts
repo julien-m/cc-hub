@@ -7,7 +7,7 @@
 import { spawn } from 'node:child_process';
 
 /** Auth patterns from `codex` stderr when not logged in or token expired. */
-const AUTH_ERROR_PATTERNS: readonly string[] = [
+export const AUTH_ERROR_PATTERNS: readonly string[] = [
   'not logged in',
   'authentication required',
   'invalid token',
