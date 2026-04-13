@@ -86,7 +86,7 @@ export const createCodexCommand = (): Command => {
           }
 
           // for-await-of is sequential: reads one line, awaits body, then reads next
-          const rl = readline.createInterface({ input: process.stdin, output: null });
+          const rl = readline.createInterface({ input: process.stdin, output: undefined });
 
           const sigintHandler = () => { rl.close(); };
           process.once('SIGINT', sigintHandler);
