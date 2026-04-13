@@ -2,6 +2,7 @@
 import { exitCode } from '../errors.ts';
 import { Command } from 'commander';
 import { askCodex, reviewCodex, CodexAuthError, CodexNotFoundError } from '../services/codex.ts';
+import { CodexTimeoutError, CodexSessionError } from '../services/codex-session.ts';
 import { resolveForProvider } from '../services/models.ts';
 import { getEnv } from '../services/env.ts';
 import { resolvePrompt } from '../infra/prompt.ts';
@@ -118,6 +119,14 @@ const handleError = (err: unknown): never => {
   if (err instanceof CodexAuthError) {
     console.error('Codex is not authenticated. Run: codex login');
     process.exit(3);
+  }
+  if (err instanceof CodexTimeoutError) {
+    console.error(`Codex session timed out: ${err.message}`);
+    process.exit(4);
+  }
+  if (err instanceof CodexSessionError) {
+    console.error(`Codex session error: ${err.message}`);
+    process.exit(1);
   }
   console.error(
     `Codex command failed: ${(err as Error).message}. ` +
