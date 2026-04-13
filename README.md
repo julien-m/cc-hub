@@ -335,6 +335,22 @@ Default model: `openai/gpt-5.4`. Authentication is managed by the Codex CLI itse
 | `--effort <level>` | Reasoning effort level: `low`, `medium`, `high` |
 | `--sandbox <mode>` | Sandbox mode: `read-only` (default), `workspace-write` |
 | `--schema <path>` | JSON Schema file for structured output |
+| `--interactive` | Start an interactive REPL session (persistent thread via `codex app-server`) |
+| `--persist` | Keep thread history across turns (ephemeral: false) |
+
+#### `cc-hub codex --interactive`
+
+Launch a persistent conversational REPL session with Codex:
+
+```bash
+cc-hub codex --interactive
+cc-hub codex --interactive "Start with this question"
+cc-hub codex --interactive --model openai/gpt-5.4
+cc-hub codex --interactive --sandbox workspace-write
+cc-hub codex --interactive --persist
+```
+
+Type `exit` or press Ctrl-C to end the session. Each turn is sent to the same thread, preserving context. Use `--persist` to keep the thread history between sessions.
 
 #### `cc-hub codex review`
 
