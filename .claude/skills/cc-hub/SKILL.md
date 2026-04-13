@@ -92,12 +92,12 @@ cc-hub codex "Analyse" -f src/api.ts
 cc-hub codex "Deep" --effort high
 cc-hub codex --interactive            # interactive REPL session
 cc-hub codex --interactive "prompt"   # start session with initial prompt
-cc-hub codex --interactive --persist  # persistent thread history
+cc-hub codex --interactive --persist  # create a non-ephemeral thread (no automatic resume of prior sessions)
 cc-hub codex review                  # review uncommitted changes
 cc-hub codex review --base main
 ```
 
-Auth via `codex login`. Options : `--effort low|medium|high`, `--sandbox read-only|workspace-write`, `--schema <path>`, `--interactive`, `--persist`.
+Auth via `codex login`. Options : `--effort low|medium|high`, `--sandbox read-only|workspace-write`, `--schema <path>`, `--interactive`, `--persist` (create a non-ephemeral thread; no automatic resume).
 Modèles : **Read** [`references/models.md`](references/models.md)
 
 ### Copilot CLI (GitHub)

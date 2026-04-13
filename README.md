@@ -315,7 +315,7 @@ Transcription via Soniox. Outputs the transcription to stdout.
 
 ### `codex` — LLM via OpenAI Codex CLI
 
-LLM access via the `codex` CLI. Uses `codex exec` in non-interactive mode.
+LLM access via the `codex` CLI. Supports one-shot prompts, interactive REPL sessions, and repository reviews.
 
 ```bash
 cc-hub codex "Summarize this text"
@@ -335,12 +335,12 @@ Default model: `openai/gpt-5.4`. Authentication is managed by the Codex CLI itse
 | `--effort <level>` | Reasoning effort level: `low`, `medium`, `high` |
 | `--sandbox <mode>` | Sandbox mode: `read-only` (default), `workspace-write` |
 | `--schema <path>` | JSON Schema file for structured output |
-| `--interactive` | Start an interactive REPL session (persistent thread via `codex app-server`) |
-| `--persist` | Keep thread history across turns (ephemeral: false) |
+| `--interactive` | Start an interactive Codex session |
+| `--persist` | Create a non-ephemeral thread; does not automatically resume a previous session |
 
 #### `cc-hub codex --interactive`
 
-Launch a persistent conversational REPL session with Codex:
+Launch a conversational REPL session with Codex:
 
 ```bash
 cc-hub codex --interactive
@@ -350,7 +350,7 @@ cc-hub codex --interactive --sandbox workspace-write
 cc-hub codex --interactive --persist
 ```
 
-Type `exit` or press Ctrl-C to end the session. Each turn is sent to the same thread, preserving context. Use `--persist` to keep the thread history between sessions.
+Type `exit` or press Ctrl-C to end the session. Each turn is sent to the same thread, preserving context for that session. Use `--persist` to create a non-ephemeral thread; it does not automatically resume a previous session.
 
 #### `cc-hub codex review`
 
