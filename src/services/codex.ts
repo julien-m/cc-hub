@@ -4,43 +4,43 @@
  * @see https://developers.openai.com/codex/noninteractive
  */
 
-import { spawn } from 'node:child_process';
+import { spawn } from "node:child_process";
 
 /** Auth patterns from `codex` stderr when not logged in or token expired. */
 export const AUTH_ERROR_PATTERNS: readonly string[] = [
-  'not logged in',
-  'authentication required',
-  'invalid token',
-  'token expired',
-  'codex login',
-  'login is required',
-  'unauthorized',
-  'api key',
+	"not logged in",
+	"authentication required",
+	"invalid token",
+	"token expired",
+	"codex login",
+	"login is required",
+	"unauthorized",
+	"api key",
 ];
 
 /** Thrown when Codex CLI requires authentication. */
 export class CodexAuthError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'CodexAuthError';
-  }
+	constructor(message: string) {
+		super(message);
+		this.name = "CodexAuthError";
+	}
 }
 
 /** Thrown when Codex CLI binary is not found. */
 export class CodexNotFoundError extends Error {
-  constructor() {
-    super('Codex CLI not found. Install it from https://developers.openai.com/codex');
-    this.name = 'CodexNotFoundError';
-  }
+	constructor() {
+		super("Codex CLI not found. Install it from https://developers.openai.com/codex");
+		this.name = "CodexNotFoundError";
+	}
 }
 
 export interface CodexOptions {
-  model?: string;
-  stdin?: string;
-  files?: Array<{ path: string; content: string }>;
-  effort?: string;
-  sandbox?: string;
-  schema?: string;
+	model?: string;
+	stdin?: string;
+	files?: Array<{ path: string; content: string }>;
+	effort?: string;
+	sandbox?: string;
+	schema?: string;
 }
 
 /**
@@ -53,36 +53,36 @@ export interface CodexOptions {
  * @throws Error when CLI returns an error.
  */
 export const askCodex = async (prompt: string, opts: CodexOptions = {}): Promise<string> => {
-  const parts: string[] = [];
+	const parts: string[] = [];
 
-  if (opts.files?.length) {
-    const { buildFileContext } = await import('./files.ts');
-    parts.push(buildFileContext(opts.files));
-  }
+	if (opts.files?.length) {
+		const { buildFileContext } = await import("./files.ts");
+		parts.push(buildFileContext(opts.files));
+	}
 
-  if (opts.stdin) {
-    parts.push(`<stdin>\n${opts.stdin}\n</stdin>`);
-  }
+	if (opts.stdin) {
+		parts.push(`<stdin>\n${opts.stdin}\n</stdin>`);
+	}
 
-  parts.push(prompt);
+	parts.push(prompt);
 
-  const fullPrompt = parts.join('\n\n');
+	const fullPrompt = parts.join("\n\n");
 
-  const args = ['exec', '-', '--ephemeral', '-s', opts.sandbox || 'read-only'];
+	const args = ["exec", "-", "--ephemeral", "-s", opts.sandbox || "read-only"];
 
-  if (opts.model) {
-    args.push('-m', opts.model);
-  }
+	if (opts.model) {
+		args.push("-m", opts.model);
+	}
 
-  if (opts.effort) {
-    args.push('-c', `reasoning.effort=${opts.effort}`);
-  }
+	if (opts.effort) {
+		args.push("-c", `reasoning.effort=${opts.effort}`);
+	}
 
-  if (opts.schema) {
-    args.push('--output-schema', opts.schema);
-  }
+	if (opts.schema) {
+		args.push("--output-schema", opts.schema);
+	}
 
-  return runCodex(args, fullPrompt);
+	return runCodex(args, fullPrompt);
 };
 
 /**
@@ -94,17 +94,17 @@ export const askCodex = async (prompt: string, opts: CodexOptions = {}): Promise
  * @throws Error when CLI returns an error.
  */
 export const reviewCodex = async (opts: { model?: string; base?: string } = {}): Promise<string> => {
-  const args = ['exec', 'review', '--ephemeral'];
+	const args = ["exec", "review", "--ephemeral"];
 
-  if (opts.model) {
-    args.push('-m', opts.model);
-  }
+	if (opts.model) {
+		args.push("-m", opts.model);
+	}
 
-  if (opts.base) {
-    args.push('--base', opts.base);
-  }
+	if (opts.base) {
+		args.push("--base", opts.base);
+	}
 
-  return runCodex(args);
+	return runCodex(args);
 };
 
 /**
@@ -118,43 +118,46 @@ export const reviewCodex = async (opts: { model?: string; base?: string } = {}):
  * @throws Error for all other errors.
  */
 const runCodex = (args: string[], stdinPayload?: string): Promise<string> =>
-  new Promise((resolve, reject) => {
-    let stdout = '';
-    let stderr = '';
+	new Promise((resolve, reject) => {
+		let stdout = "";
+		let stderr = "";
 
-    const child = spawn('codex', args, {
-      stdio: [stdinPayload ? 'pipe' : 'ignore', 'pipe', 'pipe'],
-    });
+		const child = spawn("codex", args, {
+			stdio: [stdinPayload ? "pipe" : "ignore", "pipe", "pipe"],
+		});
 
-    child.on('error', (err: NodeJS.ErrnoException) => {
-      if (err.code === 'ENOENT') {
-        reject(new CodexNotFoundError());
-      } else {
-        reject(err);
-      }
-    });
+		child.on("error", (err: NodeJS.ErrnoException) => {
+			if (err.code === "ENOENT") {
+				reject(new CodexNotFoundError());
+			} else {
+				reject(err);
+			}
+		});
 
-    if (stdinPayload && child.stdin) {
-      child.stdin.write(stdinPayload);
-      child.stdin.end();
-    }
+		if (stdinPayload && child.stdin) {
+			child.stdin.write(stdinPayload);
+			child.stdin.end();
+		}
 
-    child.stdout!.on('data', (chunk: Buffer) => { stdout += chunk.toString(); });
-    child.stderr!.on('data', (chunk: Buffer) => { stderr += chunk.toString(); });
+		child.stdout?.on("data", (chunk: Buffer) => {
+			stdout += chunk.toString();
+		});
+		child.stderr?.on("data", (chunk: Buffer) => {
+			stderr += chunk.toString();
+		});
 
-    child.on('close', (code) => {
-      if (code === 0) {
-        resolve(stdout.replace(/\n+$/, ''));
-      } else {
-        const message = stderr.trim() || `codex exited with code ${code}`;
-        const lower = message.toLowerCase();
-        const isAuthError = AUTH_ERROR_PATTERNS.some((p) => lower.includes(p));
-        if (isAuthError) {
-          reject(new CodexAuthError(message));
-        } else {
-          reject(new Error(`Codex CLI error: ${message}`));
-        }
-      }
-    });
-  });
-
+		child.on("close", (code) => {
+			if (code === 0) {
+				resolve(stdout.replace(/\n+$/, ""));
+			} else {
+				const message = stderr.trim() || `codex exited with code ${code}`;
+				const lower = message.toLowerCase();
+				const isAuthError = AUTH_ERROR_PATTERNS.some((p) => lower.includes(p));
+				if (isAuthError) {
+					reject(new CodexAuthError(message));
+				} else {
+					reject(new Error(`Codex CLI error: ${message}`));
+				}
+			}
+		});
+	});

@@ -1,32 +1,32 @@
-import { writeFileSync } from 'node:fs';
-import { ConfigError } from '../errors.ts';
-import { getEnv } from './env.ts';
+import { writeFileSync } from "node:fs";
+import { ConfigError } from "../errors.ts";
+import { getEnv } from "./env.ts";
 
 interface SubmitRequest {
-  model: string;
-  input: Record<string, unknown>;
+	model: string;
+	input: Record<string, unknown>;
 }
 
 interface TaskStatus {
-  task_id: string;
-  status: 'not_started' | 'running' | 'finished' | 'failed';
-  files?: Array<{ file_url: string; file_type: 'image' | 'video' | 'audio' }>;
-  progress?: number;
-  error_message?: string;
+	task_id: string;
+	status: "not_started" | "running" | "finished" | "failed";
+	files?: Array<{ file_url: string; file_type: "image" | "video" | "audio" }>;
+	progress?: number;
+	error_message?: string;
 }
 
 interface SubmitResponse {
-  code: number;
-  data: {
-    task_id: string;
-    status: string;
-    error?: { message?: string };
-  };
+	code: number;
+	data: {
+		task_id: string;
+		status: string;
+		error?: { message?: string };
+	};
 }
 
 interface StatusResponse {
-  code: number;
-  data: TaskStatus;
+	code: number;
+	data: TaskStatus;
 }
 
 /**
@@ -35,11 +35,11 @@ interface StatusResponse {
  * @throws ConfigError if POYO_API_KEY is not configured
  */
 const getApiKey = (): string => {
-  const apiKey = getEnv('POYO_API_KEY');
-  if (!apiKey) {
-    throw new ConfigError('POYO_API_KEY not configured in .env');
-  }
-  return apiKey;
+	const apiKey = getEnv("POYO_API_KEY");
+	if (!apiKey) {
+		throw new ConfigError("POYO_API_KEY not configured in .env");
+	}
+	return apiKey;
 };
 
 /**
@@ -51,38 +51,38 @@ const getApiKey = (): string => {
  * @throws Error if the submission fails, the task fails, or polling times out
  */
 export const generateMedia = async (
-  request: SubmitRequest,
-  onProgress?: (progress: number) => void,
+	request: SubmitRequest,
+	onProgress?: (progress: number) => void,
 ): Promise<TaskStatus> => {
-  const apiKey = getApiKey();
-  const headers = {
-    'Authorization': `Bearer ${apiKey}`,
-    'Content-Type': 'application/json',
-  };
+	const apiKey = getApiKey();
+	const headers = {
+		Authorization: `Bearer ${apiKey}`,
+		"Content-Type": "application/json",
+	};
 
-  const res = await fetch('https://api.poyo.ai/api/generate/submit', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(request),
-    signal: AbortSignal.timeout(30_000),
-  });
+	const res = await fetch("https://api.poyo.ai/api/generate/submit", {
+		method: "POST",
+		headers,
+		body: JSON.stringify(request),
+		signal: AbortSignal.timeout(30_000),
+	});
 
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Poyo submit error (${res.status}): ${err}`);
-  }
+	if (!res.ok) {
+		const err = await res.text();
+		throw new Error(`Poyo submit error (${res.status}): ${err}`);
+	}
 
-  const json = await res.json() as SubmitResponse;
+	const json = (await res.json()) as SubmitResponse;
 
-  if (json.code !== 200 || json.data?.error) {
-    const msg = json.data?.error?.message || `Unexpected status code: ${json.code}`;
-    throw new Error(`Poyo submit error: ${msg}`);
-  }
+	if (json.code !== 200 || json.data?.error) {
+		const msg = json.data?.error?.message || `Unexpected status code: ${json.code}`;
+		throw new Error(`Poyo submit error: ${msg}`);
+	}
 
-  const taskId = json.data.task_id;
-  console.error(`   Task: ${taskId}`);
+	const taskId = json.data.task_id;
+	console.error(`   Task: ${taskId}`);
 
-  return pollTask(taskId, headers, onProgress);
+	return pollTask(taskId, headers, onProgress);
 };
 
 /**
@@ -94,45 +94,42 @@ export const generateMedia = async (
  * @throws Error if polling fails, the task fails, or polling times out
  */
 const pollTask = async (
-  taskId: string,
-  headers: Record<string, string>,
-  onProgress?: (progress: number) => void,
+	taskId: string,
+	headers: Record<string, string>,
+	onProgress?: (progress: number) => void,
 ): Promise<TaskStatus> => {
-  const maxAttempts = 180;
-  const intervalMs = 3000;
+	const maxAttempts = 180;
+	const intervalMs = 3000;
 
-  for (let i = 0; i < maxAttempts; i++) {
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+	for (let i = 0; i < maxAttempts; i++) {
+		await new Promise((resolve) => setTimeout(resolve, intervalMs));
 
-    const res = await fetch(
-      `https://api.poyo.ai/api/generate/status/${taskId}`,
-      {
-        headers: { 'Authorization': headers['Authorization'] },
-        signal: AbortSignal.timeout(30_000),
-      },
-    );
+		const res = await fetch(`https://api.poyo.ai/api/generate/status/${taskId}`, {
+			headers: { Authorization: headers.Authorization },
+			signal: AbortSignal.timeout(30_000),
+		});
 
-    if (!res.ok) {
-      throw new Error(`Poyo polling error (${res.status})`);
-    }
+		if (!res.ok) {
+			throw new Error(`Poyo polling error (${res.status})`);
+		}
 
-    const json = await res.json() as StatusResponse;
-    const task = json.data;
+		const json = (await res.json()) as StatusResponse;
+		const task = json.data;
 
-    if (task.progress !== undefined && task.progress > 0 && onProgress) {
-      onProgress(task.progress);
-    }
+		if (task.progress !== undefined && task.progress > 0 && onProgress) {
+			onProgress(task.progress);
+		}
 
-    if (task.status === 'finished') {
-      return task;
-    }
+		if (task.status === "finished") {
+			return task;
+		}
 
-    if (task.status === 'failed') {
-      throw new Error(`Poyo task failed: ${task.error_message || 'unknown error'}`);
-    }
-  }
+		if (task.status === "failed") {
+			throw new Error(`Poyo task failed: ${task.error_message || "unknown error"}`);
+		}
+	}
 
-  throw new Error('Poyo task timed out');
+	throw new Error("Poyo task timed out");
 };
 
 /**
@@ -143,13 +140,13 @@ const pollTask = async (
  * @throws Error if the download fails
  */
 export const downloadFile = async (url: string, destPath: string): Promise<string> => {
-  const res = await fetch(url, {
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!res.ok) {
-    throw new Error(`Download failed (${res.status}): ${url}`);
-  }
-  const buffer = Buffer.from(await res.arrayBuffer());
-  writeFileSync(destPath, buffer);
-  return destPath;
+	const res = await fetch(url, {
+		signal: AbortSignal.timeout(30_000),
+	});
+	if (!res.ok) {
+		throw new Error(`Download failed (${res.status}): ${url}`);
+	}
+	const buffer = Buffer.from(await res.arrayBuffer());
+	writeFileSync(destPath, buffer);
+	return destPath;
 };

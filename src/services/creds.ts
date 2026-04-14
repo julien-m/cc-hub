@@ -1,5 +1,5 @@
-import { execFileSync } from 'node:child_process';
-import { ConfigError } from '../errors.ts';
+import { execFileSync } from "node:child_process";
+import { ConfigError } from "../errors.ts";
 
 /**
  * Retrieves a credential from the keychain.
@@ -8,15 +8,13 @@ import { ConfigError } from '../errors.ts';
  * @throws ConfigError if the credential is missing or inaccessible
  */
 export const getCred = (name: string): string => {
-  try {
-    return execFileSync('creds', ['get', name, '--no-newline'], {
-      encoding: 'utf-8',
-    });
-  } catch {
-    throw new ConfigError(
-      `Missing credential: ${name}\n   Store it with: creds set ${name}`,
-    );
-  }
+	try {
+		return execFileSync("creds", ["get", name, "--no-newline"], {
+			encoding: "utf-8",
+		});
+	} catch {
+		throw new ConfigError(`Missing credential: ${name}\n   Store it with: creds set ${name}`);
+	}
 };
 
 /**
@@ -25,12 +23,12 @@ export const getCred = (name: string): string => {
  * @returns The credential value, or null if not found
  */
 export const tryGetCred = (name: string): string | null => {
-  try {
-    return execFileSync('creds', ['get', name, '--no-newline'], {
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'ignore'],
-    });
-  } catch {
-    return null;
-  }
+	try {
+		return execFileSync("creds", ["get", name, "--no-newline"], {
+			encoding: "utf-8",
+			stdio: ["pipe", "pipe", "ignore"],
+		});
+	} catch {
+		return null;
+	}
 };

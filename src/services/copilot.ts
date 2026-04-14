@@ -4,35 +4,35 @@
  * @see https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference
  */
 
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
 /** Auth patterns from `gh copilot` stderr when not logged in or token expired. */
 const AUTH_ERROR_PATTERNS: readonly string[] = [
-  'not logged in',
-  'must authenticate',
-  'authentication required',
-  'invalid token',
-  'token expired',
-  'auth login',
-  'login is required',
-  'could not determine token',
+	"not logged in",
+	"must authenticate",
+	"authentication required",
+	"invalid token",
+	"token expired",
+	"auth login",
+	"login is required",
+	"could not determine token",
 ];
 
 /** Thrown when GitHub Copilot CLI requires authentication. */
 export class CopilotAuthError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'CopilotAuthError';
-  }
+	constructor(message: string) {
+		super(message);
+		this.name = "CopilotAuthError";
+	}
 }
 
 export interface CopilotOptions {
-  model?: string;
-  stdin?: string;
-  files?: Array<{ path: string; content: string }>;
+	model?: string;
+	stdin?: string;
+	files?: Array<{ path: string; content: string }>;
 }
 
 /**
@@ -44,43 +44,43 @@ export interface CopilotOptions {
  * @throws Error when no model is specified or CLI returns an error
  */
 export const askCopilot = async (prompt: string, opts: CopilotOptions = {}): Promise<string> => {
-  const model = opts.model;
-  if (!model) throw new Error('No model specified for Copilot');
+	const model = opts.model;
+	if (!model) throw new Error("No model specified for Copilot");
 
-  const parts: string[] = [];
+	const parts: string[] = [];
 
-  if (opts.files?.length) {
-    const { buildFileContext } = await import('./files.ts');
-    parts.push(buildFileContext(opts.files));
-  }
+	if (opts.files?.length) {
+		const { buildFileContext } = await import("./files.ts");
+		parts.push(buildFileContext(opts.files));
+	}
 
-  if (opts.stdin) {
-    parts.push(`<stdin>\n${opts.stdin}\n</stdin>`);
-  }
+	if (opts.stdin) {
+		parts.push(`<stdin>\n${opts.stdin}\n</stdin>`);
+	}
 
-  parts.push(prompt);
+	parts.push(prompt);
 
-  const fullPrompt = parts.join('\n\n');
+	const fullPrompt = parts.join("\n\n");
 
-  const args = ['copilot', '-p', fullPrompt, '-s', '--output-format', 'json', '--no-ask-user', '--model', model];
+	const args = ["copilot", "-p", fullPrompt, "-s", "--output-format", "json", "--no-ask-user", "--model", model];
 
-  try {
-    const { stdout } = await execFileAsync('gh', args, {
-      encoding: 'utf-8',
-      maxBuffer: 10 * 1024 * 1024,
-    });
+	try {
+		const { stdout } = await execFileAsync("gh", args, {
+			encoding: "utf-8",
+			maxBuffer: 10 * 1024 * 1024,
+		});
 
-    return parseJsonlResponse(stdout);
-  } catch (error: unknown) {
-    const err = error as { stderr?: string; message?: string };
-    const message = err.stderr?.trim() || err.message || 'Unknown error';
-    const lower = message.toLowerCase();
-    const isAuthError = AUTH_ERROR_PATTERNS.some((p) => lower.includes(p));
-    if (isAuthError) {
-      throw new CopilotAuthError(message);
-    }
-    throw new Error(`Copilot CLI error: ${message}`);
-  }
+		return parseJsonlResponse(stdout);
+	} catch (error: unknown) {
+		const err = error as { stderr?: string; message?: string };
+		const message = err.stderr?.trim() || err.message || "Unknown error";
+		const lower = message.toLowerCase();
+		const isAuthError = AUTH_ERROR_PATTERNS.some((p) => lower.includes(p));
+		if (isAuthError) {
+			throw new CopilotAuthError(message);
+		}
+		throw new Error(`Copilot CLI error: ${message}`);
+	}
 };
 
 /**
@@ -90,25 +90,25 @@ export const askCopilot = async (prompt: string, opts: CopilotOptions = {}): Pro
  * @returns The concatenated response text
  */
 const parseJsonlResponse = (output: string): string => {
-  const lines = output.trim().split('\n');
-  const parts: string[] = [];
+	const lines = output.trim().split("\n");
+	const parts: string[] = [];
 
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    try {
-      const parsed = JSON.parse(line);
-      if (parsed.type === 'assistant.message' && parsed.data?.content) {
-        parts.push(parsed.data.content);
-      }
-    } catch {
-      // Not JSON — treat as plain text
-      parts.push(line);
-    }
-  }
+	for (const line of lines) {
+		if (!line.trim()) continue;
+		try {
+			const parsed = JSON.parse(line);
+			if (parsed.type === "assistant.message" && parsed.data?.content) {
+				parts.push(parsed.data.content);
+			}
+		} catch {
+			// Not JSON — treat as plain text
+			parts.push(line);
+		}
+	}
 
-  if (parts.length === 0) {
-    return output.trim();
-  }
+	if (parts.length === 0) {
+		return output.trim();
+	}
 
-  return parts.join('');
+	return parts.join("");
 };

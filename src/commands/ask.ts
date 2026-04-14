@@ -1,15 +1,15 @@
 /** Command handler for querying LLMs via OpenRouter or Poyo. */
-import { readFile } from 'node:fs/promises';
-import { Command } from 'commander';
-import { askLLM } from '../services/openrouter.ts';
-import { askPoyo } from '../services/poyo.ts';
-import { getEnv } from '../services/env.ts';
-import { resolveForProvider } from '../services/models.ts';
-import type { ProviderName } from '../data/models.ts';
-import { resolvePrompt } from '../infra/prompt.ts';
-import { Spinner } from '../infra/spinner.ts';
-import { loadFileContext } from '../services/files.ts';
-import { exitCode } from '../errors.ts';
+import { readFile } from "node:fs/promises";
+import { Command } from "commander";
+import type { ProviderName } from "../data/models.ts";
+import { exitCode } from "../errors.ts";
+import { resolvePrompt } from "../infra/prompt.ts";
+import { Spinner } from "../infra/spinner.ts";
+import { getEnv } from "../services/env.ts";
+import { loadFileContext } from "../services/files.ts";
+import { resolveForProvider } from "../services/models.ts";
+import { askLLM } from "../services/openrouter.ts";
+import { askPoyo } from "../services/poyo.ts";
 
 /**
  * Parse a JSON schema from an inline string or a file path.
@@ -18,11 +18,11 @@ import { exitCode } from '../errors.ts';
  * @throws {SyntaxError} When the JSON is invalid.
  */
 const parseSchema = async (value: string): Promise<Record<string, unknown>> => {
-  if (value.trimStart().startsWith('{')) {
-    return JSON.parse(value) as Record<string, unknown>;
-  }
-  const content = await readFile(value, 'utf-8');
-  return JSON.parse(content) as Record<string, unknown>;
+	if (value.trimStart().startsWith("{")) {
+		return JSON.parse(value) as Record<string, unknown>;
+	}
+	const content = await readFile(value, "utf-8");
+	return JSON.parse(content) as Record<string, unknown>;
 };
 
 /**
@@ -30,78 +30,83 @@ const parseSchema = async (value: string): Promise<Record<string, unknown>> => {
  * @returns The configured Commander command.
  */
 export const createAskCommand = (): Command =>
-  new Command('ask')
-    .description('Ask a question to an LLM')
-    .argument('[prompt]', 'Prompt to send to the model (or pipe via stdin)')
-    .option('-m, --model <model>', 'Model override (replaces ASK_MODEL)')
-    .option('-f, --file <path>', 'File or glob to include as context (repeatable)', (val: string, acc: string[]) => [...acc, val], [])
-    .option('-p, --provider <name>', 'LLM provider (openrouter, poyo)')
-    .option('-j, --json', 'Request JSON output from the model')
-    .option('-s, --schema <json_or_file>', 'JSON schema for structured output (inline JSON or path to .json file)')
-    .option('-e, --effort <level>', 'Reasoning effort level (low, medium, high)')
-    .action(async (promptArg: string | undefined, opts: { model?: string; file: string[]; provider?: string; json?: boolean; schema?: string; effort?: string }) => {
-      try {
-        const resolved = await resolvePrompt(promptArg);
-        const { prompt } = resolved;
-        const stdin = resolved.stdin;
+	new Command("ask")
+		.description("Ask a question to an LLM")
+		.argument("[prompt]", "Prompt to send to the model (or pipe via stdin)")
+		.option("-m, --model <model>", "Model override (replaces ASK_MODEL)")
+		.option(
+			"-f, --file <path>",
+			"File or glob to include as context (repeatable)",
+			(val: string, acc: string[]) => [...acc, val],
+			[],
+		)
+		.option("-p, --provider <name>", "LLM provider (openrouter, poyo)")
+		.option("-j, --json", "Request JSON output from the model")
+		.option("-s, --schema <json_or_file>", "JSON schema for structured output (inline JSON or path to .json file)")
+		.option("-e, --effort <level>", "Reasoning effort level (low, medium, high)")
+		.action(
+			async (
+				promptArg: string | undefined,
+				opts: { model?: string; file: string[]; provider?: string; json?: boolean; schema?: string; effort?: string },
+			) => {
+				try {
+					const resolved = await resolvePrompt(promptArg);
+					const { prompt } = resolved;
+					const stdin = resolved.stdin;
 
-        const files = opts.file.length > 0
-          ? await loadFileContext(opts.file)
-          : [];
+					const files = opts.file.length > 0 ? await loadFileContext(opts.file) : [];
 
-        let jsonSchema: Record<string, unknown> | undefined;
-        if (opts.schema) {
-          jsonSchema = await parseSchema(opts.schema);
-        }
+					let jsonSchema: Record<string, unknown> | undefined;
+					if (opts.schema) {
+						jsonSchema = await parseSchema(opts.schema);
+					}
 
-        const provider = opts.provider || getEnv('ASK_PROVIDER') || 'openrouter';
-        if (provider === 'copilot') {
-          console.error('Use "cc-hub copilot" instead of "cc-hub ask --provider copilot"');
-          process.exit(2);
-        }
-        if (provider === 'codex') {
-          console.error('Use "cc-hub codex" instead of "cc-hub ask --provider codex"');
-          process.exit(2);
-        }
-        const rawModel = opts.model || getEnv('ASK_MODEL');
-        if (!rawModel) {
-          console.error('No model specified — use --model <model> or set ASK_MODEL');
-          process.exit(2);
-        }
-        const providerName: ProviderName = provider === 'poyo' ? 'poyo' : 'openrouter';
-        const model = resolveForProvider(rawModel, providerName);
-        const askFn = provider === 'poyo' ? askPoyo : askLLM;
+					const provider = opts.provider || getEnv("ASK_PROVIDER") || "openrouter";
+					if (provider === "copilot") {
+						console.error('Use "cc-hub copilot" instead of "cc-hub ask --provider copilot"');
+						process.exit(2);
+					}
+					if (provider === "codex") {
+						console.error('Use "cc-hub codex" instead of "cc-hub ask --provider codex"');
+						process.exit(2);
+					}
+					const rawModel = opts.model || getEnv("ASK_MODEL");
+					if (!rawModel) {
+						console.error("No model specified — use --model <model> or set ASK_MODEL");
+						process.exit(2);
+					}
+					const providerName: ProviderName = provider === "poyo" ? "poyo" : "openrouter";
+					const model = resolveForProvider(rawModel, providerName);
+					const askFn = provider === "poyo" ? askPoyo : askLLM;
 
-        const validEfforts = ['low', 'medium', 'high'];
-        if (opts.effort && !validEfforts.includes(opts.effort)) {
-          console.error(`Invalid effort level: ${opts.effort}. Must be one of: low, medium, high`);
-          process.exit(2);
-        }
-        const effort = opts.effort as 'low' | 'medium' | 'high' | undefined;
+					const validEfforts = ["low", "medium", "high"];
+					if (opts.effort && !validEfforts.includes(opts.effort)) {
+						console.error(`Invalid effort level: ${opts.effort}. Must be one of: low, medium, high`);
+						process.exit(2);
+					}
+					const effort = opts.effort as "low" | "medium" | "high" | undefined;
 
-        const spinner = new Spinner('waiting...', { elapsed: true }).start();
+					const spinner = new Spinner("waiting...", { elapsed: true }).start();
 
-        try {
-          const response = await askFn(prompt, {
-            model,
-            stdin,
-            files: files.length > 0 ? files : undefined,
-            json: opts.json || !!jsonSchema,
-            jsonSchema,
-            effort,
-          });
+					try {
+						const response = await askFn(prompt, {
+							model,
+							stdin,
+							files: files.length > 0 ? files : undefined,
+							json: opts.json || !!jsonSchema,
+							jsonSchema,
+							effort,
+						});
 
-          spinner.stop();
-          process.stdout.write(response);
-          if (!response.endsWith('\n')) process.stdout.write('\n');
-        } finally {
-          spinner.stop();
-        }
-      } catch (err) {
-        console.error(
-          `Ask command failed: ${(err as Error).message}. ` +
-          'Check the model name and API credentials.',
-        );
-        process.exit(exitCode(err, 4));
-      }
-    });
+						spinner.stop();
+						process.stdout.write(response);
+						if (!response.endsWith("\n")) process.stdout.write("\n");
+					} finally {
+						spinner.stop();
+					}
+				} catch (err) {
+					console.error(`Ask command failed: ${(err as Error).message}. Check the model name and API credentials.`);
+					process.exit(exitCode(err, 4));
+				}
+			},
+		);

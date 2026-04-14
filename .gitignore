@@ -24,13 +24,29 @@ out/
 *.log
 npm-debug.log*
 
+# TypeScript
+.tsbuildinfo
+.output/
+
+# Bun
+.bun/
+
 # Coverage
 coverage/
 
 # Temp
 *.tmp
 *.swp
+*.swo
 *~
 
 # Materialized conventions
 .conventions/
+
+# LiveSpec local
+.claude/commands/spec.*.md
+.claude/agents/livespec-*.md
+.specs/.livespec-path
+.specs/hooks/*.local.md
+test-results/
+playwright-report/

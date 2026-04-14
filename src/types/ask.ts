@@ -9,11 +9,11 @@
  * @property jsonSchema - JSON schema for structured output.
  */
 export interface AskOptions {
-  model?: string;
-  systemPrompt?: string;
-  stdin?: string;
-  files?: Array<{ path: string; content: string }>;
-  effort?: 'low' | 'medium' | 'high';
-  json?: boolean;
-  jsonSchema?: Record<string, unknown>;
+	model?: string;
+	systemPrompt?: string;
+	stdin?: string;
+	files?: Array<{ path: string; content: string }>;
+	effort?: "low" | "medium" | "high";
+	json?: boolean;
+	jsonSchema?: Record<string, unknown>;
 }

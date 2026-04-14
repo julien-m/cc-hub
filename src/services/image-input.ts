@@ -1,20 +1,20 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve, extname } from 'node:path';
-import { getEnv } from './env.ts';
+import { existsSync, readFileSync } from "node:fs";
+import { extname, resolve } from "node:path";
+import { getEnv } from "./env.ts";
 
 /** Maps supported image extensions to MIME types. */
 const IMAGE_MIME_TYPES = {
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
+	".png": "image/png",
+	".jpg": "image/jpeg",
+	".jpeg": "image/jpeg",
+	".webp": "image/webp",
 } as const satisfies Record<string, string>;
 
 /** Maps supported video extensions to MIME types. */
 const VIDEO_MIME_TYPES = {
-  '.mp4': 'video/mp4',
-  '.webm': 'video/webm',
-  '.mov': 'video/quicktime',
+	".mp4": "video/mp4",
+	".webm": "video/webm",
+	".mov": "video/quicktime",
 } as const satisfies Record<string, string>;
 
 /**
@@ -24,13 +24,15 @@ const VIDEO_MIME_TYPES = {
  * @throws If the extension is not supported
  */
 export const validateImageExtension = (filePath: string): string => {
-  const ext = extname(filePath).toLowerCase();
-  const mime = (IMAGE_MIME_TYPES as Record<string, string>)[ext];
-  if (!mime) {
-    const supported = Object.keys(IMAGE_MIME_TYPES).map((e) => e.slice(1)).join(', ');
-    throw new Error(`Unsupported image format: ${ext ? ext.slice(1) : '(none)'}. Supported: ${supported}`);
-  }
-  return mime;
+	const ext = extname(filePath).toLowerCase();
+	const mime = (IMAGE_MIME_TYPES as Record<string, string>)[ext];
+	if (!mime) {
+		const supported = Object.keys(IMAGE_MIME_TYPES)
+			.map((e) => e.slice(1))
+			.join(", ");
+		throw new Error(`Unsupported image format: ${ext ? ext.slice(1) : "(none)"}. Supported: ${supported}`);
+	}
+	return mime;
 };
 
 /**
@@ -40,13 +42,15 @@ export const validateImageExtension = (filePath: string): string => {
  * @throws If the extension is not supported
  */
 export const validateVideoExtension = (filePath: string): string => {
-  const ext = extname(filePath).toLowerCase();
-  const mime = (VIDEO_MIME_TYPES as Record<string, string>)[ext];
-  if (!mime) {
-    const supported = Object.keys(VIDEO_MIME_TYPES).map((e) => e.slice(1)).join(', ');
-    throw new Error(`Unsupported video format: ${ext ? ext.slice(1) : '(none)'}. Supported: ${supported}`);
-  }
-  return mime;
+	const ext = extname(filePath).toLowerCase();
+	const mime = (VIDEO_MIME_TYPES as Record<string, string>)[ext];
+	if (!mime) {
+		const supported = Object.keys(VIDEO_MIME_TYPES)
+			.map((e) => e.slice(1))
+			.join(", ");
+		throw new Error(`Unsupported video format: ${ext ? ext.slice(1) : "(none)"}. Supported: ${supported}`);
+	}
+	return mime;
 };
 
 /**
@@ -61,22 +65,22 @@ export const validateVideoExtension = (filePath: string): string => {
  * @throws If the local file does not exist or has an unsupported extension
  */
 export const resolveImageInput = async (pathOrUrl: string): Promise<string[]> => {
-  if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
-    return [pathOrUrl];
-  }
+	if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
+		return [pathOrUrl];
+	}
 
-  const absPath = resolve(pathOrUrl);
-  if (!existsSync(absPath)) {
-    throw new Error(`Image not found: ${absPath}`);
-  }
+	const absPath = resolve(pathOrUrl);
+	if (!existsSync(absPath)) {
+		throw new Error(`Image not found: ${absPath}`);
+	}
 
-  const mime = validateImageExtension(absPath);
-  const buffer = readFileSync(absPath);
-  const base64 = buffer.toString('base64');
-  const dataUri = `data:${mime};base64,${base64}`;
+	const mime = validateImageExtension(absPath);
+	const buffer = readFileSync(absPath);
+	const base64 = buffer.toString("base64");
+	const dataUri = `data:${mime};base64,${base64}`;
 
-  const uploaded = await tryUploadToPoyo(dataUri);
-  return [uploaded ?? dataUri];
+	const uploaded = await tryUploadToPoyo(dataUri);
+	return [uploaded ?? dataUri];
 };
 
 /**
@@ -91,25 +95,25 @@ export const resolveImageInput = async (pathOrUrl: string): Promise<string[]> =>
  * @throws If the local file does not exist or has an unsupported extension
  */
 export const resolveVideoInput = async (pathOrUrl: string): Promise<string> => {
-  if (pathOrUrl.startsWith('http://') || pathOrUrl.startsWith('https://')) {
-    return pathOrUrl;
-  }
+	if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
+		return pathOrUrl;
+	}
 
-  const absPath = resolve(pathOrUrl);
-  if (!existsSync(absPath)) {
-    throw new Error(`Video not found: ${absPath}`);
-  }
+	const absPath = resolve(pathOrUrl);
+	if (!existsSync(absPath)) {
+		throw new Error(`Video not found: ${absPath}`);
+	}
 
-  const mime = validateVideoExtension(absPath);
-  const buffer = readFileSync(absPath);
-  const base64 = buffer.toString('base64');
-  const dataUri = `data:${mime};base64,${base64}`;
+	const mime = validateVideoExtension(absPath);
+	const buffer = readFileSync(absPath);
+	const base64 = buffer.toString("base64");
+	const dataUri = `data:${mime};base64,${base64}`;
 
-  const uploaded = await tryUploadToPoyo(dataUri);
-  if (!uploaded) {
-    throw new Error('Failed to upload video to Poyo storage — try using a URL instead');
-  }
-  return uploaded;
+	const uploaded = await tryUploadToPoyo(dataUri);
+	if (!uploaded) {
+		throw new Error("Failed to upload video to Poyo storage — try using a URL instead");
+	}
+	return uploaded;
 };
 
 /**
@@ -118,29 +122,29 @@ export const resolveVideoInput = async (pathOrUrl: string): Promise<string> => {
  * @returns The hosted URL on success, null on failure
  */
 const tryUploadToPoyo = async (dataUri: string): Promise<string | null> => {
-  const apiKey = getEnv('POYO_API_KEY');
-  if (!apiKey) return null;
+	const apiKey = getEnv("POYO_API_KEY");
+	if (!apiKey) return null;
 
-  try {
-    const res = await fetch('https://api.poyo.ai/api/common/upload/url', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ file_url: dataUri }),
-      signal: AbortSignal.timeout(30_000),
-    });
+	try {
+		const res = await fetch("https://api.poyo.ai/api/common/upload/url", {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${apiKey}`,
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({ file_url: dataUri }),
+			signal: AbortSignal.timeout(30_000),
+		});
 
-    if (!res.ok) return null;
+		if (!res.ok) return null;
 
-    const json = (await res.json()) as {
-      code: number;
-      data?: { file_url?: string };
-    };
+		const json = (await res.json()) as {
+			code: number;
+			data?: { file_url?: string };
+		};
 
-    return json.code === 200 ? (json.data?.file_url ?? null) : null;
-  } catch {
-    return null;
-  }
+		return json.code === 200 ? (json.data?.file_url ?? null) : null;
+	} catch {
+		return null;
+	}
 };

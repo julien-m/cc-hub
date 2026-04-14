@@ -1,21 +1,22 @@
 {
-  "name": "cc-hub",
-  "version": "0.1.0",
-  "description": "All-in-one AI CLI — logs, digest, multi-model",
-  "type": "module",
-  "bin": {
-    "cc-hub": "./bin/cc-hub.ts"
-  },
-  "scripts": {
-    "start": "bun bin/cc-hub.ts"
-  },
-  "dependencies": {
-    "@libsql/client": "^0.14.0",
-    "commander": "^13.0.0",
-    "ora": "^9.3.0"
-  },
-  "license": "MIT",
-  "devDependencies": {
-    "@types/bun": "^1.3.10"
-  }
+	"name": "cc-hub",
+	"version": "0.1.0",
+	"description": "All-in-one AI CLI — logs, digest, multi-model",
+	"type": "module",
+	"bin": {
+		"cc-hub": "./bin/cc-hub.ts"
+	},
+	"scripts": {
+		"start": "bun bin/cc-hub.ts",
+		"typecheck": "bunx tsc --noEmit"
+	},
+	"dependencies": {
+		"@libsql/client": "^0.14.0",
+		"commander": "^13.0.0",
+		"ora": "^9.3.0"
+	},
+	"license": "MIT",
+	"devDependencies": {
+		"@types/bun": "^1.3.10"
+	}
 }
