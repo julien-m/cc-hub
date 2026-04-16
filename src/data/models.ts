@@ -25,7 +25,6 @@ export const MODELS: Model[] = [
 		providers: {
 			openrouter: "anthropic/claude-opus-4.5",
 			copilot: "claude-opus-4.5",
-			poyo: "claude-opus-4-5-20251101",
 		},
 	},
 	{
@@ -42,7 +41,6 @@ export const MODELS: Model[] = [
 		providers: {
 			openrouter: "anthropic/claude-sonnet-4.5",
 			copilot: "claude-sonnet-4.5",
-			poyo: "claude-sonnet-4-5-20250929",
 		},
 	},
 	{
@@ -59,7 +57,6 @@ export const MODELS: Model[] = [
 		providers: {
 			openrouter: "anthropic/claude-haiku-4.5",
 			copilot: "claude-haiku-4.5",
-			poyo: "claude-haiku-4-5-20251001",
 		},
 	},
 
@@ -163,6 +160,15 @@ export const MODELS: Model[] = [
 		},
 	},
 
+	// --- Z.AI ---
+	{
+		id: "z-ai/glm-5.1",
+		type: "text",
+		providers: {
+			openrouter: "z-ai/glm-5.1",
+		},
+	},
+
 	// --- xAI ---
 	{
 		id: "xai/grok-4.1-fast",
@@ -181,18 +187,10 @@ export const MODELS: Model[] = [
 
 	// --- Google ---
 	{
-		id: "google/gemini-3-pro",
-		type: "text",
-		providers: {
-			poyo: "gemini-3-pro-preview",
-		},
-	},
-	{
 		id: "google/gemini-3-flash",
 		type: "text",
 		providers: {
 			openrouter: "google/gemini-3-flash-preview",
-			poyo: "gemini-3-flash-preview",
 		},
 	},
 	{
