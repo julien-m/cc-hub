@@ -54,7 +54,7 @@ describe("toProviderName", () => {
 	});
 
 	it("should translate canonical ID to poyo name", () => {
-		expect(toProviderName("google/gemini-3-pro", "poyo")).toBe("gemini-3-pro-preview");
+		expect(toProviderName("google/nano-banana-2", "poyo")).toBe("nano-banana-2");
 	});
 
 	it("should self-map openrouter (ID equals provider name)", () => {
