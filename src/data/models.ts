@@ -63,6 +63,15 @@ export const MODELS: Model[] = [
 	// --- OpenAI ---
 	// Codex models: OpenRouter strips dots in their slug (gpt-53-codex, not gpt-5.3-codex)
 	{
+		id: "openai/gpt-5.5",
+		type: "text",
+		providers: {
+			openrouter: "openai/gpt-5.5",
+			copilot: "gpt-5.5",
+			codex: "gpt-5.5",
+		},
+	},
+	{
 		id: "openai/gpt-5.4",
 		type: "text",
 		providers: {

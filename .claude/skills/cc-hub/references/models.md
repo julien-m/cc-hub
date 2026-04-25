@@ -17,7 +17,7 @@
 ## Codex (`cc-hub codex`)
 
 - Modèle par défaut : `openai/gpt-5.4`
-- Disponibles : `openai/gpt-5.4`, `openai/gpt-5.4-mini`, `openai/gpt-53-codex`, `openai/gpt-53-codex-spark`
+- Disponibles : `openai/gpt-5.5`, `openai/gpt-5.4`, `openai/gpt-5.4-mini`, `openai/gpt-53-codex`, `openai/gpt-53-codex-spark`
 
 ## Ask / Copilot (`cc-hub ask` / `cc-hub copilot`)
 

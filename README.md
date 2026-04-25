@@ -367,7 +367,7 @@ cc-hub codex review --model openai/gpt-53-codex
 | `--model <model>` | Model canonical ID (default: `openai/gpt-5.4`) |
 | `--base <ref>` | Git base reference for review (e.g. `main`) |
 
-Available Codex models: `openai/gpt-5.4` (default), `openai/gpt-5.4-mini`, `openai/gpt-53-codex`, `openai/gpt-53-codex-spark`.
+Available Codex models: `openai/gpt-5.5`, `openai/gpt-5.4` (default), `openai/gpt-5.4-mini`, `openai/gpt-53-codex`, `openai/gpt-53-codex-spark`.
 
 ### `copilot` — LLM via GitHub Copilot CLI
 
