@@ -294,6 +294,20 @@ export const MODELS: Model[] = [
 		},
 	},
 	{
+		id: "openai/gpt-5.4-image-2",
+		type: "image",
+		providers: {
+			poyo: "gpt-5.4-image-2",
+		},
+	},
+	{
+		id: "openai/gpt-5.4-image-2-edit",
+		type: "image",
+		providers: {
+			poyo: "gpt-5.4-image-2-edit",
+		},
+	},
+	{
 		id: "openai/gpt-image-1.5",
 		type: "image",
 		providers: {
