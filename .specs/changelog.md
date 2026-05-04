@@ -5,6 +5,15 @@
 
 ---
 
+## 2026-05-04 — Feature 001 implemented: Multi-reference files for imagine/video/motion
+
+- **Type:** Feature implementation
+- **Author:** spec.implement (livespec-implementer agent)
+- **Artifacts:** `src/infra/option-collectors.ts`, `src/commands/{imagine,video,motion}.ts`, `tests/infra/option-collectors.test.ts`, `tests/commands/{imagine,video,motion,help-text}.test.ts`, `tests/commands/__fixtures__/*-single-i.json`, `README.md`, `.claude/skills/cc-hub/SKILL.md`, `.specs/features/001-multi-reference-files/{progress,implementation,changelog}.md`
+- **Notes:** `imagine`, `video`, `motion` now accept repeated `-i, --image`. Single-`-i` payload remains byte-identical to the pre-feature shape (FR-006), enforced by snapshot fixtures.
+
+---
+
 ## 2026-04-14 — Setup: LiveSpec initialized via `spec.init --from-code`
 
 - **Type:** Setup

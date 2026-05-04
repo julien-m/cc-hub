@@ -60,6 +60,7 @@ Options : `-j/--json` (libre), `-s/--schema <json_or_file>` (contraint), `-e/--e
 cc-hub imagine "Description" -o /tmp/image.png
 cc-hub imagine "Description" --size 16:9 --resolution 2K -o rendu.png
 cc-hub imagine "Watercolor" -i ./photo.png -o result.png   # image de référence
+cc-hub imagine "Blend" -i ref1.png -i ref2.png -o blend.png # `-i` répétable → `image_urls` ordonné
 ```
 
 `-o` obligatoire. Chemin relatif/absolu respecté ; nom seul → `~/.claude-hub/artifacts/`.
@@ -71,6 +72,7 @@ Modèles : **Read** [`references/models.md`](references/models.md)
 cc-hub video "Description" -o clip.mp4
 cc-hub video "Description" -d 10 -a 9:16 -o short.mp4
 cc-hub video "Walking" -i ./portrait.jpg -o animated.mp4   # image-to-video
+cc-hub video "Fusion" -i a.png -i b.png -o fusion.mp4      # `-i` répétable
 ```
 
 `-o` obligatoire. Durée 3-15s (défaut 5). Ratios : `16:9`, `1:1`, `9:16`.
@@ -80,9 +82,10 @@ Modèles : **Read** [`references/models.md`](references/models.md)
 
 ```bash
 cc-hub motion "Dance" -i ./character.png -v ./dance.mp4 -o result.mp4
+cc-hub motion "Walk" -i front.png -i side.png -v ref.mp4 -o walk.mp4  # `-i` répétable (≥1 requis)
 ```
 
-`-i` (image) et `-v` (vidéo de mouvement) obligatoires. `-c/--character-orientation character|video`.
+`-i` (image, répétable, ≥1 requis) et `-v` (vidéo de mouvement, scalaire) obligatoires. `-c/--character-orientation character|video`.
 
 ### Codex CLI (OpenAI)
 

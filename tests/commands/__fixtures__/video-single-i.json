@@ -1,0 +1,10 @@
+{
+	"model": "kuaishou/kling-3.0-pro",
+	"input": {
+		"prompt": "one ref",
+		"duration": 5,
+		"aspect_ratio": "16:9",
+		"sound": true,
+		"image_urls": ["url-only"]
+	}
+}
