@@ -26,13 +26,11 @@ const resolveReferenceImages = async (paths: ReadonlyArray<string>): Promise<str
 	const count = paths.length;
 	const label = count === 1 ? "Resolving reference image..." : `Resolving ${count} reference images...`;
 	const resolveSpinner = new Spinner(label).start();
-	const imageUrls: string[] = [];
 
-	// Resolve references one by one so the first failing path aborts immediately and
-	// the outbound `image_urls` array stays in the same order as the repeated `-i` flags.
-	for (const path of paths) {
-		imageUrls.push(...(await resolveImageInput(path)));
-	}
+	// Resolve independent inputs in parallel while preserving the CLI flag order in the
+	// outbound `image_urls` payload because Promise.all keeps results aligned to inputs.
+	const resolvedGroups = await Promise.all(paths.map((path) => resolveImageInput(path)));
+	const imageUrls = resolvedGroups.flat();
 
 	resolveSpinner.succeed(count === 1 ? "Reference image resolved" : `${count} reference images resolved`);
 	return imageUrls;
