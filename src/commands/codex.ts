@@ -10,6 +10,8 @@ import { getEnv } from "../services/env.ts";
 import { loadFileContext } from "../services/files.ts";
 import { resolveForProvider } from "../services/models.ts";
 
+const CODEX_DEFAULT_MODEL = "openai/gpt-5.5";
+
 /**
  * Create the `codex` command.
  * @returns The configured Commander command.
@@ -18,7 +20,7 @@ export const createCodexCommand = (): Command => {
 	const cmd = new Command("codex")
 		.description("Ask a question or run a review via OpenAI Codex CLI")
 		.argument("[prompt]", "Prompt to send to the model (or pipe via stdin)")
-		.option("-m, --model <model>", "Model override (default: gpt-5.4)")
+		.option("-m, --model <model>", `Model override (default: ${CODEX_DEFAULT_MODEL})`)
 		.option(
 			"-f, --file <path>",
 			"File or glob to include as context (repeatable)",
@@ -67,7 +69,7 @@ export const createCodexCommand = (): Command => {
 							process.exit(2);
 						}
 
-						const rawModel = opts.model || getEnv("CODEX_MODEL") || "openai/gpt-5.4";
+						const rawModel = opts.model || getEnv("CODEX_MODEL") || CODEX_DEFAULT_MODEL;
 						const nativeModel = resolveForProvider(rawModel, "codex");
 
 						const session = await (async (): Promise<CodexSession> => {
@@ -137,7 +139,7 @@ export const createCodexCommand = (): Command => {
 
 					const files = opts.file.length > 0 ? await loadFileContext(opts.file) : [];
 
-					const rawModel = opts.model || getEnv("CODEX_MODEL") || "openai/gpt-5.4";
+					const rawModel = opts.model || getEnv("CODEX_MODEL") || CODEX_DEFAULT_MODEL;
 					const nativeModel = resolveForProvider(rawModel, "codex");
 
 					const spinner = new Spinner("waiting...", { elapsed: true }).start();
@@ -167,11 +169,11 @@ export const createCodexCommand = (): Command => {
 	cmd
 		.command("review")
 		.description("Run a code review on the current repository")
-		.option("-m, --model <model>", "Model override (default: gpt-5.4)")
+		.option("-m, --model <model>", `Model override (default: ${CODEX_DEFAULT_MODEL})`)
 		.option("-b, --base <ref>", "Git base reference for review (e.g. main)")
 		.action(async (opts: { model?: string; base?: string }) => {
 			try {
-				const rawModel = opts.model || getEnv("CODEX_MODEL") || "openai/gpt-5.4";
+				const rawModel = opts.model || getEnv("CODEX_MODEL") || CODEX_DEFAULT_MODEL;
 				const nativeModel = resolveForProvider(rawModel, "codex");
 
 				const spinner = new Spinner("reviewing...", { elapsed: true }).start();

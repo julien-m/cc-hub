@@ -57,7 +57,7 @@ LLM_MODEL=anthropic/claude-sonnet-4.6
 COPILOT_MODEL=openai/gpt-5.4
 
 # Codex — via OpenAI Codex CLI
-CODEX_MODEL=openai/gpt-5.4
+CODEX_MODEL=openai/gpt-5.5
 
 # Image — via Poyo
 IMAGE_PROVIDER=poyo
@@ -325,11 +325,11 @@ cc-hub codex "Summarize this text"
 cc-hub codex "Explain this code" -f src/cli.ts
 cc-hub codex "Compare these files" -f src/a.ts -f src/b.ts
 cat file.ts | cc-hub codex "Analyze"
-cc-hub codex "Question" --model openai/gpt-53-codex
+cc-hub codex "Question" --model openai/gpt-5.3-codex
 cc-hub codex "Deep analysis" --effort high
 ```
 
-Default model: `openai/gpt-5.4`. Authentication is managed by the Codex CLI itself (`codex login`).
+Default model: `openai/gpt-5.5`. Authentication is managed by the Codex CLI itself (`codex login`).
 
 | Option | Description |
 | --- | --- |
