@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createAgentCommand } from "../../src/commands/agent.ts";
 import { createMigrateCommand } from "../../src/commands/migrate.ts";
+import { createRuleCommand } from "../../src/commands/rule.ts";
 import { createSkillCommand } from "../../src/commands/skill.ts";
 import { createSyncCommand } from "../../src/commands/sync.ts";
 
@@ -160,6 +161,22 @@ describe("agent-sync CLI commands", () => {
 		);
 	});
 
+	it("sync run includes canonical rules", async () => {
+		const { projectDir, homeDir } = workspace();
+		const rulePath = join(projectDir, ".agent-sync", "rules", "api.md");
+		mkdirSync(join(rulePath, ".."), { recursive: true });
+		writeFileSync(rulePath, "# API Rules\n\n- Validate payloads.\n");
+
+		await withWorkspace(projectDir, homeDir, async () => {
+			await createSyncCommand().parseAsync(["node", "sync", "run", "--scope", "project", "--targets", "all"], {
+				from: "node",
+			});
+		});
+
+		expect(readFileSync(join(projectDir, ".claude", "rules", "api.md"), "utf-8")).toContain("Validate payloads.");
+		expect(readFileSync(join(projectDir, "AGENTS.md"), "utf-8")).toContain("Validate payloads.");
+	});
+
 	it("migrate imports a Claude command as a project skill", async () => {
 		const { projectDir, homeDir } = workspace();
 		const commandsDir = join(projectDir, ".claude", "commands");
@@ -225,5 +242,52 @@ describe("agent-sync CLI commands", () => {
 
 		const parsed = JSON.parse(output) as Array<{ kind: string; name: string; status: string }>;
 		expect(parsed[0]).toMatchObject({ kind: "skill", name: "json-audit", status: "MIGRATED" });
+	});
+
+	it("rule link supports scoped portable rules and rebuilds provider outputs", async () => {
+		const { projectDir, homeDir } = workspace();
+		const rulesDir = join(projectDir, "rules");
+		mkdirSync(rulesDir, { recursive: true });
+		writeFileSync(join(rulesDir, "api.md"), "# API Rules\n\n- Validate all inputs.\n");
+
+		await withWorkspace(projectDir, homeDir, async () => {
+			await createRuleCommand().parseAsync(
+				["node", "rule", "link", "rules/api.md", "--scope", "project", "--targets", "all", "--force"],
+				{ from: "node" },
+			);
+		});
+
+		expect(readlinkSync(join(projectDir, ".agent-sync", "rules", "api.md"))).toBe(join(projectDir, "rules", "api.md"));
+		expect(readFileSync(join(projectDir, ".claude", "rules", "api.md"), "utf-8")).toContain("Validate all inputs.");
+		expect(readFileSync(join(projectDir, "AGENTS.md"), "utf-8")).toContain("Validate all inputs.");
+		const commandHelp = createRuleCommand().helpInformation();
+		const linkHelp =
+			createRuleCommand()
+				.commands.find((command) => command.name() === "link")
+				?.helpInformation() ?? "";
+		expect(commandHelp).toContain("build");
+		expect(linkHelp).toContain("--scope <scope>");
+	});
+
+	it("migrate rules imports Claude rules through the CLI", async () => {
+		const { projectDir, homeDir } = workspace();
+		const rulesDir = join(projectDir, ".claude", "rules");
+		mkdirSync(rulesDir, { recursive: true });
+		writeFileSync(join(rulesDir, "testing.md"), "# Testing Rules\n\n- Run behavior tests.\n");
+
+		const output = await withWorkspace(projectDir, homeDir, async () =>
+			captureLogs(async () => {
+				await createMigrateCommand().parseAsync(
+					["node", "migrate", "rules", ".claude/rules", "--scope", "project", "--targets", "all", "--force"],
+					{ from: "node" },
+				);
+			}),
+		);
+
+		expect(output).toContain("rule\ttesting\trule\tMIGRATED");
+		expect(readFileSync(join(projectDir, ".agent-sync", "rules", "testing.md"), "utf-8")).toContain(
+			"Run behavior tests.",
+		);
+		expect(readFileSync(join(projectDir, "AGENTS.md"), "utf-8")).toContain("Run behavior tests.");
 	});
 });

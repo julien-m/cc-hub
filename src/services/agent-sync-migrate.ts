@@ -12,7 +12,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
-import { basename, dirname, extname, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, extname, isAbsolute, join, relative, resolve } from "node:path";
 import {
 	linkAgent,
 	linkSkill,
@@ -21,9 +21,10 @@ import {
 	type SyncEntry,
 	type SyncOptions,
 } from "./agent-sync.ts";
+import { buildRules, type RuleSyncEntry } from "./agent-sync-rules.ts";
 
 export type MigrationOrigin = ProviderId;
-export type MigrationSourceType = "skill" | "agent" | "command";
+export type MigrationSourceType = "skill" | "agent" | "command" | "rule";
 export type MigrationStatus = "MIGRATED" | "DRY_RUN" | "CONFLICT" | "SKIPPED";
 
 export interface MigrateOptions extends SyncOptions {
@@ -31,14 +32,14 @@ export interface MigrateOptions extends SyncOptions {
 }
 
 export interface MigrationResult {
-	readonly kind: "skill" | "agent";
+	readonly kind: "skill" | "agent" | "rule";
 	readonly sourceType: MigrationSourceType;
 	readonly name: string;
 	readonly status: MigrationStatus;
 	readonly sourcePath: string;
 	readonly canonicalPath: string;
 	readonly actions: readonly string[];
-	readonly links: readonly SyncEntry[];
+	readonly links: readonly (SyncEntry | RuleSyncEntry)[];
 	readonly detail?: string;
 }
 
@@ -72,6 +73,9 @@ const canonicalSkillPath = (name: string, scope: "project" | "global", paths: Ru
 
 const canonicalAgentPath = (name: string, scope: "project" | "global", paths: RuntimePaths): string =>
 	join(canonicalRoot(scope, paths), "agents", name);
+
+const canonicalRulePath = (relativePath: string, scope: "project" | "global", paths: RuntimePaths): string =>
+	join(canonicalRoot(scope, paths), "rules", relativePath.endsWith(".md") ? relativePath : `${relativePath}.md`);
 
 const resolveInputPath = (path: string, paths: RuntimePaths): string => {
 	const resolved = isAbsolute(path) ? path : resolve(paths.projectDir, path);
@@ -211,7 +215,7 @@ const renderCommandSkill = (name: string, commandPath: string): string => {
 };
 
 const resultFromError = (
-	kind: "skill" | "agent",
+	kind: "skill" | "agent" | "rule",
 	sourceType: MigrationSourceType,
 	name: string,
 	sourcePath: string,
@@ -235,6 +239,9 @@ const linkMigratedSkill = (name: string, scope: "project" | "global", options: M
 
 const linkMigratedAgent = (name: string, scope: "project" | "global", options: MigrateOptions): readonly SyncEntry[] =>
 	linkAgent(name, { ...options, scope, targets: options.targets ?? "all" });
+
+const buildMigratedRules = (scope: "project" | "global", options: MigrateOptions): readonly RuleSyncEntry[] =>
+	buildRules({ ...options, scope, targets: options.targets ?? "all" });
 
 const resolveMigrationOrigin = (from: MigrateOptions["from"] | undefined, sourcePath: string): MigrationOrigin => {
 	const origin = from ?? inferOrigin(sourcePath);
@@ -328,6 +335,52 @@ const migrateCommandForScope = (
 	}
 };
 
+const migrateRuleForScope = (
+	sourcePath: string,
+	scope: "project" | "global",
+	options: MigrateOptions,
+	sourceRoot?: string,
+): MigrationResult => {
+	// @spec FR-007: Import Claude rules, FR-008: Dry-run rules — .specs/features/004-portable-agent-sync-rules/spec.md#fr-007
+	const paths = runtimePaths(options);
+	const relativeName =
+		options.name ??
+		(sourceRoot ? relative(sourceRoot, sourcePath).replace(/\\/g, "/") : `${nameFromFile(sourcePath)}.md`);
+	const relativePath = relativeName.endsWith(".md") ? relativeName : `${relativeName}.md`;
+	const name = relativePath.slice(0, -extname(relativePath).length);
+	const canonicalPath = canonicalRulePath(relativePath, scope, paths);
+	const actions = [`copy rule ${sourcePath} -> ${canonicalPath}`, `build rules (${scope})`];
+	if (options.dryRun) {
+		return {
+			kind: "rule",
+			sourceType: "rule",
+			name,
+			status: "DRY_RUN",
+			sourcePath,
+			canonicalPath,
+			actions,
+			links: [],
+		};
+	}
+	try {
+		removeDestinationForWrite(canonicalPath, options.force);
+		ensureDirectory(dirname(canonicalPath));
+		writeFileSync(canonicalPath, readFileSync(sourcePath, "utf-8"));
+		return {
+			kind: "rule",
+			sourceType: "rule",
+			name,
+			status: "MIGRATED",
+			sourcePath,
+			canonicalPath,
+			actions,
+			links: buildMigratedRules(scope, options),
+		};
+	} catch (error) {
+		return resultFromError("rule", "rule", name, sourcePath, canonicalPath, actions, error);
+	}
+};
+
 const writeAgentSource = (canonicalPath: string, agent: ParsedAgent, force: boolean | undefined): void => {
 	removeDestinationForWrite(canonicalPath, force);
 	ensureDirectory(canonicalPath);
@@ -406,6 +459,28 @@ const sortedDirectories = (dir: string): readonly string[] => {
 		.sort();
 };
 
+const sortedMarkdownFilesRecursive = (dir: string): readonly string[] => {
+	if (!existsSync(dir)) return [];
+	const files: string[] = [];
+	const visit = (currentDir: string): void => {
+		for (const entry of readdirSync(currentDir).sort()) {
+			const path = join(currentDir, entry);
+			try {
+				const stat = lstatSync(path);
+				if (stat.isDirectory()) {
+					visit(path);
+					continue;
+				}
+				if ((stat.isFile() || stat.isSymbolicLink()) && path.endsWith(".md")) files.push(path);
+			} catch {
+				// Ignore entries that disappear during traversal.
+			}
+		}
+	};
+	visit(dir);
+	return files;
+};
+
 const inferOrigin = (path: string): MigrationOrigin => (path.includes(`${".codex"}/`) ? "codex" : "claude");
 
 const scopesForMigration = (options: MigrateOptions): readonly ("project" | "global")[] =>
@@ -430,6 +505,34 @@ export const migrateCommand = (path: string, options: MigrateOptions = {}): read
 	return scopesForMigration(options).map((scope) =>
 		migrateCommandForScope(sourcePath, scope, { ...options, from: "claude" }),
 	);
+};
+
+/**
+ * Migrate one Claude rule markdown file into canonical agent-sync rules.
+ */
+export const migrateRule = (path: string, options: MigrateOptions = {}): readonly MigrationResult[] => {
+	const paths = runtimePaths(options);
+	const sourcePath = resolveInputPath(path, paths);
+	return scopesForMigration(options).map((scope) =>
+		migrateRuleForScope(sourcePath, scope, { ...options, from: "claude" }),
+	);
+};
+
+/**
+ * Migrate a Claude rules folder into canonical agent-sync rules.
+ */
+export const migrateRules = (path: string, options: MigrateOptions = {}): readonly MigrationResult[] => {
+	const paths = runtimePaths(options);
+	const sourcePath = resolveInputPath(path, paths);
+	const files = statSync(sourcePath).isDirectory() ? sortedMarkdownFilesRecursive(sourcePath) : [sourcePath];
+	const sourceRoot = statSync(sourcePath).isDirectory() ? sourcePath : undefined;
+	const results: MigrationResult[] = [];
+	for (const scope of scopesForMigration(options)) {
+		for (const file of files) {
+			results.push(migrateRuleForScope(file, scope, { ...options, from: "claude" }, sourceRoot));
+		}
+	}
+	return results;
 };
 
 /**
@@ -460,6 +563,9 @@ export const migratePath = (path: string, options: MigrateOptions = {}): readonl
 			}
 			for (const commandFile of sortedFiles(join(sourcePath, "commands"), ".md")) {
 				results.push(migrateCommandForScope(commandFile, scope, { ...options, from: origin }));
+			}
+			for (const ruleFile of sortedMarkdownFilesRecursive(join(sourcePath, "rules"))) {
+				results.push(migrateRuleForScope(ruleFile, scope, { ...options, from: origin }, join(sourcePath, "rules")));
 			}
 		} else {
 			for (const agentFile of sortedFiles(join(sourcePath, "agents"), ".toml")) {

@@ -13,7 +13,13 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { MigrationResult } from "../../src/services/agent-sync-migrate.ts";
-import { migrateAgent, migrateCommand, migratePath } from "../../src/services/agent-sync-migrate.ts";
+import {
+	migrateAgent,
+	migrateCommand,
+	migratePath,
+	migrateRule,
+	migrateRules,
+} from "../../src/services/agent-sync-migrate.ts";
 
 const roots: string[] = [];
 
@@ -46,6 +52,15 @@ const writeClaudeCommand = (projectDir: string, name: string): void => {
 	const dir = join(projectDir, ".claude", "commands");
 	mkdirSync(dir, { recursive: true });
 	writeFileSync(join(dir, `${name}.md`), "Run a focused code review and report risks.\n");
+};
+
+const writeClaudeRule = (projectDir: string, name: string): void => {
+	const dir = join(projectDir, ".claude", "rules");
+	mkdirSync(dir, { recursive: true });
+	writeFileSync(
+		join(dir, `${name}.md`),
+		`---\npaths:\n  - "src/${name}/**/*.ts"\n---\n\n# ${name} Rules\n\n- Keep ${name} behavior portable.\n`,
+	);
 };
 
 const writeCodexAgent = (projectDir: string, name: string): void => {
@@ -244,5 +259,45 @@ describe("agent-sync migration service", () => {
 		expect(readlinkSync(join(projectDir, ".codex", "agents", "architect.toml"))).toBe(
 			join(projectDir, ".agent-sync", "agents", "architect", "dist", "codex.toml"),
 		);
+	});
+
+	it("migrates a Claude rules folder into canonical project rules and generated outputs", () => {
+		const { projectDir, homeDir } = workspace();
+		writeClaudeRule(projectDir, "api");
+
+		const results = migrateRules(join(projectDir, ".claude", "rules"), {
+			from: "claude",
+			projectDir,
+			homeDir,
+			scope: "project",
+			targets: "all",
+			force: true,
+		});
+
+		expect(results.map((result) => `${result.kind}:${result.name}:${result.status}`)).toEqual(["rule:api:MIGRATED"]);
+		expect(readFileSync(join(projectDir, ".agent-sync", "rules", "api.md"), "utf-8")).toContain("Keep api behavior");
+		expect(readFileSync(join(projectDir, ".claude", "rules", "api.md"), "utf-8")).toContain("src/api/**/*.ts");
+		expect(readFileSync(join(projectDir, "AGENTS.md"), "utf-8")).toContain("When modifying `src/api/**/*.ts`");
+	});
+
+	it("migrates one Claude rule with dry-run without writing files", () => {
+		const { projectDir, homeDir } = workspace();
+		writeClaudeRule(projectDir, "dry");
+
+		const result = onlyResult(
+			migrateRule(join(projectDir, ".claude", "rules", "dry.md"), {
+				from: "claude",
+				projectDir,
+				homeDir,
+				scope: "project",
+				targets: "all",
+				dryRun: true,
+			}),
+		);
+
+		expect(result.kind).toBe("rule");
+		expect(result.status).toBe("DRY_RUN");
+		expect(result.actions.some((action) => action.includes(".agent-sync/rules/dry.md"))).toBe(true);
+		expect(existsSync(join(projectDir, ".agent-sync", "rules", "dry.md"))).toBe(false);
 	});
 });

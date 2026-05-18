@@ -8,6 +8,8 @@ import {
 	migrateAgent,
 	migrateCommand,
 	migratePath,
+	migrateRule,
+	migrateRules,
 	migrateSkill,
 } from "../services/agent-sync-migrate.ts";
 
@@ -90,6 +92,28 @@ export const createMigrateCommand = (): Command => {
 	command.action((path: string) => {
 		const options = optionsOf(command);
 		run(() => migrateCommand(path, options), options);
+	});
+
+	const rule = addOptions(
+		migrate
+			.command("rule")
+			.description("Migrate one Claude rule into agent-sync rules")
+			.argument("<path>", "Rule path"),
+	);
+	rule.action((path: string) => {
+		const options = optionsOf(rule);
+		run(() => migrateRule(path, options), options);
+	});
+
+	const rules = addOptions(
+		migrate
+			.command("rules")
+			.description("Migrate a Claude rules folder into agent-sync rules")
+			.argument("<path>", "Rules folder path"),
+	);
+	rules.action((path: string) => {
+		const options = optionsOf(rules);
+		run(() => migrateRules(path, options), options);
 	});
 
 	return migrate;

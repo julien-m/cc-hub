@@ -171,10 +171,14 @@ cc-hub migrate <folder> --from claude|codex [--scope project|global|all] [--targ
 cc-hub migrate skill <path> [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
 cc-hub migrate agent <path> --from claude|codex [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
 cc-hub migrate command <path> [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
+cc-hub migrate rule <path> [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
+cc-hub migrate rules <folder> [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
 cc-hub skill link <path> [--scope project|global|all] [--targets claude|codex|all] [-n <name>]
 cc-hub skill list / status / repair / unlink <name>
 cc-hub command link <path> [-n <name>]
-cc-hub rule link <path> [-n <name>]
+cc-hub rule link <path> [--scope project|global|all] [--targets claude|codex|all] [-n <name>] [--namespace <ns>] [--force]
+cc-hub rule build|list|status|repair [--scope project|global|all] [--targets claude|codex|all]
+cc-hub rule unlink <name> [--scope project|global|all] [--targets claude|codex|all]
 cc-hub agent create <name> [--scope project|global]
 cc-hub agent build <name> [--scope project|global|all] [--targets claude|codex|all]
 cc-hub agent link <name> [--scope project|global|all] [--targets claude|codex|all]
@@ -184,17 +188,21 @@ cc-hub agent list / status / repair / unlink <name>
 Agent-sync paths:
 
 - skills: `.agent-sync/skills/<name>` or `~/.agent-sync/skills/<name>`
+- rules: `.agent-sync/rules/<name>.md` or `~/.agent-sync/rules/<namespace>/<name>.md`
 - agents: `.agent-sync/agents/<name>/{agent.yaml,prompt.md,dist/}` or `~/.agent-sync/agents/<name>/...`
 - Claude skills: `.claude/skills` / `~/.claude/skills`
 - Codex skills: `.agents/skills` / `~/.agents/skills`
+- Claude rules: generated `.claude/rules/**/*.md` / `~/.claude/rules/**/*.md`
+- Codex rules: generated managed blocks in `AGENTS.md` / `~/.codex/AGENTS.md`
 - Claude agents: `.claude/agents/*.md` / `~/.claude/agents/*.md`
 - Codex agents: `.codex/agents/*.toml` / `~/.codex/agents/*.toml`
 
 Migration behavior:
 
-- `cc-hub migrate .claude --from claude` imports Claude skills, agents, and commands into `.agent-sync`.
+- `cc-hub migrate .claude --from claude` imports Claude skills, agents, commands, and rules into `.agent-sync`.
 - `cc-hub migrate .codex --from codex` imports Codex TOML agents into `.agent-sync`.
 - Claude commands (`.claude/commands/*.md`) become skills (`.agent-sync/skills/<name>/SKILL.md`) because Codex has no command artifact.
+- Claude rules (`.claude/rules/**/*.md`) become canonical rules (`.agent-sync/rules/**/*.md`), then generate Claude `.claude/rules` outputs and Codex `AGENTS.md` blocks.
 - `--dry-run` reports planned writes without changing files.
 - Existing real provider files/directories are preserved unless `--force` is passed.
 

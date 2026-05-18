@@ -5,6 +5,15 @@
 
 ---
 
+## 2026-05-18 — Feature 004 implemented: Portable agent-sync rules
+
+- **Type:** Feature implementation
+- **Author:** Codex
+- **Artifacts:** `src/services/agent-sync-rules.ts`, `src/services/agent-sync-migrate.ts`, `src/commands/rule.ts`, `src/commands/migrate.ts`, `src/commands/sync.ts`, `tests/services/agent-sync-rules.test.ts`, `tests/services/agent-sync-migrate.test.ts`, `tests/commands/agent-sync-cli.test.ts`, `README.md`, `.agent-sync/skills/cc-hub/SKILL.md`, `.specs/features/004-portable-agent-sync-rules/{spec,plan,progress,implementation,changelog}.md`
+- **Notes:** Added canonical project/global `.agent-sync/rules` registries, generated Claude `.claude/rules` outputs, managed Codex `AGENTS.md` blocks, individual rule links, namespaced global links, Claude rule migration, and aggregate sync/status/repair coverage for rules.
+
+---
+
 ## 2026-05-18 — Check: Feature 002 + 003 spec-code alignment verified
 
 - **Type:** Check

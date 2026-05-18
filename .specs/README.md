@@ -34,6 +34,7 @@
 <!-- readme:features:start -->
 | # | Feature | Status | Created | Updated | Spec |
 |---|---|---|---|---|---|
+| 004 | Portable Agent Sync Rules | Implemented | 2026-05-18 | 2026-05-18 | [spec.md](features/004-portable-agent-sync-rules/spec.md) |
 | 003 | Migrate Provider Folders to Agent Sync | Implemented | 2026-05-18 | 2026-05-18 | [spec.md](features/003-migrate-provider-folders-to-agent-sync/spec.md) |
 | 002 | Multi-provider Agent Sync for Claude and Codex Skills and Agents | Implemented | 2026-05-17 | 2026-05-17 | [spec.md](features/002-multi-provider-agent-sync-for-claude-and-codex-skills-and-agents/spec.md) |
 <!-- readme:features:end -->
@@ -60,6 +61,7 @@
 <!-- readme:activity:start -->
 | Date | Type | Description |
 |---|---|---|
+| 2026-05-18 | Feature | Portable agent-sync rules |
 | 2026-05-18 | Feature | Migrate provider folders to agent-sync |
 | 2026-05-17 | Feature | Multi-provider agent sync for Claude and Codex skills and agents |
 | 2026-04-14 | Setup | LiveSpec initialized via `spec.init --from-code` |

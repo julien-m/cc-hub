@@ -417,7 +417,7 @@ Guides are stored in `~/.claude-hub/prompts/<model-slug>.md`.
 
 ### `sync` — Turso Cloud sync
 
-Synchronize portable AI assets from `.agent-sync` / `~/.agent-sync` to Claude Code and Codex provider directories.
+Synchronize portable AI assets from `.agent-sync` / `~/.agent-sync` to Claude Code and Codex provider directories. `sync run`, `sync status`, and `sync repair` include skills, agents, and rules.
 
 ```bash
 cc-hub sync run --scope project --targets all
@@ -449,6 +449,7 @@ Claude folder migration discovers:
 - `.claude/skills/*` -> `.agent-sync/skills/<name>`
 - `.claude/agents/*.md` -> `.agent-sync/agents/<name>/{agent.yaml,prompt.md,dist/}`
 - `.claude/commands/*.md` -> `.agent-sync/skills/<command-name>/SKILL.md`
+- `.claude/rules/**/*.md` -> `.agent-sync/rules/<relative-path>.md`
 
 Codex folder migration discovers:
 
@@ -461,13 +462,15 @@ cc-hub migrate skill .claude/skills/reviewer --scope project --targets all --for
 cc-hub migrate agent .claude/agents/reviewer.md --from claude --scope project --targets all --force
 cc-hub migrate agent .codex/agents/reviewer.toml --from codex --scope project --targets all --force
 cc-hub migrate command .claude/commands/review.md --scope project --targets all --force
+cc-hub migrate rule .claude/rules/api.md --scope project --targets all --force
+cc-hub migrate rules .claude/rules --scope project --targets all --force
 ```
 
 Use `--dry-run` to inspect planned writes without changing files. Existing real provider files/directories are preserved unless `--force` is passed.
 
 ### `skill` / `command` / `rule` / `agent` — Provider linking
 
-Install skills and agents via `.agent-sync` so the same source can be linked to Claude Code and Codex. Commands and rules remain Claude Code `.md` links.
+Install skills, rules, and agents via `.agent-sync` so the same source can be linked or generated for Claude Code and Codex. Commands remain Claude Code `.md` links because Codex has no matching command artifact.
 
 Skills are portable folders with `SKILL.md`, so cc-hub symlinks the whole canonical skill directory:
 
@@ -491,6 +494,19 @@ Agents use one editable source and generated provider-native files:
 .codex/agents/<name>.toml
 ```
 
+Rules use canonical Markdown sources and generated provider outputs:
+
+```text
+.agent-sync/rules/<name>.md             # project canonical rule
+~/.agent-sync/rules/<namespace>/<name>.md # global canonical rule
+.claude/rules/<name>.md                 # generated Claude project rule
+~/.claude/rules/<namespace>/<name>.md    # generated Claude global rule
+AGENTS.md                               # generated project Codex rule block
+~/.codex/AGENTS.md                      # generated global Codex rule block
+```
+
+Claude `paths:` frontmatter is preserved in generated `.claude/rules`. Codex has no equivalent path-scoped rules mechanism, so cc-hub renders paths as textual "When modifying ..." guidance inside the managed `AGENTS.md` block. Edit `.agent-sync/rules` / `~/.agent-sync/rules`, not generated provider outputs.
+
 ```bash
 # Skills
 cc-hub skill link ./my-skill --scope global --targets all
@@ -504,10 +520,14 @@ cc-hub command link /path/to/project/.claude/commands/deploy.md
 cc-hub command list
 cc-hub command unlink deploy.md
 
-# Rules (source = .md file)
-cc-hub rule link /path/to/project/.claude/rules/no-console.md
+# Rules (source = .md file, canonicalized into .agent-sync/rules)
+cc-hub rule link ./rules/api.md --scope project --targets all
+cc-hub rule link .agent-sync/rules/api.md --scope global --targets all --namespace project-x
+cc-hub rule build --scope all --targets all
 cc-hub rule list
-cc-hub rule unlink no-console.md
+cc-hub rule status --scope all --targets all
+cc-hub rule repair --scope project --targets all
+cc-hub rule unlink api --scope project --targets all
 
 # Agents
 cc-hub agent create reviewer --scope project
@@ -533,12 +553,12 @@ Use `--name` to give a skill symlink a different canonical name than the source:
 ```bash
 cc-hub skill link ./my-skill --name custom-skill-name
 cc-hub command link ./test.md --name my-command.md    # ~/.claude/commands/my-command.md
-cc-hub rule link ./local-rule.md --name project-rules.md
+cc-hub rule link ./local-rule.md --name project-rules.md --scope project --targets all
 ```
 
-For commands and rules, the `.md` extension is added automatically if omitted.
+For commands and rule names, the `.md` extension is added automatically if omitted.
 
-All provider installs use symlinks. Skills link to canonical skill directories; agents link to generated provider-native files.
+All provider installs use symlinks where the provider supports symlinks. Skills link to canonical skill directories; agents link to generated provider-native files; rules link into canonical `.agent-sync/rules` and generate provider-facing outputs.
 
 ### `config` — Preferences
 
@@ -651,7 +671,7 @@ cc-hub/
       migrate.js           # import Claude/Codex folders into agent-sync
       skill.js             # portable skill link, list, status, repair, unlink
       command.js           # command link, list, unlink
-      rule.js              # rule link, list, unlink
+      rule.js              # portable rule build, link, list, status, repair, unlink
       agent.js             # portable agent create, build, link, status, repair
       claude-link.js       # legacy Claude command/rule linking logic
     db/
@@ -663,6 +683,7 @@ cc-hub/
       env.js               # .env file parser (provider/model defaults)
       image-input.ts       # resolve local image path or URL for Poyo API
       agent-sync.js        # provider registry, agent rendering, symlink sync
+      agent-sync-rules.js  # portable rule generation for Claude and Codex
       agent-sync-migrate.js # provider folder migration to agent-sync
       openrouter.js        # OpenRouter API client
       replicate.js         # Replicate API client (predict + poll + download)
