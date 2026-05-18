@@ -5,6 +5,14 @@
 
 ---
 
+## 2026-05-18 — Check: Feature 002 + 003 spec-code alignment verified
+
+- **Type:** Check
+- **Author:** /spec.check
+- **Summary:** [Feature 002] 100% verified (12/12 FR, 12/12 AC); [Feature 003] 100% verified (12/12 FR, 11/11 AC). Reports saved under each feature's `checks/2026-05-18.md`. Verification: `bun tsc --noEmit` ✅, targeted tests 20/20 pass.
+
+---
+
 ## 2026-05-18 — Feature 003 implemented: Migrate provider folders to agent-sync
 
 - **Type:** Feature implementation

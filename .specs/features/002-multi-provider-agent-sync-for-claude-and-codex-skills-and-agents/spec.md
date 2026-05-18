@@ -158,20 +158,20 @@ flowchart TD
 
 ## Acceptance Criteria
 
-| ID | Criterion | Priority | Story |
-|---|---|---|---|
-| AC-001 | `cc-hub skill link <path-or-name> --scope project --targets all` creates project-scope symlinks for Claude (`.claude/skills/<name>`) and Codex (`.agents/skills/<name>`) from the canonical `.agent-sync/skills/<name>` directory. | P1 | Story 1 |
-| AC-002 | `cc-hub skill link <path-or-name> --scope global --targets all` creates global symlinks for Claude (`~/.claude/skills/<name>`) and Codex (`~/.agents/skills/<name>`) from `~/.agent-sync/skills/<name>`. | P1 | Story 1 |
-| AC-003 | `cc-hub agent create <name>` creates `.agent-sync/agents/<name>/agent.yaml` and `prompt.md` with a minimal valid portable agent source. | P1 | Story 2 |
-| AC-004 | `cc-hub agent build <name> --scope project --targets all` generates `dist/claude.md` and `dist/codex.toml` from `agent.yaml` and `prompt.md` without requiring duplicate manual agent definitions. | P1 | Story 2 |
-| AC-005 | `cc-hub agent link <name> --scope project --targets all` symlinks `.claude/agents/<name>.md` to generated Claude output and `.codex/agents/<name>.toml` to generated Codex output. | P1 | Story 2 |
-| AC-006 | Status commands report OK, MISSING, BROKEN, and LOCAL states for skills and agents across scope and target filters. | P1 | Story 3 |
-| AC-007 | Repair commands recreate missing or broken symlinks when canonical sources and generated agent files exist. | P1 | Story 3 |
-| AC-008 | `sync run`, `sync status`, `sync repair`, and `sync clean --dry-run` operate across both skills and agents using the same provider registry as `skill` and `agent`. | P1 | Story 3 |
-| AC-009 | Unsupported targets fail with a clear message listing supported target values. | P2 | Story 4 |
-| AC-010 | The implementation keeps provider definitions and agent renderers isolated so a future provider can be added without rewriting command handlers. | P2 | Story 4 |
-| AC-011 | README and the cc-hub skill documentation are updated for every added or changed command, option, and model-neutral behavior. | P1 | Documentation |
-| AC-012 | Real filesystem tests verify project-scope and global-scope symlink creation in temporary HOME/project directories without touching the user's real provider directories. | P1 | Testing |
+| ID | Given | When | Then | Priority | Story |
+|---|---|---|---|---|---|
+| AC-001 | a canonical `.agent-sync/skills/<name>` exists in the project | the developer runs `cc-hub skill link <path-or-name> --scope project --targets all` | `.claude/skills/<name>` and `.agents/skills/<name>` are symlinks to the canonical skill | P1 | Story 1 |
+| AC-002 | a canonical `~/.agent-sync/skills/<name>` exists in HOME | the developer runs `cc-hub skill link <path-or-name> --scope global --targets all` | `~/.claude/skills/<name>` and `~/.agents/skills/<name>` are symlinks to the canonical skill | P1 | Story 1 |
+| AC-003 | a project with no agent named `<name>` | the developer runs `cc-hub agent create <name>` | `.agent-sync/agents/<name>/agent.yaml` and `prompt.md` exist with minimal valid content | P1 | Story 2 |
+| AC-004 | `.agent-sync/agents/<name>/agent.yaml` and `prompt.md` exist | the developer runs `cc-hub agent build <name> --scope project --targets all` | `dist/claude.md` and `dist/codex.toml` are generated without manual duplication | P1 | Story 2 |
+| AC-005 | generated `dist/claude.md` and `dist/codex.toml` exist | the developer runs `cc-hub agent link <name> --scope project --targets all` | `.claude/agents/<name>.md` and `.codex/agents/<name>.toml` are symlinks to the generated files | P1 | Story 2 |
+| AC-006 | provider symlinks are in mixed states (valid, missing, broken, local) | the developer runs a status command with scope/target filters | each provider path is reported as OK, MISSING, BROKEN, or LOCAL | P1 | Story 3 |
+| AC-007 | a canonical source exists and a provider symlink is missing or broken | the developer runs a repair command | the missing/broken symlink is recreated to the canonical source | P1 | Story 3 |
+| AC-008 | a project has skills and agents with multiple providers | the developer runs `sync run`, `sync status`, `sync repair`, or `sync clean --dry-run` | the command operates across skills and agents using the same provider registry as `skill`/`agent` | P1 | Story 3 |
+| AC-009 | the developer passes an unsupported target name | target resolution executes | the command fails with a clear error listing supported targets | P2 | Story 4 |
+| AC-010 | a new provider definition is added with destinations and renderer | the sync planner runs | provider-specific actions are produced without changing command handlers | P2 | Story 4 |
+| AC-011 | a command, option, or model-neutral behavior is added or changed | the change is committed | `README.md` and `.agents/skills/cc-hub/SKILL.md` are updated to reflect it | P1 | Documentation |
+| AC-012 | a temporary HOME and project directory are provisioned | filesystem tests run | project-scope and global-scope symlink creation are verified without touching the user's real provider directories | P1 | Testing |
 
 ---
 

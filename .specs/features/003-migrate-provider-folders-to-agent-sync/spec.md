@@ -152,19 +152,19 @@ flowchart TD
 
 ## Acceptance Criteria
 
-| ID | Criterion | Priority | Story |
-|---|---|---|---|
-| AC-001 | `cc-hub migrate <folder> --from claude --scope project --targets all --force` discovers `skills`, `agents`, and `commands` under a `.claude` folder and migrates supported entries into project `.agent-sync`. | P1 | Story 1 |
-| AC-002 | Claude command markdown files are converted to canonical skills in `.agent-sync/skills/<command-name>/SKILL.md` because Codex has no command primitive. | P1 | Story 1 |
-| AC-003 | `cc-hub migrate <folder> --from codex --scope project --targets all --force` discovers Codex TOML agents and migrates them into portable agent sources. | P1 | Story 2 |
-| AC-004 | Claude Markdown agents are converted into `.agent-sync/agents/<name>/agent.yaml` and `prompt.md` while preserving frontmatter metadata and body instructions. | P1 | Story 1 |
-| AC-005 | Codex TOML agents are converted into `.agent-sync/agents/<name>/agent.yaml` and `prompt.md` while preserving `name`, `description`, `model`, `reasoning_effort`, and `developer_instructions`. | P1 | Story 2 |
-| AC-006 | Targeted `migrate skill`, `migrate agent`, and `migrate command` subcommands migrate one artifact and then recreate requested provider links. | P2 | Story 3 |
-| AC-007 | `--dry-run` reports planned actions without creating, replacing, or deleting files. | P1 | Story 3 |
-| AC-008 | Existing provider files or directories are protected unless `--force` is passed; conflicts are visible in the output. | P1 | Story 4 |
-| AC-009 | Migration outputs include enough structured data for JSON output and readable tabular status for humans. | P2 | Story 4 |
-| AC-010 | README and the canonical cc-hub skill documentation describe migrate syntax, folder behavior, command conversion, and conflict options. | P1 | Documentation |
-| AC-011 | Tests cover folder migration, targeted migration, dry-run behavior, conflict handling, and CLI command wiring in isolated temp project/HOME directories. | P1 | Testing |
+| ID | Given | When | Then | Priority | Story |
+|---|---|---|---|---|---|
+| AC-001 | a `.claude` folder contains `skills/`, `agents/`, and `commands/` entries | the developer runs `cc-hub migrate <folder> --from claude --scope project --targets all --force` | supported entries are migrated into project `.agent-sync` with Claude and Codex provider links | P1 | Story 1 |
+| AC-002 | a Claude command markdown file exists under `.claude/commands/<name>.md` | the migration runs | `.agent-sync/skills/<command-name>/SKILL.md` is created as a canonical skill (no Codex command primitive) | P1 | Story 1 |
+| AC-003 | a `.codex` folder contains TOML agents under `agents/` | the developer runs `cc-hub migrate <folder> --from codex --scope project --targets all --force` | Codex TOML agents are migrated into portable agent sources under `.agent-sync/agents/` | P1 | Story 2 |
+| AC-004 | a Claude Markdown agent file with frontmatter exists | the migration parses it | `.agent-sync/agents/<name>/agent.yaml` and `prompt.md` are created preserving frontmatter metadata and body instructions | P1 | Story 1 |
+| AC-005 | a Codex TOML agent declares `name`, `description`, `model`, `reasoning_effort`, `developer_instructions` | the migration parses it | `.agent-sync/agents/<name>/agent.yaml` and `prompt.md` preserve all of these fields | P1 | Story 2 |
+| AC-006 | a single skill, agent, or Claude command file is provided | the developer runs `cc-hub migrate skill\|agent\|command <path>` | only that artifact is migrated and requested provider links are recreated | P2 | Story 3 |
+| AC-007 | a migration command is invoked with `--dry-run` | the command runs | planned actions are reported and no files are created, replaced, or deleted | P1 | Story 3 |
+| AC-008 | a non-symlink provider file or directory already exists at a target path | the migration runs without `--force` | the existing file is preserved and the conflict is visible in the output (LOCAL) | P1 | Story 4 |
+| AC-009 | a migration completes | the developer requests output | results are available as both JSON and readable tabular status with enough structure to script against | P2 | Story 4 |
+| AC-010 | the migrate command or its options are added or changed | the change is committed | `README.md` and the canonical cc-hub skill documentation describe syntax, folder behavior, command conversion, and conflict options | P1 | Documentation |
+| AC-011 | an isolated temp project/HOME is provisioned | the test suite runs | folder migration, targeted migration, dry-run, conflict handling, and CLI command wiring are all covered | P1 | Testing |
 
 ## Functional Requirements
 
