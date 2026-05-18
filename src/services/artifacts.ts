@@ -16,7 +16,9 @@ export const resolveOutputPath = (url: string, output: string, defaultExt: strin
 	const ext = pathname.split(".").pop() || defaultExt;
 	const hasPath = output.includes("/") || output.includes("\\");
 	const name = hasPath ? output : `${output.replace(/\.[^.]+$/, "")}.${ext}`;
-	return hasPath ? name : (ensureDirs(), join(ARTIFACTS_DIR, name));
+	if (hasPath) return name;
+	ensureDirs();
+	return join(ARTIFACTS_DIR, name);
 };
 
 /**

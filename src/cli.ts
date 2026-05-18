@@ -8,6 +8,7 @@ import { createCopilotCommand } from "./commands/copilot.ts";
 import { createDigestCommand } from "./commands/digest.ts";
 import { createImagineCommand } from "./commands/imagine.ts";
 import { createLogCommand } from "./commands/log.ts";
+import { createMigrateCommand } from "./commands/migrate.ts";
 import { createModelsCommand } from "./commands/models.ts";
 import { createMotionCommand } from "./commands/motion.ts";
 import { createMusicCommand } from "./commands/music.ts";
@@ -25,6 +26,7 @@ const program = new Command();
 program.name("cc-hub").description("All-in-one AI CLI — logs, digest, multi-model").version("0.1.0");
 
 program.addCommand(createLogCommand());
+program.addCommand(createMigrateCommand());
 program.addCommand(createDigestCommand());
 program.addCommand(createScheduleCommand());
 program.addCommand(createConfigCommand());

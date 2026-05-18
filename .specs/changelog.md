@@ -5,6 +5,24 @@
 
 ---
 
+## 2026-05-18 — Feature 003 implemented: Migrate provider folders to agent-sync
+
+- **Type:** Feature implementation
+- **Author:** Codex
+- **Artifacts:** `src/services/agent-sync-migrate.ts`, `src/commands/migrate.ts`, `src/cli.ts`, `tests/services/agent-sync-migrate.test.ts`, `tests/commands/agent-sync-cli.test.ts`, `README.md`, `.agent-sync/skills/cc-hub/SKILL.md`, `.specs/features/003-migrate-provider-folders-to-agent-sync/{spec,plan,progress,implementation,changelog}.md`
+- **Notes:** Added `cc-hub migrate` folder imports for `.claude` and `.codex`, targeted skill/agent/command migrations, Claude command to skill conversion, dry-run reporting, and conflict protection.
+
+---
+
+## 2026-05-17 — Feature 002 implemented: Multi-provider agent sync for Claude and Codex
+
+- **Type:** Feature implementation
+- **Author:** Codex
+- **Artifacts:** `src/services/agent-sync.ts`, `src/commands/{skill,agent,sync}.ts`, `tests/services/agent-sync.test.ts`, `tests/commands/agent-sync-cli.test.ts`, `README.md`, `.agents/skills/cc-hub/SKILL.md`, `.specs/features/002-multi-provider-agent-sync-for-claude-and-codex-skills-and-agents/{spec,plan,progress,implementation,changelog}.md`
+- **Notes:** Added `.agent-sync` canonical skill/agent sources, Claude/Codex symlinks, provider-native agent rendering, status/repair/sync commands, isolated tests, and real smoke verification.
+
+---
+
 ## 2026-05-04 — Feature 001 implemented: Multi-reference files for imagine/video/motion
 
 - **Type:** Feature implementation

@@ -86,10 +86,11 @@ export const createPromptCommand = (): Command => {
 			if (opts.model) {
 				model = opts.model;
 			} else {
-				validateModelType(opts.type!);
-				model = getDefaultModel(opts.type! as ModelType);
-				console.error(`Type "${opts.type}" -> default model: ${model}`);
-				console.error(`   (configurable: cc-hub config set prompt.default.${opts.type} "other/model")`);
+				const type = opts.type as ModelType;
+				validateModelType(type);
+				model = getDefaultModel(type);
+				console.error(`Type "${type}" -> default model: ${model}`);
+				console.error(`   (configurable: cc-hub config set prompt.default.${type} "other/model")`);
 			}
 
 			const slug = modelToSlug(model);

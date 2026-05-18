@@ -2,7 +2,7 @@
 
 > Specification registry for cc-hub. All artifacts produced by LiveSpec are indexed here.
 >
-> Last updated: 2026-04-14
+> Last updated: 2026-05-18
 
 ---
 
@@ -34,9 +34,9 @@
 <!-- readme:features:start -->
 | # | Feature | Status | Created | Updated | Spec |
 |---|---|---|---|---|---|
+| 003 | Migrate Provider Folders to Agent Sync | Implemented | 2026-05-18 | 2026-05-18 | [spec.md](features/003-migrate-provider-folders-to-agent-sync/spec.md) |
+| 002 | Multi-provider Agent Sync for Claude and Codex Skills and Agents | Implemented | 2026-05-17 | 2026-05-17 | [spec.md](features/002-multi-provider-agent-sync-for-claude-and-codex-skills-and-agents/spec.md) |
 <!-- readme:features:end -->
-
-> No features yet. Create your first with `/spec.specify "feature description"`.
 
 ---
 
@@ -60,6 +60,8 @@
 <!-- readme:activity:start -->
 | Date | Type | Description |
 |---|---|---|
+| 2026-05-18 | Feature | Migrate provider folders to agent-sync |
+| 2026-05-17 | Feature | Multi-provider agent sync for Claude and Codex skills and agents |
 | 2026-04-14 | Setup | LiveSpec initialized via `spec.init --from-code` |
 <!-- readme:activity:end -->
 

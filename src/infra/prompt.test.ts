@@ -5,11 +5,11 @@ describe("resolvePrompt", () => {
 	const originalIsTTY = process.stdin.isTTY;
 
 	afterEach(() => {
-		Object.defineProperty(process.stdin, "isTTY", { value: originalIsTTY, writable: true });
+		Object.defineProperty(process.stdin, "isTTY", { value: originalIsTTY, writable: true, configurable: true });
 	});
 
 	const setTTY = (value: boolean | undefined) => {
-		Object.defineProperty(process.stdin, "isTTY", { value, writable: true });
+		Object.defineProperty(process.stdin, "isTTY", { value, writable: true, configurable: true });
 	};
 
 	it("should return prompt from arg when no stdin", async () => {

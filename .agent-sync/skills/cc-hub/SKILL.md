@@ -4,7 +4,8 @@ description: >
   CLI IA global installé sur cette machine. Auto-invoquer quand : utilisation
   de cc-hub, log d'activité terminée, envoi Telegram, génération image/vidéo/
   musique, requête LLM (ask/copilot/codex), transcription audio, gestion de
-  skills/rules/agents Claude Code, ou chargement prompt guide avant appel LLM.
+  skills/rules/agents Claude Code et Codex, ou chargement prompt guide avant
+  appel LLM.
 allowed-tools: Bash
 ---
 
@@ -166,13 +167,36 @@ cc-hub transcribe ./fichier.mp3   # → stdout
 ### Skills / Commands / Rules / Agents
 
 ```bash
-cc-hub skill link <path> [-n <name>]   # installer globalement
-cc-hub skill list / unlink <name>
+cc-hub migrate <folder> --from claude|codex [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
+cc-hub migrate skill <path> [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
+cc-hub migrate agent <path> --from claude|codex [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
+cc-hub migrate command <path> [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
+cc-hub skill link <path> [--scope project|global|all] [--targets claude|codex|all] [-n <name>]
+cc-hub skill list / status / repair / unlink <name>
 cc-hub command link <path> [-n <name>]
 cc-hub rule link <path> [-n <name>]
-cc-hub agent link <path> [-n <name>]
-cc-hub agent list / unlink <name>
+cc-hub agent create <name> [--scope project|global]
+cc-hub agent build <name> [--scope project|global|all] [--targets claude|codex|all]
+cc-hub agent link <name> [--scope project|global|all] [--targets claude|codex|all]
+cc-hub agent list / status / repair / unlink <name>
 ```
+
+Agent-sync paths:
+
+- skills: `.agent-sync/skills/<name>` or `~/.agent-sync/skills/<name>`
+- agents: `.agent-sync/agents/<name>/{agent.yaml,prompt.md,dist/}` or `~/.agent-sync/agents/<name>/...`
+- Claude skills: `.claude/skills` / `~/.claude/skills`
+- Codex skills: `.agents/skills` / `~/.agents/skills`
+- Claude agents: `.claude/agents/*.md` / `~/.claude/agents/*.md`
+- Codex agents: `.codex/agents/*.toml` / `~/.codex/agents/*.toml`
+
+Migration behavior:
+
+- `cc-hub migrate .claude --from claude` imports Claude skills, agents, and commands into `.agent-sync`.
+- `cc-hub migrate .codex --from codex` imports Codex TOML agents into `.agent-sync`.
+- Claude commands (`.claude/commands/*.md`) become skills (`.agent-sync/skills/<name>/SKILL.md`) because Codex has no command artifact.
+- `--dry-run` reports planned writes without changing files.
+- Existing real provider files/directories are preserved unless `--force` is passed.
 
 ### Digest
 
@@ -187,7 +211,8 @@ cc-hub schedule set 08:00 / show / unset
 ```bash
 cc-hub config show
 cc-hub config set prompt.default.text "openai/gpt-5.4"
-cc-hub sync run / status
+cc-hub sync run / status / repair / clean --scope project|global|all --targets claude|codex|all
+cc-hub sync db / db-status   # sync DB Turso legacy
 cc-hub prompt get -m openai/gpt-5.4
 cc-hub prompt get -t image|video|audio|music
 cc-hub prompt list [-t image|video|audio|music]

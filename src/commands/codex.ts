@@ -55,8 +55,9 @@ export const createCodexCommand = (): Command => {
 						process.exit(2);
 					}
 					const validSandboxes = ["read-only", "workspace-write"];
-					if (!validSandboxes.includes(opts.sandbox!)) {
-						console.error(`Invalid sandbox mode: ${opts.sandbox}. Must be one of: read-only, workspace-write`);
+					const sandbox = opts.sandbox ?? "read-only";
+					if (!validSandboxes.includes(sandbox)) {
+						console.error(`Invalid sandbox mode: ${sandbox}. Must be one of: read-only, workspace-write`);
 						process.exit(2);
 					}
 

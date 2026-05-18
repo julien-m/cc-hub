@@ -137,7 +137,11 @@ export class CodexSession {
 			}
 		});
 
-		this.rl = createInterface({ input: this.proc.stdout! });
+		const stdout = this.proc.stdout;
+		if (!stdout) {
+			throw new CodexSessionError("Codex app-server stdout is unavailable");
+		}
+		this.rl = createInterface({ input: stdout });
 		this.rl.on("line", (line: string) => this._handleLine(line));
 
 		await this._request("initialize", {
