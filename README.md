@@ -508,6 +508,8 @@ Agents use one editable source and generated provider-native files:
 
 `agent create` writes the canonical source, builds the selected provider files, then links them to the selected scope. In project scope, Codex agents are published to `.codex/agents/<name>.toml`.
 
+`agent.yaml` model values `haiku`, `sonnet`, `opus`, and Claude model IDs are Claude-only and are omitted from generated Codex TOML. OpenAI canonical IDs with Codex support are rendered as Codex-native names.
+
 Rules use canonical Markdown sources and generated provider outputs:
 
 ```text

@@ -5,6 +5,15 @@
 
 ---
 
+## 2026-05-18 — Bugfix: Codex agent generation ignores Claude-only models
+
+- **Type:** Bugfix
+- **Author:** Codex
+- **Artifacts:** `src/services/agent-sync.ts`, `tests/services/agent-sync.test.ts`, `README.md`, `.agent-sync/skills/cc-hub/SKILL.md`, `.specs/features/002-multi-provider-agent-sync-for-claude-and-codex-skills-and-agents/{spec,implementation,changelog}.md`
+- **Notes:** Generated `codex.toml` files now omit Claude-only agent models (`haiku`, `sonnet`, `opus`, Claude IDs) while preserving Codex-native models and translating supported OpenAI canonical IDs.
+
+---
+
 ## 2026-05-18 — Feature 005 implemented: Migration output root override
 
 - **Type:** Feature implementation

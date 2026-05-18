@@ -107,6 +107,42 @@ describe("agent-sync service", () => {
 		);
 	});
 
+	it("generates a Codex agent without copying Claude-only model aliases", () => {
+		const { projectDir, homeDir } = tempWorkspace();
+		mkdirp(projectDir);
+		mkdirp(homeDir);
+		const agentDir = writeAgent(projectDir, "cloud-reviewer");
+		writeFileSync(
+			join(agentDir, "agent.yaml"),
+			`name: cloud-reviewer\ndescription: Reviews cloud changes\nmodel: sonnet\neffort: high\ntargets:\n  - claude\n  - codex\n`,
+		);
+
+		buildAgent("cloud-reviewer", { projectDir, homeDir, scope: "project", targets: "all" });
+
+		const claudeAgent = readFileSync(join(agentDir, "dist", "claude.md"), "utf-8");
+		const codexAgent = readFileSync(join(agentDir, "dist", "codex.toml"), "utf-8");
+		expect(claudeAgent).toContain("model: sonnet");
+		expect(codexAgent).toContain('name = "cloud-reviewer"');
+		expect(codexAgent).toContain("developer_instructions");
+		expect(codexAgent).not.toContain("model =");
+		expect(codexAgent).not.toContain("sonnet");
+	});
+
+	it("translates canonical OpenAI models to Codex-native model names", () => {
+		const { projectDir, homeDir } = tempWorkspace();
+		mkdirp(projectDir);
+		mkdirp(homeDir);
+		const agentDir = writeAgent(projectDir, "codex-reviewer");
+		writeFileSync(
+			join(agentDir, "agent.yaml"),
+			`name: codex-reviewer\ndescription: Reviews Codex changes\nmodel: openai/gpt-5.4\ntargets:\n  - codex\n`,
+		);
+
+		buildAgent("codex-reviewer", { projectDir, homeDir, scope: "project", targets: "codex" });
+
+		expect(readFileSync(join(agentDir, "dist", "codex.toml"), "utf-8")).toContain('model = "gpt-5.4"');
+	});
+
 	it("creates a minimal portable agent source", () => {
 		const { projectDir, homeDir } = tempWorkspace();
 		mkdirp(projectDir);

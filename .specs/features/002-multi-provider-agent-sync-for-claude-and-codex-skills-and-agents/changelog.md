@@ -33,3 +33,11 @@
 - **Code modified:** `src/commands/agent.ts`, `tests/commands/agent-sync-cli.test.ts`, `README.md`, `.agent-sync/skills/cc-hub/SKILL.md`
 - **AC impacted:** AC-003, AC-011, AC-012
 - **Author:** Codex
+
+## 2026-05-18 — [Bugfix]: Codex agent generation ignores Claude-only models
+
+- **Type:** Bugfix
+- **Spec modified:** Yes (`spec.md` — Story 2, AC-004, Edge Cases)
+- **Code modified:** `src/services/agent-sync.ts`, `tests/services/agent-sync.test.ts`, `README.md`, `.agent-sync/skills/cc-hub/SKILL.md`
+- **AC impacted:** AC-004, AC-011, AC-012
+- **Author:** Codex

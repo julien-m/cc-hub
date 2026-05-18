@@ -199,6 +199,8 @@ Agent-sync paths:
 - Claude agents: `.claude/agents/*.md` / `~/.claude/agents/*.md`
 - Codex agents: `.codex/agents/*.toml` / `~/.codex/agents/*.toml`
 
+Agent `model` behavior: `haiku`, `sonnet`, `opus`, and Claude model IDs are Claude-only and omitted from generated Codex TOML. OpenAI canonical IDs with Codex support render as Codex-native names.
+
 Migration behavior:
 
 - `cc-hub migrate .claude --from claude` imports Claude skills, agents, commands, and rules into `.agent-sync`.

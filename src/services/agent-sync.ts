@@ -14,6 +14,7 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { findByProviderName, findModel } from "./models.ts";
 
 export type ArtifactKind = "skill" | "agent";
 export type ProviderId = "claude" | "codex";
@@ -404,9 +405,29 @@ const tomlString = (value: string): string => JSON.stringify(value);
 
 const tomlMultiline = (value: string): string => `"""${value.replace(/\\/g, "\\\\").replace(/"""/g, '\\"\\"\\"')}"""`;
 
+const isClaudeOnlyModel = (model: string): boolean => {
+	const normalized = model.trim().toLowerCase();
+	return (
+		normalized === "haiku" ||
+		normalized === "sonnet" ||
+		normalized === "opus" ||
+		normalized.startsWith("claude-") ||
+		normalized.startsWith("anthropic/claude-")
+	);
+};
+
+const codexAgentModel = (model: string | undefined): string | undefined => {
+	if (!model || model === "inherit" || isClaudeOnlyModel(model)) return undefined;
+	const canonical = findModel(model);
+	if (canonical) return canonical.providers.codex;
+	if (findByProviderName("codex", model)) return model;
+	return model;
+};
+
 const renderCodexAgent = (metadata: AgentMetadata, prompt: string): string => {
 	const lines = [`name = ${tomlString(metadata.name)}`, `description = ${tomlString(metadata.description)}`];
-	if (metadata.model && metadata.model !== "inherit") lines.push(`model = ${tomlString(metadata.model)}`);
+	const model = codexAgentModel(metadata.model);
+	if (model) lines.push(`model = ${tomlString(model)}`);
 	if (metadata.effort) lines.push(`reasoning_effort = ${tomlString(metadata.effort)}`);
 	lines.push("", `developer_instructions = ${tomlMultiline(prompt)}`, "");
 	return lines.join("\n");

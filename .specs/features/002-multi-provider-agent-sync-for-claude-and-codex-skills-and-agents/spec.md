@@ -69,6 +69,12 @@ Feature: Portable agent generation
     Then  ".agent-sync/agents/reviewer/dist/claude.md" contains Claude frontmatter and the shared prompt
     And   ".agent-sync/agents/reviewer/dist/codex.toml" contains Codex TOML and the shared prompt as developer instructions
 
+  Scenario: Ignore Claude model aliases when generating Codex TOML
+    Given ".agent-sync/agents/reviewer/agent.yaml" declares model "sonnet"
+    When  the developer runs "cc-hub agent build reviewer --scope project --targets codex"
+    Then  ".agent-sync/agents/reviewer/dist/codex.toml" is generated
+    And   the Codex TOML does not contain a model entry copied from the Claude alias
+
   Scenario: Create and publish one project-scoped Codex agent
     Given a project has no agent named "reviewer"
     When  the developer runs "cc-hub agent create reviewer --scope project --targets codex"
@@ -170,7 +176,7 @@ flowchart TD
 | AC-001 | a canonical `.agent-sync/skills/<name>` exists in the project | the developer runs `cc-hub skill link <path-or-name> --scope project --targets all` | `.claude/skills/<name>` and `.agents/skills/<name>` are symlinks to the canonical skill | P1 | Story 1 |
 | AC-002 | a canonical `~/.agent-sync/skills/<name>` exists in HOME | the developer runs `cc-hub skill link <path-or-name> --scope global --targets all` | `~/.claude/skills/<name>` and `~/.agents/skills/<name>` are symlinks to the canonical skill | P1 | Story 1 |
 | AC-003 | a project with no agent named `<name>` | the developer runs `cc-hub agent create <name> --scope project --targets codex` | `.agent-sync/agents/<name>/agent.yaml`, `prompt.md`, `dist/codex.toml`, and `.codex/agents/<name>.toml` exist, with the provider path symlinked to the generated TOML | P1 | Story 2 |
-| AC-004 | `.agent-sync/agents/<name>/agent.yaml` and `prompt.md` exist | the developer runs `cc-hub agent build <name> --scope project --targets all` | `dist/claude.md` and `dist/codex.toml` are generated without manual duplication | P1 | Story 2 |
+| AC-004 | `.agent-sync/agents/<name>/agent.yaml` and `prompt.md` exist | the developer runs `cc-hub agent build <name> --scope project --targets all` | `dist/claude.md` and `dist/codex.toml` are generated without manual duplication; Claude-only model aliases are not copied into Codex TOML | P1 | Story 2 |
 | AC-005 | generated `dist/claude.md` and `dist/codex.toml` exist | the developer runs `cc-hub agent link <name> --scope project --targets all` | `.claude/agents/<name>.md` and `.codex/agents/<name>.toml` are symlinks to the generated files | P1 | Story 2 |
 | AC-006 | provider symlinks are in mixed states (valid, missing, broken, local) | the developer runs a status command with scope/target filters | each provider path is reported as OK, MISSING, BROKEN, or LOCAL | P1 | Story 3 |
 | AC-007 | a canonical source exists and a provider symlink is missing or broken | the developer runs a repair command | the missing/broken symlink is recreated to the canonical source | P1 | Story 3 |
@@ -219,6 +225,8 @@ flowchart TD
 - A skill source lacks `SKILL.md`: fail before creating provider links.
 - An agent source lacks `agent.yaml` or `prompt.md`: fail before build/link with the missing file path.
 - A generated agent file is stale after prompt/config edits: `agent build` rewrites generated files before link/sync run.
+- Claude-only agent models (`haiku`, `sonnet`, `opus`, or Claude IDs) are valid for Claude outputs but omitted from generated Codex TOML.
+- Codex-compatible OpenAI canonical IDs are translated to Codex-native model names when rendered in Codex TOML.
 - `--targets all` expands only to providers that support the requested artifact kind.
 - Global-scope tests must use an injected/test HOME so they never mutate `~/.claude`, `~/.agents`, or `~/.codex` during automated tests.
 - Existing Claude-only command behavior should remain usable for simple `cc-hub skill link <path>` and `cc-hub agent link <path>` invocations through sensible defaults.
