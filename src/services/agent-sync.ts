@@ -29,6 +29,7 @@ export interface SyncOptions {
 	readonly json?: boolean;
 	readonly projectDir?: string;
 	readonly homeDir?: string;
+	readonly agentSyncRoot?: string;
 }
 
 export interface ProviderDefinition {
@@ -70,6 +71,7 @@ interface AgentMetadata {
 interface RuntimePaths {
 	readonly projectDir: string;
 	readonly homeDir: string;
+	readonly agentSyncRoot?: string;
 }
 
 // @spec FR-010: Data-driven provider registry - .specs/features/002-multi-provider-agent-sync-for-claude-and-codex-skills-and-agents/spec.md#fr-010
@@ -106,13 +108,22 @@ export const PROVIDERS: readonly ProviderDefinition[] = [
 
 const FEATURE_SPEC = ".specs/features/002-multi-provider-agent-sync-for-claude-and-codex-skills-and-agents/spec.md";
 
-const runtimePaths = (options: SyncOptions = {}): RuntimePaths => ({
-	projectDir: resolve(options.projectDir ?? process.cwd()),
-	homeDir: resolve(options.homeDir ?? homedir()),
-});
+const runtimePaths = (options: SyncOptions = {}): RuntimePaths => {
+	const projectDir = resolve(options.projectDir ?? process.cwd());
+	return {
+		projectDir,
+		homeDir: resolve(options.homeDir ?? homedir()),
+		agentSyncRoot: options.agentSyncRoot
+			? isAbsolute(options.agentSyncRoot)
+				? resolve(options.agentSyncRoot)
+				: resolve(projectDir, options.agentSyncRoot)
+			: undefined,
+	};
+};
 
 const canonicalRoot = (scope: Exclude<SyncScope, "all">, paths: RuntimePaths): string =>
-	scope === "project" ? join(paths.projectDir, ".agent-sync") : join(paths.homeDir, ".agent-sync");
+	paths.agentSyncRoot ??
+	(scope === "project" ? join(paths.projectDir, ".agent-sync") : join(paths.homeDir, ".agent-sync"));
 
 const providerRoot = (
 	provider: ProviderDefinition,

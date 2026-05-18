@@ -36,6 +36,7 @@ export interface RuleSyncEntry {
 interface RuntimePaths {
 	readonly projectDir: string;
 	readonly homeDir: string;
+	readonly agentSyncRoot?: string;
 }
 
 interface CanonicalRule {
@@ -49,14 +50,26 @@ interface CanonicalRule {
 
 const FEATURE_SPEC = ".specs/features/004-portable-agent-sync-rules/spec.md";
 
-const runtimePaths = (options: RuleSyncOptions = {}): RuntimePaths => ({
-	projectDir: resolve(options.projectDir ?? process.cwd()),
-	homeDir: resolve(options.homeDir ?? homedir()),
-});
+const runtimePaths = (options: RuleSyncOptions = {}): RuntimePaths => {
+	const projectDir = resolve(options.projectDir ?? process.cwd());
+	return {
+		projectDir,
+		homeDir: resolve(options.homeDir ?? homedir()),
+		agentSyncRoot: options.agentSyncRoot
+			? isAbsolute(options.agentSyncRoot)
+				? resolve(options.agentSyncRoot)
+				: resolve(projectDir, options.agentSyncRoot)
+			: undefined,
+	};
+};
 
 const canonicalRoot = (scope: Exclude<SyncScope, "all">, paths: RuntimePaths): string =>
 	// @spec FR-001: Canonical rule roots — .specs/features/004-portable-agent-sync-rules/spec.md#fr-001
-	scope === "project" ? join(paths.projectDir, ".agent-sync", "rules") : join(paths.homeDir, ".agent-sync", "rules");
+	join(
+		paths.agentSyncRoot ??
+			(scope === "project" ? join(paths.projectDir, ".agent-sync") : join(paths.homeDir, ".agent-sync")),
+		"rules",
+	);
 
 const claudeRulesRoot = (scope: Exclude<SyncScope, "all">, paths: RuntimePaths): string =>
 	scope === "project" ? join(paths.projectDir, ".claude", "rules") : join(paths.homeDir, ".claude", "rules");

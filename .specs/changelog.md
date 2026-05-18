@@ -5,6 +5,15 @@
 
 ---
 
+## 2026-05-18 — Feature 005 implemented: Migration output root override
+
+- **Type:** Feature implementation
+- **Author:** Codex
+- **Artifacts:** `src/commands/migrate.ts`, `src/services/agent-sync-migrate.ts`, `src/services/agent-sync.ts`, `src/services/agent-sync-rules.ts`, `tests/services/agent-sync-migrate.test.ts`, `tests/commands/agent-sync-cli.test.ts`, `README.md`, `.agent-sync/skills/cc-hub/SKILL.md`, `.specs/features/005-migration-output-root-override/{spec,plan,progress,implementation,changelog}.md`
+- **Notes:** Added `--output <dir>` for folder and targeted migrations so canonical migrated skills, agents, and rules can be written to a custom agent-sync root while `--scope` continues to control provider output publication.
+
+---
+
 ## 2026-05-18 — Feature 004 implemented: Portable agent-sync rules
 
 - **Type:** Feature implementation

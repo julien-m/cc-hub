@@ -29,6 +29,7 @@ export type MigrationStatus = "MIGRATED" | "DRY_RUN" | "CONFLICT" | "SKIPPED";
 
 export interface MigrateOptions extends SyncOptions {
 	readonly from?: MigrationOrigin;
+	readonly output?: string;
 }
 
 export interface MigrationResult {
@@ -46,6 +47,7 @@ export interface MigrationResult {
 interface RuntimePaths {
 	readonly projectDir: string;
 	readonly homeDir: string;
+	readonly outputRoot?: string;
 }
 
 interface ParsedAgent {
@@ -60,13 +62,24 @@ interface ParsedAgent {
 
 const FEATURE_SPEC = ".specs/features/003-migrate-provider-folders-to-agent-sync/spec.md";
 
-const runtimePaths = (options: MigrateOptions = {}): RuntimePaths => ({
-	projectDir: resolve(options.projectDir ?? process.cwd()),
-	homeDir: resolve(options.homeDir ?? homedir()),
-});
+const runtimePaths = (options: MigrateOptions = {}): RuntimePaths => {
+	const projectDir = resolve(options.projectDir ?? process.cwd());
+	return {
+		projectDir,
+		homeDir: resolve(options.homeDir ?? homedir()),
+		// @spec FR-003: Resolve relative output — .specs/features/005-migration-output-root-override/spec.md#fr-003
+		outputRoot: options.output
+			? isAbsolute(options.output)
+				? resolve(options.output)
+				: resolve(projectDir, options.output)
+			: undefined,
+	};
+};
 
 const canonicalRoot = (scope: "project" | "global", paths: RuntimePaths): string =>
-	scope === "project" ? join(paths.projectDir, ".agent-sync") : join(paths.homeDir, ".agent-sync");
+	// @spec FR-002: Custom canonical root — .specs/features/005-migration-output-root-override/spec.md#fr-002
+	paths.outputRoot ??
+	(scope === "project" ? join(paths.projectDir, ".agent-sync") : join(paths.homeDir, ".agent-sync"));
 
 const canonicalSkillPath = (name: string, scope: "project" | "global", paths: RuntimePaths): string =>
 	join(canonicalRoot(scope, paths), "skills", name);
@@ -235,13 +248,31 @@ const resultFromError = (
 });
 
 const linkMigratedSkill = (name: string, scope: "project" | "global", options: MigrateOptions): readonly SyncEntry[] =>
-	linkSkill(name, { ...options, scope, targets: options.targets ?? "all" });
+	// @spec FR-004: Link custom root — .specs/features/005-migration-output-root-override/spec.md#fr-004
+	linkSkill(name, {
+		...options,
+		scope,
+		targets: options.targets ?? "all",
+		agentSyncRoot: runtimePaths(options).outputRoot,
+	});
 
 const linkMigratedAgent = (name: string, scope: "project" | "global", options: MigrateOptions): readonly SyncEntry[] =>
-	linkAgent(name, { ...options, scope, targets: options.targets ?? "all" });
+	// @spec FR-004: Link custom root — .specs/features/005-migration-output-root-override/spec.md#fr-004
+	linkAgent(name, {
+		...options,
+		scope,
+		targets: options.targets ?? "all",
+		agentSyncRoot: runtimePaths(options).outputRoot,
+	});
 
 const buildMigratedRules = (scope: "project" | "global", options: MigrateOptions): readonly RuleSyncEntry[] =>
-	buildRules({ ...options, scope, targets: options.targets ?? "all" });
+	// @spec FR-005: Build rules from custom root — .specs/features/005-migration-output-root-override/spec.md#fr-005
+	buildRules({
+		...options,
+		scope,
+		targets: options.targets ?? "all",
+		agentSyncRoot: runtimePaths(options).outputRoot,
+	});
 
 const resolveMigrationOrigin = (from: MigrateOptions["from"] | undefined, sourcePath: string): MigrationOrigin => {
 	const origin = from ?? inferOrigin(sourcePath);
@@ -262,6 +293,7 @@ const migrateSkillForScope = (
 	const actions = [`copy ${sourceDir} -> ${canonicalPath}`, `link skill ${name} (${scope})`];
 	if (options.dryRun) {
 		// @spec FR-008: Dry-run avoids writes — .specs/features/003-migrate-provider-folders-to-agent-sync/spec.md#fr-008
+		// @spec FR-006: Dry-run custom output — .specs/features/005-migration-output-root-override/spec.md#fr-006
 		return {
 			kind: "skill",
 			sourceType: "skill",
@@ -305,6 +337,7 @@ const migrateCommandForScope = (
 	const canonicalPath = canonicalSkillPath(name, scope, paths);
 	const actions = [`write command skill ${canonicalPath}`, `link skill ${name} (${scope})`];
 	if (options.dryRun) {
+		// @spec FR-006: Dry-run custom output — .specs/features/005-migration-output-root-override/spec.md#fr-006
 		return {
 			kind: "skill",
 			sourceType: "command",
@@ -351,6 +384,7 @@ const migrateRuleForScope = (
 	const canonicalPath = canonicalRulePath(relativePath, scope, paths);
 	const actions = [`copy rule ${sourcePath} -> ${canonicalPath}`, `build rules (${scope})`];
 	if (options.dryRun) {
+		// @spec FR-006: Dry-run custom output — .specs/features/005-migration-output-root-override/spec.md#fr-006
 		return {
 			kind: "rule",
 			sourceType: "rule",
@@ -401,6 +435,7 @@ const migrateAgentForScope = (
 	const canonicalPath = canonicalAgentPath(name, scope, paths);
 	const actions = [`write agent source ${canonicalPath}`, `build and link agent ${name} (${scope})`];
 	if (options.dryRun) {
+		// @spec FR-006: Dry-run custom output — .specs/features/005-migration-output-root-override/spec.md#fr-006
 		return {
 			kind: "agent",
 			sourceType: "agent",

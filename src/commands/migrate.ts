@@ -18,15 +18,26 @@ const addOptions = (command: Command): Command =>
 		.option("--from <provider>", "Source provider: claude or codex")
 		.option("--scope <scope>", "Sync scope: project, global, or all", "project")
 		.option("--targets <targets>", "Provider targets: claude, codex, or all", "all")
+		// @spec FR-001: Migrate output option — .specs/features/005-migration-output-root-override/spec.md#fr-001
+		.option("--output <dir>", "Custom agent-sync root for migrated canonical artifacts")
 		.option("-n, --name <name>", "Custom canonical name")
 		.option("--force", "Replace existing canonical/provider paths when required")
 		.option("--dry-run", "Report migration actions without writing")
 		.option("--json", "Print JSON output");
 
-const optionsOf = (command: Command): MigrateOptions => ({
-	...(command.parent?.opts<MigrateOptions>() ?? {}),
-	...command.opts<MigrateOptions>(),
-});
+const optionsOf = (command: Command): MigrateOptions => {
+	const parentOptions = command.parent?.opts<MigrateOptions>() ?? {};
+	const commandOptions = command.opts<MigrateOptions>();
+	const merged: Record<string, unknown> = { ...parentOptions, ...commandOptions };
+	for (const key of ["from", "scope", "targets", "output", "name", "force", "dryRun", "json"] as const) {
+		const parentSource = command.parent?.getOptionValueSource(key);
+		const commandSource = command.getOptionValueSource(key);
+		if (commandSource === "default" && parentSource && parentSource !== "default") {
+			merged[key] = parentOptions[key];
+		}
+	}
+	return merged as MigrateOptions;
+};
 
 const printResults = (results: MigrationResult | readonly MigrationResult[], options: MigrateOptions): void => {
 	const list = Array.isArray(results) ? results : [results];

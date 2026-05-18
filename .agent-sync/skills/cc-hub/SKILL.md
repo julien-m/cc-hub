@@ -167,12 +167,12 @@ cc-hub transcribe ./fichier.mp3   # → stdout
 ### Skills / Commands / Rules / Agents
 
 ```bash
-cc-hub migrate <folder> --from claude|codex [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
-cc-hub migrate skill <path> [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
-cc-hub migrate agent <path> --from claude|codex [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
-cc-hub migrate command <path> [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
-cc-hub migrate rule <path> [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
-cc-hub migrate rules <folder> [--scope project|global|all] [--targets claude|codex|all] [--force] [--dry-run]
+cc-hub migrate <folder> --from claude|codex [--scope project|global|all] [--targets claude|codex|all] [--output <dir>] [--force] [--dry-run]
+cc-hub migrate skill <path> [--scope project|global|all] [--targets claude|codex|all] [--output <dir>] [--force] [--dry-run]
+cc-hub migrate agent <path> --from claude|codex [--scope project|global|all] [--targets claude|codex|all] [--output <dir>] [--force] [--dry-run]
+cc-hub migrate command <path> [--scope project|global|all] [--targets claude|codex|all] [--output <dir>] [--force] [--dry-run]
+cc-hub migrate rule <path> [--scope project|global|all] [--targets claude|codex|all] [--output <dir>] [--force] [--dry-run]
+cc-hub migrate rules <folder> [--scope project|global|all] [--targets claude|codex|all] [--output <dir>] [--force] [--dry-run]
 cc-hub skill link <path> [--scope project|global|all] [--targets claude|codex|all] [-n <name>]
 cc-hub skill list / status / repair / unlink <name>
 cc-hub command link <path> [-n <name>]
@@ -203,6 +203,7 @@ Migration behavior:
 - `cc-hub migrate .codex --from codex` imports Codex TOML agents into `.agent-sync`.
 - Claude commands (`.claude/commands/*.md`) become skills (`.agent-sync/skills/<name>/SKILL.md`) because Codex has no command artifact.
 - Claude rules (`.claude/rules/**/*.md`) become canonical rules (`.agent-sync/rules/**/*.md`), then generate Claude `.claude/rules` outputs and Codex `AGENTS.md` blocks.
+- `--output <dir>` writes canonical migrated assets to a custom agent-sync root (`<dir>/skills`, `<dir>/rules`, `<dir>/agents`). Relative paths resolve from the project directory. `--scope` still controls project/global provider outputs, which point to or are generated from the custom root.
 - `--dry-run` reports planned writes without changing files.
 - Existing real provider files/directories are preserved unless `--force` is passed.
 

@@ -468,6 +468,18 @@ cc-hub migrate rules .claude/rules --scope project --targets all --force
 
 Use `--dry-run` to inspect planned writes without changing files. Existing real provider files/directories are preserved unless `--force` is passed.
 
+Use `--output <dir>` when the canonical source should be written somewhere other than `.agent-sync` / `~/.agent-sync`:
+
+```bash
+cc-hub migrate command .claude/commands/review.md \
+  --output Project/.agent-sync \
+  --scope global \
+  --targets all \
+  --force
+```
+
+With `--output`, the destination root is `<dir>/skills`, `<dir>/rules`, and `<dir>/agents`. Relative output paths resolve from the project directory. `--scope` still controls where provider outputs are published: `project` writes project provider links/files, `global` writes global provider links/files, and those outputs point to or are generated from the custom root.
+
 ### `skill` / `command` / `rule` / `agent` — Provider linking
 
 Install skills, rules, and agents via `.agent-sync` so the same source can be linked or generated for Claude Code and Codex. Commands remain Claude Code `.md` links because Codex has no matching command artifact.
@@ -543,6 +555,7 @@ Common options:
 ```bash
 --scope project|global|all
 --targets claude|codex|all
+--output <dir> # migrate only: custom agent-sync root for canonical writes
 --force
 --json
 --dry-run     # migrate/repair/clean only

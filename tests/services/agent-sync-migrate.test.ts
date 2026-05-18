@@ -173,6 +173,37 @@ describe("agent-sync migration service", () => {
 		);
 	});
 
+	it("migrates a Claude command into a custom output root and links global providers to it", () => {
+		const { projectDir, homeDir } = workspace();
+		writeClaudeCommand(projectDir, "collection-audit");
+		const output = join(projectDir, "Project", ".agent-sync");
+
+		const result = onlyResult(
+			migrateCommand(join(projectDir, ".claude", "commands", "collection-audit.md"), {
+				from: "claude",
+				projectDir,
+				homeDir,
+				scope: "global",
+				targets: "all",
+				force: true,
+				output,
+			}),
+		);
+
+		expect(result.canonicalPath).toBe(join(output, "skills", "collection-audit"));
+		expect(readFileSync(join(output, "skills", "collection-audit", "SKILL.md"), "utf-8")).toContain(
+			"name: collection-audit",
+		);
+		expect(existsSync(join(projectDir, ".agent-sync", "skills", "collection-audit"))).toBe(false);
+		expect(existsSync(join(homeDir, ".agent-sync", "skills", "collection-audit"))).toBe(false);
+		expect(readlinkSync(join(homeDir, ".claude", "skills", "collection-audit"))).toBe(
+			join(output, "skills", "collection-audit"),
+		);
+		expect(readlinkSync(join(homeDir, ".agents", "skills", "collection-audit"))).toBe(
+			join(output, "skills", "collection-audit"),
+		);
+	});
+
 	it("migrates targeted commands for both project and global scopes", () => {
 		const { projectDir, homeDir } = workspace();
 		writeClaudeCommand(projectDir, "dual");
@@ -215,6 +246,32 @@ describe("agent-sync migration service", () => {
 		expect(results[0].status).toBe("DRY_RUN");
 		expect(results[0].actions.some((action) => action.includes(".agent-sync/skills/audit"))).toBe(true);
 		expect(existsSync(join(projectDir, ".agent-sync", "skills", "audit"))).toBe(false);
+	});
+
+	it("reports a custom output root during dry-run without writing files", () => {
+		const { projectDir, homeDir } = workspace();
+		writeClaudeCommand(projectDir, "dry-output");
+		const output = join(projectDir, "Project", ".agent-sync");
+
+		const result = onlyResult(
+			migrateCommand(join(projectDir, ".claude", "commands", "dry-output.md"), {
+				from: "claude",
+				projectDir,
+				homeDir,
+				scope: "project",
+				targets: "all",
+				dryRun: true,
+				output,
+			}),
+		);
+
+		expect(result.status).toBe("DRY_RUN");
+		expect(result.canonicalPath).toBe(join(output, "skills", "dry-output"));
+		expect(
+			result.actions.some((action) => action.includes(join("Project", ".agent-sync", "skills", "dry-output"))),
+		).toBe(true);
+		expect(existsSync(join(output, "skills", "dry-output"))).toBe(false);
+		expect(existsSync(join(projectDir, ".agent-sync", "skills", "dry-output"))).toBe(false);
 	});
 
 	it("preserves existing provider files without force and reports a conflict", () => {
@@ -278,6 +335,35 @@ describe("agent-sync migration service", () => {
 		expect(readFileSync(join(projectDir, ".agent-sync", "rules", "api.md"), "utf-8")).toContain("Keep api behavior");
 		expect(readFileSync(join(projectDir, ".claude", "rules", "api.md"), "utf-8")).toContain("src/api/**/*.ts");
 		expect(readFileSync(join(projectDir, "AGENTS.md"), "utf-8")).toContain("When modifying `src/api/**/*.ts`");
+	});
+
+	it("migrates Claude rules into a custom output root and builds global provider outputs from it", () => {
+		const { projectDir, homeDir } = workspace();
+		writeClaudeRule(projectDir, "collection");
+		const output = join(projectDir, "Project", ".agent-sync");
+
+		const results = migrateRules(join(projectDir, ".claude", "rules"), {
+			from: "claude",
+			projectDir,
+			homeDir,
+			scope: "global",
+			targets: "all",
+			force: true,
+			output,
+		});
+
+		expect(results.map((result) => `${result.kind}:${result.name}:${result.status}`)).toEqual([
+			"rule:collection:MIGRATED",
+		]);
+		expect(results[0].canonicalPath).toBe(join(output, "rules", "collection.md"));
+		expect(readFileSync(join(output, "rules", "collection.md"), "utf-8")).toContain("Keep collection behavior");
+		expect(existsSync(join(homeDir, ".agent-sync", "rules", "collection.md"))).toBe(false);
+		expect(readFileSync(join(homeDir, ".claude", "rules", "collection.md"), "utf-8")).toContain(
+			"Keep collection behavior",
+		);
+		expect(readFileSync(join(homeDir, ".codex", "AGENTS.md"), "utf-8")).toContain(
+			"When modifying `src/collection/**/*.ts`",
+		);
 	});
 
 	it("migrates one Claude rule with dry-run without writing files", () => {

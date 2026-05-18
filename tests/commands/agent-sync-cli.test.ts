@@ -214,6 +214,43 @@ describe("agent-sync CLI commands", () => {
 		expect(help).toContain("--dry-run");
 	});
 
+	it("migrate command accepts a custom output root", async () => {
+		const { projectDir, homeDir } = workspace();
+		const commandsDir = join(projectDir, ".claude", "commands");
+		mkdirSync(commandsDir, { recursive: true });
+		writeFileSync(join(commandsDir, "collection.md"), "Run collection checks.\n");
+
+		const output = await withWorkspace(projectDir, homeDir, async () =>
+			captureLogs(async () => {
+				await createMigrateCommand().parseAsync(
+					[
+						"node",
+						"migrate",
+						"command",
+						".claude/commands/collection.md",
+						"--output",
+						"Project/.agent-sync",
+						"--scope",
+						"project",
+						"--targets",
+						"all",
+						"--force",
+					],
+					{ from: "node" },
+				);
+			}),
+		);
+
+		expect(output).toContain("skill\tcollection\tcommand\tMIGRATED");
+		expect(
+			readFileSync(join(projectDir, "Project", ".agent-sync", "skills", "collection", "SKILL.md"), "utf-8"),
+		).toContain("Run collection checks.");
+		expect(readlinkSync(join(projectDir, ".agents", "skills", "collection"))).toBe(
+			join(projectDir, "Project", ".agent-sync", "skills", "collection"),
+		);
+		expect(createMigrateCommand().helpInformation()).toContain("--output <dir>");
+	});
+
 	it("migrate can print JSON output", async () => {
 		const { projectDir, homeDir } = workspace();
 		const commandsDir = join(projectDir, ".claude", "commands");
