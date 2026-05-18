@@ -6,7 +6,7 @@ priority: P1
 feature_number: "002"
 date: 2026-05-17
 created: 2026-05-17
-updated: 2026-05-17
+updated: 2026-05-18
 ---
 
 # Multi-provider Agent Sync for Claude and Codex Skills and Agents
@@ -68,6 +68,13 @@ Feature: Portable agent generation
     When  the developer runs "cc-hub agent build reviewer --scope project --targets all"
     Then  ".agent-sync/agents/reviewer/dist/claude.md" contains Claude frontmatter and the shared prompt
     And   ".agent-sync/agents/reviewer/dist/codex.toml" contains Codex TOML and the shared prompt as developer instructions
+
+  Scenario: Create and publish one project-scoped Codex agent
+    Given a project has no agent named "reviewer"
+    When  the developer runs "cc-hub agent create reviewer --scope project --targets codex"
+    Then  ".agent-sync/agents/reviewer/agent.yaml" and "prompt.md" exist
+    And   ".agent-sync/agents/reviewer/dist/codex.toml" is generated
+    And   ".codex/agents/reviewer.toml" is a symlink to the generated Codex TOML file
 
   Scenario: Link generated agent files to both providers
     Given provider-native agent files exist in ".agent-sync/agents/reviewer/dist"
@@ -162,7 +169,7 @@ flowchart TD
 |---|---|---|---|---|---|
 | AC-001 | a canonical `.agent-sync/skills/<name>` exists in the project | the developer runs `cc-hub skill link <path-or-name> --scope project --targets all` | `.claude/skills/<name>` and `.agents/skills/<name>` are symlinks to the canonical skill | P1 | Story 1 |
 | AC-002 | a canonical `~/.agent-sync/skills/<name>` exists in HOME | the developer runs `cc-hub skill link <path-or-name> --scope global --targets all` | `~/.claude/skills/<name>` and `~/.agents/skills/<name>` are symlinks to the canonical skill | P1 | Story 1 |
-| AC-003 | a project with no agent named `<name>` | the developer runs `cc-hub agent create <name>` | `.agent-sync/agents/<name>/agent.yaml` and `prompt.md` exist with minimal valid content | P1 | Story 2 |
+| AC-003 | a project with no agent named `<name>` | the developer runs `cc-hub agent create <name> --scope project --targets codex` | `.agent-sync/agents/<name>/agent.yaml`, `prompt.md`, `dist/codex.toml`, and `.codex/agents/<name>.toml` exist, with the provider path symlinked to the generated TOML | P1 | Story 2 |
 | AC-004 | `.agent-sync/agents/<name>/agent.yaml` and `prompt.md` exist | the developer runs `cc-hub agent build <name> --scope project --targets all` | `dist/claude.md` and `dist/codex.toml` are generated without manual duplication | P1 | Story 2 |
 | AC-005 | generated `dist/claude.md` and `dist/codex.toml` exist | the developer runs `cc-hub agent link <name> --scope project --targets all` | `.claude/agents/<name>.md` and `.codex/agents/<name>.toml` are symlinks to the generated files | P1 | Story 2 |
 | AC-006 | provider symlinks are in mixed states (valid, missing, broken, local) | the developer runs a status command with scope/target filters | each provider path is reported as OK, MISSING, BROKEN, or LOCAL | P1 | Story 3 |
@@ -181,7 +188,7 @@ flowchart TD
 |---|---|---|
 | FR-001 | The system MUST introduce a canonical `.agent-sync` root for project scope and `~/.agent-sync` root for global scope. | AC-001, AC-002 |
 | FR-002 | Skill linking MUST canonicalize a source skill into the canonical sync root and then symlink provider skill directories from that canonical source. | AC-001, AC-002 |
-| FR-003 | Agent creation MUST produce a portable source directory containing `agent.yaml` and `prompt.md`. | AC-003 |
+| FR-003 | Agent creation MUST produce a portable source directory containing `agent.yaml` and `prompt.md`, then build and link the selected provider outputs for the selected scope. | AC-003 |
 | FR-004 | Agent building MUST render Claude Markdown and Codex TOML provider files from the portable source. | AC-004 |
 | FR-005 | Agent linking MUST symlink provider agent files to generated provider-native files, not to the whole agent source directory. | AC-005 |
 | FR-006 | Status reporting MUST inspect canonical sources and provider symlinks and classify each provider path as OK, MISSING, BROKEN, LOCAL, or ERROR. | AC-006 |

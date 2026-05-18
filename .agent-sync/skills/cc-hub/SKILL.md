@@ -179,11 +179,13 @@ cc-hub command link <path> [-n <name>]
 cc-hub rule link <path> [--scope project|global|all] [--targets claude|codex|all] [-n <name>] [--namespace <ns>] [--force]
 cc-hub rule build|list|status|repair [--scope project|global|all] [--targets claude|codex|all]
 cc-hub rule unlink <name> [--scope project|global|all] [--targets claude|codex|all]
-cc-hub agent create <name> [--scope project|global]
+cc-hub agent create <name> [--scope project|global] [--targets claude|codex|all]
 cc-hub agent build <name> [--scope project|global|all] [--targets claude|codex|all]
 cc-hub agent link <name> [--scope project|global|all] [--targets claude|codex|all]
 cc-hub agent list / status / repair / unlink <name>
 ```
+
+`agent create` writes `.agent-sync/agents/<name>`, builds selected provider files, and links them immediately. Project-scoped Codex agents go to `.codex/agents/<name>.toml`; global Codex agents go to `~/.codex/agents/<name>.toml`.
 
 Agent-sync paths:
 

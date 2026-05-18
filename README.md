@@ -506,6 +506,8 @@ Agents use one editable source and generated provider-native files:
 .codex/agents/<name>.toml
 ```
 
+`agent create` writes the canonical source, builds the selected provider files, then links them to the selected scope. In project scope, Codex agents are published to `.codex/agents/<name>.toml`.
+
 Rules use canonical Markdown sources and generated provider outputs:
 
 ```text
@@ -542,7 +544,8 @@ cc-hub rule repair --scope project --targets all
 cc-hub rule unlink api --scope project --targets all
 
 # Agents
-cc-hub agent create reviewer --scope project
+cc-hub agent create reviewer --scope project --targets all
+cc-hub agent create local-reviewer --scope project --targets codex
 cc-hub agent build reviewer --scope project --targets all
 cc-hub agent link reviewer --scope project --targets all
 cc-hub agent status --scope all --targets all

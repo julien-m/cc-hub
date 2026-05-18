@@ -46,12 +46,22 @@ export const createAgentCommand = (): Command => {
 	const agent = new Command("agent").description("Manage portable Claude/Codex agents via agent-sync");
 
 	const create = addSyncOptions(
-		agent.command("create").description("Create a portable agent source").argument("<name>", "Agent name"),
+		agent
+			.command("create")
+			.description("Create a portable agent source and publish selected provider files")
+			.argument("<name>", "Agent name"),
 		{ scope: "project", targets: "all" },
 	);
 	create.action((name: string) => {
 		const options = optionsOf(create);
-		printResult(createAgentSource(name, options), options);
+		const sourcePath = createAgentSource(name, options);
+		const entries = linkAgent(name, options);
+		if (options.json) {
+			console.log(JSON.stringify({ sourcePath, entries }, null, 2));
+			return;
+		}
+		console.log(sourcePath);
+		console.log(formatEntries(entries));
 	});
 
 	const build = addSyncOptions(

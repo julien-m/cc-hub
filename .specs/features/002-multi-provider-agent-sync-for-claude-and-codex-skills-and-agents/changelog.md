@@ -25,3 +25,11 @@
 - **Code modified:** No
 - **AC impacted:** AC-001 through AC-012 (format only, semantics unchanged)
 - **Author:** /spec.check (follow-up)
+
+## 2026-05-18 — [Bugfix]: Project Codex agents publish during create
+
+- **Type:** Bugfix
+- **Spec modified:** Yes (`spec.md` — Story 2, AC-003, FR-003)
+- **Code modified:** `src/commands/agent.ts`, `tests/commands/agent-sync-cli.test.ts`, `README.md`, `.agent-sync/skills/cc-hub/SKILL.md`
+- **AC impacted:** AC-003, AC-011, AC-012
+- **Author:** Codex

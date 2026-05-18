@@ -134,6 +134,24 @@ describe("agent-sync CLI commands", () => {
 		expect(output).toContain("agent\treviewer\tproject\tcodex\tOK");
 	});
 
+	it("agent create publishes a project-scoped Codex agent when requested", async () => {
+		const { projectDir, homeDir } = workspace();
+
+		await withWorkspace(projectDir, homeDir, async () => {
+			await createAgentCommand().parseAsync(
+				["node", "agent", "create", "local-reviewer", "--scope", "project", "--targets", "codex"],
+				{ from: "node" },
+			);
+		});
+
+		expect(
+			readFileSync(join(projectDir, ".agent-sync", "agents", "local-reviewer", "dist", "codex.toml"), "utf-8"),
+		).toContain('name = "local-reviewer"');
+		expect(readlinkSync(join(projectDir, ".codex", "agents", "local-reviewer.toml"))).toBe(
+			join(projectDir, ".agent-sync", "agents", "local-reviewer", "dist", "codex.toml"),
+		);
+	});
+
 	it("sync run repairs all canonical skills and agents", async () => {
 		const { projectDir, homeDir } = workspace();
 		const skill = writeSkill(projectDir);
