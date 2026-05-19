@@ -20,10 +20,10 @@ const workspace = (): { root: string; projectDir: string; homeDir: string } => {
 	return { root, projectDir: realpathSync(projectDir), homeDir: realpathSync(homeDir) };
 };
 
-const writeSkill = (projectDir: string): string => {
-	const dir = join(projectDir, "my-skill");
+const writeSkill = (projectDir: string, name = "my-skill"): string => {
+	const dir = join(projectDir, name);
 	mkdirSync(dir, { recursive: true });
-	writeFileSync(join(dir, "SKILL.md"), "---\nname: my-skill\ndescription: My skill\n---\n");
+	writeFileSync(join(dir, "SKILL.md"), `---\nname: ${name}\ndescription: ${name} skill\n---\n`);
 	return dir;
 };
 
@@ -87,6 +87,34 @@ describe("agent-sync CLI commands", () => {
 				?.helpInformation() ?? "";
 		expect(linkHelp).toContain("--scope <scope>");
 		expect(linkHelp).toContain("--targets <targets>");
+	});
+
+	it("skill status filters entries by name", async () => {
+		const { projectDir, homeDir } = workspace();
+		const firstSkill = writeSkill(projectDir, "my-skill");
+		const otherSkill = writeSkill(projectDir, "other-skill");
+
+		let output = "";
+		await withWorkspace(projectDir, homeDir, async () => {
+			await createSkillCommand().parseAsync(
+				["node", "skill", "link", firstSkill, "--scope", "project", "--targets", "all"],
+				{ from: "node" },
+			);
+			await createSkillCommand().parseAsync(
+				["node", "skill", "link", otherSkill, "--scope", "project", "--targets", "all"],
+				{ from: "node" },
+			);
+			output = await captureLogs(async () => {
+				await createSkillCommand().parseAsync(
+					["node", "skill", "status", "--scope", "project", "--targets", "all", "--name", "my-skill"],
+					{ from: "node" },
+				);
+			});
+		});
+
+		expect(output).toContain("skill\tmy-skill\tproject\tclaude\tOK");
+		expect(output).toContain("skill\tmy-skill\tproject\tcodex\tOK");
+		expect(output).not.toContain("skill\tother-skill");
 	});
 
 	it("agent create, build, link, and status work from command factories", async () => {

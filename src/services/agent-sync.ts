@@ -258,6 +258,16 @@ const listCanonicalNames = (
 	return listDirectories(join(canonicalRoot(scope, paths), `${kind}s`));
 };
 
+const filteredCanonicalNames = (
+	kind: ArtifactKind,
+	scope: Exclude<SyncScope, "all">,
+	paths: RuntimePaths,
+	name?: string,
+): readonly string[] => {
+	if (name) return [name];
+	return listCanonicalNames(kind, scope, paths);
+};
+
 const skillCanonicalPath = (name: string, scope: Exclude<SyncScope, "all">, paths: RuntimePaths): string =>
 	join(canonicalRoot(scope, paths), "skills", name);
 
@@ -562,7 +572,7 @@ const statusForKind = (kind: ArtifactKind, options: SyncOptions = {}): readonly 
 	const paths = runtimePaths(options);
 	const entries: SyncEntry[] = [];
 	for (const scope of resolveScopes(options.scope ?? "all")) {
-		for (const name of listCanonicalNames(kind, scope, paths)) {
+		for (const name of filteredCanonicalNames(kind, scope, paths, options.name)) {
 			for (const provider of resolveProviders(options.targets ?? "all")) {
 				entries.push(expectedEntry(kind, name, scope, provider, paths));
 			}
@@ -673,7 +683,9 @@ export const listCanonical = (kind: ArtifactKind, options: SyncOptions = {}): re
 	const paths = runtimePaths(options);
 	const names = new Set<string>();
 	for (const scope of resolveScopes(options.scope ?? "global")) {
-		for (const name of listCanonicalNames(kind, scope, paths)) names.add(name);
+		for (const name of listCanonicalNames(kind, scope, paths)) {
+			if (!options.name || name === options.name) names.add(name);
+		}
 	}
 	return [...names].sort();
 };
