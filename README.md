@@ -523,6 +523,8 @@ AGENTS.md                               # generated project Codex rule block
 
 Claude reads the canonical file through the `.claude/rules` symlink, so `paths:` frontmatter is preserved without copying. Codex has no equivalent path-scoped rules mechanism, so cc-hub renders paths as textual "When modifying ..." guidance inside the managed `AGENTS.md` block. Edit `.agent-sync/rules` / `~/.agent-sync/rules`, not provider outputs.
 
+Run `cc-hub rule repair --dry-run` before repairing rules. `rule build` and `rule link` without `--force` preserve conflicting local Claude rule files, but non-dry-run `rule repair` is intentionally forceful: it may replace conflicting Claude rule files or symlinks while converting legacy copies to canonical agent-sync symlinks; inspect [`.claude/rules`](.claude/rules) and [`.agent-sync/rules`](.agent-sync/rules) before running without `--dry-run`.
+
 ```bash
 # Skills
 cc-hub skill link ./my-skill --scope global --targets all

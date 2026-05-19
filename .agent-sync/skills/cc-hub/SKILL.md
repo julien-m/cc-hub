@@ -210,6 +210,7 @@ Migration behavior:
 - `--output <dir>` writes canonical migrated assets to a custom agent-sync root (`<dir>/skills`, `<dir>/rules`, `<dir>/agents`). Relative paths resolve from the project directory. `--scope` still controls project/global provider outputs, which point to or are generated from the custom root.
 - `--dry-run` reports planned writes without changing files.
 - Existing real provider files/directories are preserved unless `--force` is passed.
+- For rules, run `cc-hub rule repair --dry-run` first. `rule build` and `rule link` without `--force` preserve conflicting local Claude rule files, but non-dry-run `rule repair` may replace conflicting Claude rule files or symlinks while converting legacy copies to canonical agent-sync symlinks; inspect [`.claude/rules`](../../../.claude/rules) and [`.agent-sync/rules`](../../rules) before running without `--dry-run`.
 
 ### Digest
 
