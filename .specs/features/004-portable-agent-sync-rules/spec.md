@@ -6,7 +6,7 @@ priority: P1
 feature_number: "004"
 date: 2026-05-18
 created: 2026-05-18
-updated: 2026-05-18
+updated: 2026-05-19
 ---
 
 # Portable Agent Sync Rules
@@ -14,7 +14,7 @@ updated: 2026-05-18
 - **Branch:** `main`
 - **Date:** 2026-05-18
 - **Status:** Approved
-- **Input:** The user wants cc-hub to make `.agent-sync/rules` the source of truth for behavioral rules shared between Claude Code and Codex. Project rules should live under `.agent-sync/rules`; global rules should live under `~/.agent-sync/rules`. cc-hub should generate Claude-native `.claude/rules/*.md` files from that source, preserving Claude `paths:` frontmatter, and generate managed rule blocks inside `AGENTS.md` / `~/.codex/AGENTS.md` so Codex sees the same guidance. Rule linking must support individual project/global rules, including symlinked global rules sourced from a project. Rule migration must import `.claude/rules/**/*.md` into `.agent-sync/rules`.
+- **Input:** The user wants cc-hub to make `.agent-sync/rules` the source of truth for behavioral rules shared between Claude Code and Codex. Project rules should live under `.agent-sync/rules`; global rules should live under `~/.agent-sync/rules`. cc-hub should publish Claude `.claude/rules/*.md` as symlinks to canonical rules, preserving Claude `paths:` frontmatter without copies, and generate managed rule blocks inside `AGENTS.md` / `~/.codex/AGENTS.md` so Codex sees the same guidance. Rule linking must support individual project/global rules, including symlinked global rules sourced from a project. Rule migration must import `.claude/rules/**/*.md` into `.agent-sync/rules`.
 
 ---
 
@@ -26,14 +26,14 @@ updated: 2026-05-18
 
 **Priority reason:** This is the core portability behavior. Rules should not be manually duplicated in `.claude/rules` and `AGENTS.md`.
 
-**Independent test:** In a temporary project, create `.agent-sync/rules/api.md` with `paths:` frontmatter, run rule build for project scope and all targets, and assert `.claude/rules/api.md` exists with frontmatter while `AGENTS.md` contains a managed rule block.
+**Independent test:** In a temporary project, create `.agent-sync/rules/api.md` with `paths:` frontmatter, run rule build for project scope and all targets, and assert `.claude/rules/api.md` symlinks to the canonical rule while `AGENTS.md` contains a managed rule block.
 
 ```gherkin
 Feature: Project rule generation
-  Scenario: Generate Claude and Codex outputs from one project rule
+  Scenario: Publish Claude and Codex outputs from one project rule
     Given ".agent-sync/rules/api.md" contains paths frontmatter and rule content
     When  the developer runs "cc-hub rule build --scope project --targets all"
-    Then  ".claude/rules/api.md" is generated from the canonical rule
+    Then  ".claude/rules/api.md" is a symlink to ".agent-sync/rules/api.md"
     And   "AGENTS.md" contains a cc-hub managed rules block
     And   the managed block includes the path-specific API rule
 
@@ -47,7 +47,7 @@ Feature: Project rule generation
 ```mermaid
 flowchart TD
     A[.agent-sync/rules/api.md] --> B[rule build project all]
-    B --> C[Generate .claude/rules/api.md]
+    B --> C[Link .claude/rules/api.md]
     B --> D[Update AGENTS.md managed block]
     D --> E[Preserve manual AGENTS.md content]
 ```
@@ -58,14 +58,14 @@ flowchart TD
 
 **Priority reason:** The user manages some globally relevant rules from project folders but wants one deterministic global registry for generated outputs.
 
-**Independent test:** In a temporary HOME, create `~/.agent-sync/rules/project-x/api.md`, run rule build for global scope, and assert `~/.claude/rules/project-x/api.md` and `~/.codex/AGENTS.md` are generated.
+**Independent test:** In a temporary HOME, create `~/.agent-sync/rules/project-x/api.md`, run rule build for global scope, and assert `~/.claude/rules/project-x/api.md` symlinks to the canonical rule while `~/.codex/AGENTS.md` is generated.
 
 ```gherkin
 Feature: Global rule generation
-  Scenario: Generate global provider outputs from the global rules registry
+  Scenario: Publish global provider outputs from the global rules registry
     Given "~/.agent-sync/rules/project-x/api.md" exists
     When  the developer runs "cc-hub rule build --scope global --targets all"
-    Then  "~/.claude/rules/project-x/api.md" is generated
+    Then  "~/.claude/rules/project-x/api.md" is a symlink to "~/.agent-sync/rules/project-x/api.md"
     And   "~/.codex/AGENTS.md" contains a cc-hub managed global rules block
 
   Scenario: Global registry can contain symlinks to project-owned rules
@@ -142,7 +142,7 @@ Feature: Claude rule migration
 flowchart TD
     A[.claude/rules folder] --> B[migrate rules]
     B --> C[Copy each markdown rule into .agent-sync/rules]
-    C --> D[Build Claude generated rules]
+    C --> D[Link Claude rules]
     C --> E[Build Codex AGENTS.md block]
     F[Dry run] --> G[Report actions only]
 ```
@@ -153,25 +153,26 @@ flowchart TD
 
 | ID | Given | When | Then | Priority | Story |
 |---|---|---|---|---|---|
-| AC-001 | `.agent-sync/rules/<name>.md` exists in the project | the developer runs `cc-hub rule build --scope project --targets all` | `.claude/rules/<name>.md` and the managed block in `AGENTS.md` are generated from the canonical rule | P1 | Story 1 |
+| AC-001 | `.agent-sync/rules/<name>.md` exists in the project | the developer runs `cc-hub rule build --scope project --targets all` | `.claude/rules/<name>.md` symlinks to the canonical rule and `AGENTS.md` contains the managed block | P1 | Story 1 |
 | AC-002 | `AGENTS.md` contains existing human-authored content | project Codex rules are rebuilt | content outside the cc-hub managed rules block is preserved | P1 | Story 1 |
-| AC-003 | `~/.agent-sync/rules/<namespace>/<name>.md` exists | the developer runs `cc-hub rule build --scope global --targets all` | `~/.claude/rules/<namespace>/<name>.md` and the managed block in `~/.codex/AGENTS.md` are generated | P1 | Story 2 |
+| AC-003 | `~/.agent-sync/rules/<namespace>/<name>.md` exists | the developer runs `cc-hub rule build --scope global --targets all` | `~/.claude/rules/<namespace>/<name>.md` symlinks to the canonical rule and `~/.codex/AGENTS.md` contains the managed block | P1 | Story 2 |
 | AC-004 | a global canonical rule is a symlink to a project-owned file | the target file changes and global rules are rebuilt | generated global outputs reflect the updated content | P1 | Story 2 |
 | AC-005 | a Markdown rule file exists outside the canonical registry | the developer runs `cc-hub rule link <path> --scope project --targets all` | `.agent-sync/rules/<name>.md` is a symlink to the source and provider outputs are rebuilt | P1 | Story 3 |
 | AC-006 | a project rule should become global | the developer runs `cc-hub rule link <path> --scope global --targets all --namespace <namespace>` | `~/.agent-sync/rules/<namespace>/<name>.md` links to the source and global outputs are rebuilt | P1 | Story 3 |
 | AC-007 | `.claude/rules/**/*.md` exists | the developer runs `cc-hub migrate rules <folder> --scope project --targets all --force` | supported rules are copied into `.agent-sync/rules` and provider outputs are rebuilt | P1 | Story 4 |
 | AC-008 | rule migration is invoked with `--dry-run` | the command runs | planned actions are reported and no files are created, replaced, or deleted | P1 | Story 4 |
-| AC-009 | a rule has `paths:` frontmatter | Claude output is generated | the frontmatter is preserved for Claude-native path-scoped loading | P1 | Stories 1, 2 |
+| AC-009 | a rule has `paths:` frontmatter | Claude output is linked | the frontmatter is preserved for Claude-native path-scoped loading | P1 | Stories 1, 2 |
 | AC-010 | a rule has `paths:` frontmatter | Codex output is generated | the managed `AGENTS.md` block renders the paths as textual "When modifying..." guidance | P1 | Stories 1, 2 |
 | AC-011 | rule commands/options are added or changed | the change is committed | `README.md` and `.agent-sync/skills/cc-hub/SKILL.md` describe the syntax and generated outputs | P1 | Documentation |
 | AC-012 | isolated temp project/HOME directories are provisioned | the test suite runs | project and global rule linking, building, migration, dry-run, and generated output behavior are verified without touching real provider directories | P1 | Testing |
+| AC-013 | a Claude provider rule path exists | `cc-hub rule status --targets claude` runs | valid expected symlinks report OK; physical files report LOCAL; wrong symlinks report ERROR; broken symlinks report BROKEN | P1 | Status |
 
 ## Functional Requirements
 
 | ID | Requirement | Maps To |
 |---|---|---|
 | FR-001 | The system MUST introduce canonical rule roots at `.agent-sync/rules` and `~/.agent-sync/rules`. | AC-001, AC-003 |
-| FR-002 | Rule build MUST generate Claude Markdown rules from canonical rules for project and global scopes. | AC-001, AC-003, AC-009 |
+| FR-002 | Rule build MUST create Claude rule symlinks to canonical rules for project and global scopes. | AC-001, AC-003, AC-009 |
 | FR-003 | Rule build MUST generate managed Codex rules blocks in `AGENTS.md` and `~/.codex/AGENTS.md`. | AC-001, AC-002, AC-003, AC-010 |
 | FR-004 | Managed Codex block replacement MUST preserve content outside cc-hub markers. | AC-002 |
 | FR-005 | Rule linking MUST support one source file into project or global canonical roots using symlinks. | AC-005, AC-006 |
@@ -179,9 +180,10 @@ flowchart TD
 | FR-007 | Rule migration MUST import Claude `.md` rules from a file or folder into canonical `.agent-sync/rules`. | AC-007 |
 | FR-008 | Rule migration dry-run MUST avoid all writes and report planned actions. | AC-008 |
 | FR-009 | Rule rendering MUST preserve Claude `paths:` frontmatter while adapting paths into Codex textual guidance. | AC-009, AC-010 |
-| FR-010 | Rule status/list/unlink MUST operate against canonical rules and generated provider outputs. | AC-001, AC-003, AC-005, AC-006 |
+| FR-010 | Rule status/list/unlink MUST operate against canonical rules and provider outputs. | AC-001, AC-003, AC-005, AC-006 |
 | FR-011 | Documentation MUST describe canonical rules, generated outputs, scopes, targets, migration, and limitations. | AC-011 |
 | FR-012 | Automated tests MUST verify real filesystem behavior in isolated project/HOME directories. | AC-012 |
+| FR-013 | Rule status MUST validate Claude provider symlinks against the expected canonical target. | AC-013 |
 
 ## Key Entities
 
@@ -190,14 +192,14 @@ flowchart TD
 - **Rule Target:** `claude`, `codex`, or `all`.
 - **Rule Namespace:** Optional global path prefix used to preserve the project or topic origin of a globally linked rule.
 - **Managed Codex Block:** The cc-hub generated section between HTML markers in `AGENTS.md` or `~/.codex/AGENTS.md`.
-- **Generated Claude Rule:** A Markdown output under `.claude/rules` or `~/.claude/rules`, generated from canonical rules.
+- **Claude Rule Symlink:** A provider path under `.claude/rules` or `~/.claude/rules` pointing to the expected canonical rule.
 
 ## Edge Cases
 
 - If `AGENTS.md` does not exist, rule build creates it with only the managed rules block.
 - If `AGENTS.md` exists without markers, rule build appends a managed block after existing content.
-- If a canonical rule is deleted, a subsequent build removes the corresponding generated Claude rule only when it is a cc-hub-generated symlink/file; non-generated local files are preserved unless `--force` is passed.
-- Existing provider paths that are real files are preserved unless `--force` is passed.
+- If a canonical rule is deleted, unlink removes the corresponding Claude symlink when requested; unrelated local files are preserved unless `--force` is passed.
+- Existing Claude provider files are preserved unless `--force`, `repair`, or identical old-copy conversion applies.
 - Nested canonical rules preserve their relative path in Claude outputs and are shown with namespace-like headings in Codex output.
 - `paths:` frontmatter is advisory in Codex output because Codex has no Claude-equivalent path-scoped rule loading.
 - Global tests must inject HOME so no automated test mutates the user's real `~/.claude`, `~/.codex`, or `~/.agent-sync`.
@@ -206,8 +208,8 @@ flowchart TD
 
 | ID | Criterion | Measurement |
 |---|---|---|
-| SC-001 | Project rule generation works. | Service tests verify `.claude/rules` and `AGENTS.md` outputs from `.agent-sync/rules`. |
-| SC-002 | Global rule generation works. | Service tests verify `~/.claude/rules` and `~/.codex/AGENTS.md` outputs from `~/.agent-sync/rules`. |
+| SC-001 | Project rule publishing works. | Service tests verify `.claude/rules` symlinks and `AGENTS.md` outputs from `.agent-sync/rules`. |
+| SC-002 | Global rule publishing works. | Service tests verify `~/.claude/rules` symlinks and `~/.codex/AGENTS.md` outputs from `~/.agent-sync/rules`. |
 | SC-003 | Individual rule linking and migration work. | Service and CLI tests cover `rule link`, `rule build`, `migrate rule`, and `migrate rules`. |
 | SC-004 | Full validation passes. | `bun test` and `bun run typecheck` pass. |
 | SC-005 | LiveSpec traceability is complete. | `implementation.md` maps all FR and AC to code/tests with implemented status. |

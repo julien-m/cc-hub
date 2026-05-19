@@ -180,7 +180,79 @@ const createSymlink = (sourcePath: string, canonicalPath: string, force: boolean
 	symlinkSync(sourcePath, canonicalPath);
 };
 
-const classifyGeneratedPath = (providerPath: string): Pick<RuleSyncEntry, "status" | "detail"> => {
+const lstatIfExists = (path: string): ReturnType<typeof lstatSync> | undefined => {
+	try {
+		return lstatSync(path);
+	} catch (error) {
+		const code = typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
+		// Missing parent paths are normal for status checks; other filesystem errors must surface.
+		if (code === "ENOENT" || code === "ENOTDIR") return undefined;
+		throw error;
+	}
+};
+
+const resolvedSymlinkTarget = (linkPath: string, linkTarget: string): string =>
+	isAbsolute(linkTarget) ? resolve(linkTarget) : resolve(dirname(linkPath), linkTarget);
+
+const isExpectedSymlinkTarget = (linkPath: string, linkTarget: string, expectedTarget: string): boolean =>
+	resolvedSymlinkTarget(linkPath, linkTarget) === resolve(expectedTarget);
+
+const isOldClaudeRuleCopy = (providerContent: string, ruleContent: string): boolean =>
+	providerContent === ruleContent || providerContent === `${ruleContent}\n`;
+
+const createClaudeRuleSymlink = (
+	rule: CanonicalRule,
+	providerPath: string,
+	force: boolean | undefined,
+): Pick<RuleSyncEntry, "status" | "detail"> => {
+	// Claude publishing is strict: keep expected symlinks, convert legacy copies, and replace conflicts only with force.
+	const stat = lstatIfExists(providerPath);
+	if (stat) {
+		if (stat.isSymbolicLink()) {
+			const linkTarget = readlinkSync(providerPath);
+			if (isExpectedSymlinkTarget(providerPath, linkTarget, rule.canonicalPath)) {
+				return { status: "OK", detail: `symlink -> ${linkTarget}` };
+			}
+			if (!force) {
+				return { status: "ERROR", detail: `symlink points to ${linkTarget}, expected ${rule.canonicalPath}` };
+			}
+			rmSync(providerPath, { force: true });
+		} else if (stat.isFile() && (force || isOldClaudeRuleCopy(readFileSync(providerPath, "utf-8"), rule.content))) {
+			rmSync(providerPath, { force: true });
+		} else {
+			return { status: "LOCAL", detail: "provider path exists but is not the expected symlink" };
+		}
+	}
+	ensureDirectory(dirname(providerPath));
+	symlinkSync(rule.canonicalPath, providerPath);
+	return { status: "OK", detail: `symlink -> ${rule.canonicalPath}` };
+};
+
+const classifyClaudeRuleSymlink = (
+	providerPath: string,
+	targetPath: string,
+): Pick<RuleSyncEntry, "status" | "detail"> => {
+	// @spec FR-013: Validate Claude symlink target — .specs/features/004-portable-agent-sync-rules/spec.md#fr-013
+	const stat = lstatIfExists(providerPath);
+	if (!stat) return { status: "MISSING" };
+	try {
+		if (!stat.isSymbolicLink()) {
+			return { status: "LOCAL", detail: "provider path exists but is not a symlink" };
+		}
+		const linkTarget = readlinkSync(providerPath);
+		const resolvedTarget = resolvedSymlinkTarget(providerPath, linkTarget);
+		if (!existsSync(resolvedTarget)) {
+			return { status: "BROKEN", detail: `symlink -> ${linkTarget}` };
+		}
+		if (isExpectedSymlinkTarget(providerPath, linkTarget, targetPath))
+			return { status: "OK", detail: `symlink -> ${linkTarget}` };
+		return { status: "ERROR", detail: `symlink points to ${linkTarget}, expected ${targetPath}` };
+	} catch (error) {
+		return { status: "ERROR", detail: error instanceof Error ? error.message : String(error) };
+	}
+};
+
+const classifyGeneratedFile = (providerPath: string): Pick<RuleSyncEntry, "status" | "detail"> => {
 	if (!existsSync(providerPath)) return { status: "MISSING" };
 	try {
 		const stat = lstatSync(providerPath);
@@ -204,26 +276,11 @@ const writeClaudeRules = (
 	paths: RuntimePaths,
 	options: RuleSyncOptions,
 ): readonly RuleSyncEntry[] => {
-	// @spec FR-002: Generate Claude rules, FR-009: Preserve paths — .specs/features/004-portable-agent-sync-rules/spec.md#fr-002
+	// @spec FR-002: Link Claude rules, FR-009: Preserve paths — .specs/features/004-portable-agent-sync-rules/spec.md#fr-002
 	const root = claudeRulesRoot(scope, paths);
 	const entries: RuleSyncEntry[] = [];
 	for (const rule of rules) {
 		const providerPath = join(root, rule.relativePath);
-		ensureDirectory(dirname(providerPath));
-		if (existsSync(providerPath) && !lstatSync(providerPath).isFile() && !options.force) {
-			entries.push({
-				kind: "rule",
-				name: rule.name,
-				scope,
-				provider: "claude",
-				providerPath,
-				targetPath: rule.canonicalPath,
-				status: "LOCAL",
-				detail: "provider path exists but is not a file",
-			});
-			continue;
-		}
-		writeFileSync(providerPath, `${rule.content}\n`);
 		entries.push({
 			kind: "rule",
 			name: rule.name,
@@ -231,7 +288,7 @@ const writeClaudeRules = (
 			provider: "claude",
 			providerPath,
 			targetPath: rule.canonicalPath,
-			...classifyGeneratedPath(providerPath),
+			...createClaudeRuleSymlink(rule, providerPath, options.force),
 		});
 	}
 	return entries;
@@ -294,7 +351,7 @@ const writeCodexRules = (
 		provider: "codex",
 		providerPath,
 		targetPath: canonicalRoot(scope, paths),
-		...classifyGeneratedPath(providerPath),
+		...classifyGeneratedFile(providerPath),
 	};
 };
 
@@ -373,7 +430,7 @@ export const statusRules = (options: RuleSyncOptions = {}): readonly RuleSyncEnt
 					provider: "claude",
 					providerPath,
 					targetPath: rule.canonicalPath,
-					...classifyGeneratedPath(providerPath),
+					...classifyClaudeRuleSymlink(providerPath, rule.canonicalPath),
 				});
 			}
 		}
@@ -386,7 +443,7 @@ export const statusRules = (options: RuleSyncOptions = {}): readonly RuleSyncEnt
 				provider: "codex",
 				providerPath,
 				targetPath: canonicalRoot(scope, paths),
-				...classifyGeneratedPath(providerPath),
+				...classifyGeneratedFile(providerPath),
 			});
 		}
 	}
@@ -394,12 +451,13 @@ export const statusRules = (options: RuleSyncOptions = {}): readonly RuleSyncEnt
 };
 
 /**
- * Rebuild missing or stale generated rule outputs.
+ * Repair generated rule outputs.
  * @param options Scope, target, and filesystem root options.
  * @returns Provider output status entries.
+ * @remarks Non-dry-run repair passes `force: true`, so it may replace conflicting Claude provider files or symlinks.
  */
 export const repairRules = (options: RuleSyncOptions = {}): readonly RuleSyncEntry[] => {
-	return options.dryRun ? statusRules(options) : buildRules(options);
+	return options.dryRun ? statusRules(options) : buildRules({ ...options, force: true });
 };
 
 /**

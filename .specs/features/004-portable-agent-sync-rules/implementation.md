@@ -6,7 +6,7 @@ spec_ref: .specs/features/004-portable-agent-sync-rules/spec.md
 date: 2026-05-18
 status: Implemented
 created: 2026-05-18
-updated: 2026-05-18
+updated: 2026-05-19
 ---
 
 # Implementation Mapping
@@ -27,6 +27,7 @@ updated: 2026-05-18
 | FR-010 | `src/services/agent-sync-rules.ts`, `src/commands/rule.ts`, `src/commands/sync.ts` | `@spec FR-010` | ✅ Implemented | 2026-05-18 |
 | FR-011 | `README.md`, `.agent-sync/skills/cc-hub/SKILL.md` | Documentation update | ✅ Implemented | 2026-05-18 |
 | FR-012 | `tests/services/agent-sync-rules.test.ts`, `tests/services/agent-sync-migrate.test.ts`, `tests/commands/agent-sync-cli.test.ts` | Test coverage | ✅ Implemented | 2026-05-18 |
+| FR-013 | `src/services/agent-sync-rules.ts` | `@spec FR-013` | ✅ Implemented | 2026-05-19 |
 
 ## Acceptance Criteria Mapping
 
@@ -44,15 +45,16 @@ updated: 2026-05-18
 | AC-010 | `tests/services/agent-sync-rules.test.ts`, CLI smoke test | ✅ Implemented |
 | AC-011 | `README.md`, `.agent-sync/skills/cc-hub/SKILL.md` | ✅ Implemented |
 | AC-012 | `tests/services/agent-sync-rules.test.ts`, `tests/services/agent-sync-migrate.test.ts`, `tests/commands/agent-sync-cli.test.ts` | ✅ Implemented |
+| AC-013 | `tests/services/agent-sync-rules.test.ts` | ✅ Implemented |
 
 ## Files Created/Modified
 
-- `src/services/agent-sync-rules.ts` — canonical project/global rule roots, rule linking, build/list/status/repair/unlink, Claude output rendering, and Codex managed block rendering.
+- `src/services/agent-sync-rules.ts` — canonical project/global rule roots, rule linking, build/list/status/repair/unlink, Claude rule symlink publishing/status validation, and Codex managed block rendering.
 - `src/services/agent-sync-migrate.ts` — targeted `migrate rule`, folder `migrate rules`, and `.claude/rules` folder discovery in full Claude migrations.
 - `src/commands/rule.ts` — portable `rule link/build/list/status/repair/unlink` command group.
 - `src/commands/migrate.ts` — `migrate rule` and `migrate rules` subcommands.
 - `src/commands/sync.ts` — aggregate sync/status/repair now includes rules.
-- `tests/services/agent-sync-rules.test.ts` — isolated filesystem coverage for project/global rules, managed blocks, symlinked global rules, and unlink behavior.
+- `tests/services/agent-sync-rules.test.ts` — isolated filesystem coverage for project/global rules, managed blocks, Claude symlink outputs/status, old-copy conversion, symlinked global rules, and unlink behavior.
 - `tests/services/agent-sync-migrate.test.ts` — rule migration and dry-run coverage.
 - `tests/commands/agent-sync-cli.test.ts` — CLI wiring for `rule link`, `migrate rules`, and aggregate sync rules.
 - `README.md` — user-facing portable rules documentation.
@@ -64,5 +66,8 @@ updated: 2026-05-18
 - Focused rule suite: `bun test tests/services/agent-sync-rules.test.ts tests/services/agent-sync-migrate.test.ts tests/commands/agent-sync-cli.test.ts` — 22 pass.
 - Full typecheck: `bun run typecheck` — pass.
 - Full tests: `bun test` — 108 pass.
-- CLI smoke: `cc-hub rule link rules/api.md --scope project --targets all --force` in temp HOME/project — generated `.claude/rules/api.md` and `AGENTS.md`.
-- CLI smoke: `cc-hub migrate rules .claude/rules --scope project --targets all --force` in temp HOME/project — generated `.agent-sync/rules/testing.md` and `AGENTS.md`.
+- CLI smoke: `cc-hub rule link rules/api.md --scope project --targets all --force` in temp HOME/project — linked `.claude/rules/api.md` and generated `AGENTS.md`.
+- CLI smoke: `cc-hub migrate rules .claude/rules --scope project --targets all --force` in temp HOME/project — generated `.agent-sync/rules/testing.md`, linked Claude rules, and generated `AGENTS.md`.
+- 2026-05-19 focused validation: `bun test tests/services/agent-sync-rules.test.ts tests/services/agent-sync-migrate.test.ts tests/commands/agent-sync-cli.test.ts` — 33 pass; `bun run typecheck` — pass.
+- 2026-05-19 full validation: `bun test` — 121 pass.
+- 2026-05-19 audit: `/audit --fast` — no violations found.

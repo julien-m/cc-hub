@@ -510,18 +510,18 @@ Agents use one editable source and generated provider-native files:
 
 `agent.yaml` model values `haiku`, `sonnet`, `opus`, and Claude model IDs are Claude-only and are omitted from generated Codex TOML. OpenAI canonical IDs with Codex support are rendered as Codex-native names.
 
-Rules use canonical Markdown sources and generated provider outputs:
+Rules use canonical Markdown sources, Claude symlinks, and generated Codex blocks:
 
 ```text
 .agent-sync/rules/<name>.md             # project canonical rule
 ~/.agent-sync/rules/<namespace>/<name>.md # global canonical rule
-.claude/rules/<name>.md                 # generated Claude project rule
-~/.claude/rules/<namespace>/<name>.md    # generated Claude global rule
+.claude/rules/<name>.md                 # Claude project symlink to canonical rule
+~/.claude/rules/<namespace>/<name>.md    # Claude global symlink to canonical rule
 AGENTS.md                               # generated project Codex rule block
 ~/.codex/AGENTS.md                      # generated global Codex rule block
 ```
 
-Claude `paths:` frontmatter is preserved in generated `.claude/rules`. Codex has no equivalent path-scoped rules mechanism, so cc-hub renders paths as textual "When modifying ..." guidance inside the managed `AGENTS.md` block. Edit `.agent-sync/rules` / `~/.agent-sync/rules`, not generated provider outputs.
+Claude reads the canonical file through the `.claude/rules` symlink, so `paths:` frontmatter is preserved without copying. Codex has no equivalent path-scoped rules mechanism, so cc-hub renders paths as textual "When modifying ..." guidance inside the managed `AGENTS.md` block. Edit `.agent-sync/rules` / `~/.agent-sync/rules`, not provider outputs.
 
 ```bash
 # Skills
@@ -576,7 +576,7 @@ cc-hub rule link ./local-rule.md --name project-rules.md --scope project --targe
 
 For commands and rule names, the `.md` extension is added automatically if omitted.
 
-All provider installs use symlinks where the provider supports symlinks. Skills link to canonical skill directories; agents link to generated provider-native files; rules link into canonical `.agent-sync/rules` and generate provider-facing outputs.
+All provider installs use symlinks where the provider supports symlinks. Skills link to canonical skill directories; agents link to generated provider-native files; Claude rules link to canonical `.agent-sync/rules`; Codex rules generate provider-facing `AGENTS.md` blocks.
 
 ### `config` — Preferences
 

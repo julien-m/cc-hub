@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it, spyOn } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, readlinkSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import {
+	lstatSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	readlinkSync,
+	realpathSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createAgentCommand } from "../../src/commands/agent.ts";
@@ -219,6 +228,8 @@ describe("agent-sync CLI commands", () => {
 			});
 		});
 
+		expect(lstatSync(join(projectDir, ".claude", "rules", "api.md")).isSymbolicLink()).toBe(true);
+		expect(readlinkSync(join(projectDir, ".claude", "rules", "api.md"))).toBe(rulePath);
 		expect(readFileSync(join(projectDir, ".claude", "rules", "api.md"), "utf-8")).toContain("Validate payloads.");
 		expect(readFileSync(join(projectDir, "AGENTS.md"), "utf-8")).toContain("Validate payloads.");
 	});
@@ -341,6 +352,10 @@ describe("agent-sync CLI commands", () => {
 		});
 
 		expect(readlinkSync(join(projectDir, ".agent-sync", "rules", "api.md"))).toBe(join(projectDir, "rules", "api.md"));
+		expect(lstatSync(join(projectDir, ".claude", "rules", "api.md")).isSymbolicLink()).toBe(true);
+		expect(readlinkSync(join(projectDir, ".claude", "rules", "api.md"))).toBe(
+			join(projectDir, ".agent-sync", "rules", "api.md"),
+		);
 		expect(readFileSync(join(projectDir, ".claude", "rules", "api.md"), "utf-8")).toContain("Validate all inputs.");
 		expect(readFileSync(join(projectDir, "AGENTS.md"), "utf-8")).toContain("Validate all inputs.");
 		const commandHelp = createRuleCommand().helpInformation();

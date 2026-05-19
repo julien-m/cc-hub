@@ -1,17 +1,19 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import {
 	existsSync,
+	lstatSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
 	readlinkSync,
 	realpathSync,
 	rmSync,
+	symlinkSync,
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { buildRules, linkRule, statusRules, unlinkRule } from "../../src/services/agent-sync-rules.ts";
+import { buildRules, linkRule, repairRules, statusRules, unlinkRule } from "../../src/services/agent-sync-rules.ts";
 
 const roots: string[] = [];
 
@@ -37,9 +39,9 @@ afterEach(() => {
 });
 
 describe("agent-sync rules service", () => {
-	it("builds project Claude rules and a managed AGENTS.md block from canonical rules", () => {
+	it("builds project Claude rule symlinks and a managed AGENTS.md block from canonical rules", () => {
 		const { projectDir, homeDir } = workspace();
-		writeCanonicalProjectRule(
+		const canonicalPath = writeCanonicalProjectRule(
 			projectDir,
 			"api",
 			`---\npaths:\n  - "src/api/**/*.ts"\n---\n\n# API Rules\n\n- Validate all request inputs.\n`,
@@ -47,11 +49,12 @@ describe("agent-sync rules service", () => {
 		writeFileSync(join(projectDir, "AGENTS.md"), "# Existing Project Instructions\n\nKeep this text.\n");
 
 		const entries = buildRules({ projectDir, homeDir, scope: "project", targets: "all" });
+		const claudeRule = join(projectDir, ".claude", "rules", "api.md");
 
 		expect(entries.map((entry) => `${entry.provider}:${entry.status}`).sort()).toEqual(["claude:OK", "codex:OK"]);
-		expect(readFileSync(join(projectDir, ".claude", "rules", "api.md"), "utf-8")).toContain(
-			'paths:\n  - "src/api/**/*.ts"',
-		);
+		expect(lstatSync(claudeRule).isSymbolicLink()).toBe(true);
+		expect(readlinkSync(claudeRule)).toBe(canonicalPath);
+		expect(readFileSync(claudeRule, "utf-8")).toContain('paths:\n  - "src/api/**/*.ts"');
 		const agents = readFileSync(join(projectDir, "AGENTS.md"), "utf-8");
 		expect(agents).toContain("# Existing Project Instructions");
 		expect(agents).toContain("<!-- cc-hub:project-rules:start -->");
@@ -85,17 +88,18 @@ describe("agent-sync rules service", () => {
 		expect(agents).toContain("- Run focused tests first.");
 	});
 
-	it("builds global Claude rules and a global Codex AGENTS.md block from namespaced rules", () => {
+	it("builds global Claude rule symlinks and a global Codex AGENTS.md block from namespaced rules", () => {
 		const { projectDir, homeDir } = workspace();
 		const rulePath = join(homeDir, ".agent-sync", "rules", "project-x", "api.md");
 		mkdirSync(join(rulePath, ".."), { recursive: true });
 		writeFileSync(rulePath, "# API Rules\n\n- Prefer explicit DTOs.\n");
 
 		buildRules({ projectDir, homeDir, scope: "global", targets: "all" });
+		const claudeRule = join(homeDir, ".claude", "rules", "project-x", "api.md");
 
-		expect(readFileSync(join(homeDir, ".claude", "rules", "project-x", "api.md"), "utf-8")).toContain(
-			"Prefer explicit DTOs.",
-		);
+		expect(lstatSync(claudeRule).isSymbolicLink()).toBe(true);
+		expect(readlinkSync(claudeRule)).toBe(rulePath);
+		expect(readFileSync(claudeRule, "utf-8")).toContain("Prefer explicit DTOs.");
 		const globalAgents = readFileSync(join(homeDir, ".codex", "AGENTS.md"), "utf-8");
 		expect(globalAgents).toContain("<!-- cc-hub:global-rules:start -->");
 		expect(globalAgents).toContain("### project-x/api");
@@ -138,5 +142,88 @@ describe("agent-sync rules service", () => {
 
 		expect(existsSync(join(projectDir, ".agent-sync", "rules", "security.md"))).toBe(false);
 		expect(existsSync(join(projectDir, ".claude", "rules", "security.md"))).toBe(false);
+	});
+
+	it("reports physical Claude rule outputs as LOCAL and repair converts them to symlinks", () => {
+		const { projectDir, homeDir } = workspace();
+		const canonicalPath = writeCanonicalProjectRule(projectDir, "api", "# API Rules\n\n- Validate payloads.\n");
+		const claudeRule = join(projectDir, ".claude", "rules", "api.md");
+		mkdirSync(join(claudeRule, ".."), { recursive: true });
+		writeFileSync(claudeRule, "# API Rules\n\n- Local edit.\n");
+
+		const before = statusRules({ projectDir, homeDir, scope: "project", targets: "claude" });
+		const repaired = repairRules({ projectDir, homeDir, scope: "project", targets: "claude" });
+
+		expect(before[0]).toMatchObject({ provider: "claude", status: "LOCAL" });
+		expect(repaired[0]).toMatchObject({ provider: "claude", status: "OK" });
+		expect(lstatSync(claudeRule).isSymbolicLink()).toBe(true);
+		expect(readlinkSync(claudeRule)).toBe(canonicalPath);
+	});
+
+	it("converts old matching Claude rule copies during build", () => {
+		const { projectDir, homeDir } = workspace();
+		const content = "# API Rules\n\n- Validate payloads.\n";
+		const canonicalPath = writeCanonicalProjectRule(projectDir, "api", content);
+		const claudeRule = join(projectDir, ".claude", "rules", "api.md");
+		mkdirSync(join(claudeRule, ".."), { recursive: true });
+		writeFileSync(claudeRule, content);
+
+		const entries = buildRules({ projectDir, homeDir, scope: "project", targets: "claude" });
+
+		expect(entries[0]).toMatchObject({ provider: "claude", status: "OK" });
+		expect(lstatSync(claudeRule).isSymbolicLink()).toBe(true);
+		expect(readlinkSync(claudeRule)).toBe(canonicalPath);
+	});
+
+	it("force build converts conflicting old Claude rule copies", () => {
+		const { projectDir, homeDir } = workspace();
+		const canonicalPath = writeCanonicalProjectRule(projectDir, "api", "# API Rules\n\n- Validate payloads.\n");
+		const claudeRule = join(projectDir, ".claude", "rules", "api.md");
+		mkdirSync(join(claudeRule, ".."), { recursive: true });
+		writeFileSync(claudeRule, "# API Rules\n\n- Local edit.\n");
+
+		const entries = buildRules({ projectDir, homeDir, scope: "project", targets: "claude", force: true });
+
+		expect(entries[0]).toMatchObject({ provider: "claude", status: "OK" });
+		expect(lstatSync(claudeRule).isSymbolicLink()).toBe(true);
+		expect(readlinkSync(claudeRule)).toBe(canonicalPath);
+	});
+
+	it("reports broken and wrong Claude rule symlinks distinctly", () => {
+		const { projectDir, homeDir } = workspace();
+		writeCanonicalProjectRule(projectDir, "api", "# API Rules\n\n- Validate payloads.\n");
+		const claudeRule = join(projectDir, ".claude", "rules", "api.md");
+		const wrongTarget = join(projectDir, "wrong.md");
+		mkdirSync(join(claudeRule, ".."), { recursive: true });
+		writeFileSync(wrongTarget, "# Wrong\n");
+		symlinkSync(wrongTarget, claudeRule);
+
+		const wrong = statusRules({ projectDir, homeDir, scope: "project", targets: "claude" });
+		rmSync(claudeRule, { force: true });
+		symlinkSync(join(projectDir, "missing.md"), claudeRule);
+		const broken = statusRules({ projectDir, homeDir, scope: "project", targets: "claude" });
+
+		expect(wrong[0]).toMatchObject({ provider: "claude", status: "ERROR" });
+		expect(broken[0]).toMatchObject({ provider: "claude", status: "BROKEN" });
+	});
+
+	it("does not accept a Claude rule symlink to the canonical rule realpath", () => {
+		const { projectDir, homeDir } = workspace();
+		const source = join(projectDir, "rules", "api.md");
+		const canonicalPath = join(homeDir, ".agent-sync", "rules", "project-x", "api.md");
+		const claudeRule = join(homeDir, ".claude", "rules", "project-x", "api.md");
+		mkdirSync(join(source, ".."), { recursive: true });
+		mkdirSync(join(canonicalPath, ".."), { recursive: true });
+		mkdirSync(join(claudeRule, ".."), { recursive: true });
+		writeFileSync(source, "# API Rules\n\n- Validate payloads.\n");
+		symlinkSync(source, canonicalPath);
+		symlinkSync(source, claudeRule);
+
+		const status = statusRules({ projectDir, homeDir, scope: "global", targets: "claude" });
+		const build = buildRules({ projectDir, homeDir, scope: "global", targets: "claude" });
+
+		expect(status[0]).toMatchObject({ provider: "claude", status: "ERROR" });
+		expect(build[0]).toMatchObject({ provider: "claude", status: "ERROR" });
+		expect(readlinkSync(claudeRule)).toBe(source);
 	});
 });

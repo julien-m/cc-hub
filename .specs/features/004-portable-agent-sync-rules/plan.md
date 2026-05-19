@@ -18,7 +18,7 @@ created: 2026-05-18
 
 ## Summary
 
-Add canonical rule management under `.agent-sync/rules` and `~/.agent-sync/rules`, generate Claude-native rule files plus managed Codex `AGENTS.md` blocks, and extend rule/migrate CLI commands with scoped, target-aware rule workflows.
+Add canonical rule management under `.agent-sync/rules` and `~/.agent-sync/rules`, publish Claude rule symlinks plus managed Codex `AGENTS.md` blocks, and extend rule/migrate CLI commands with scoped, target-aware rule workflows.
 
 ## Technical Context
 
@@ -168,6 +168,6 @@ No database schema is added. These entities are in-memory records and filesystem
 ## Risks & Considerations
 
 - Codex has no native path-scoped rules. The generated `AGENTS.md` block must explicitly label path-specific guidance as textual behavior.
-- Rebuilding generated Claude rules must not delete user-owned local files unless they are managed by cc-hub or `--force` is provided.
+- Rebuilding Claude rule symlinks must not delete user-owned local files unless `--force`, `repair`, or identical old-copy conversion applies.
 - Global rules may be symlinks to project files; builds must dereference content but preserve source traceability in rendered headings.
 - Existing `cc-hub rule link` is Claude-only. Replacing it is a behavioral change and must be documented clearly.

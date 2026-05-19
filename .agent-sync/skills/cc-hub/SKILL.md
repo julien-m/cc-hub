@@ -194,7 +194,7 @@ Agent-sync paths:
 - agents: `.agent-sync/agents/<name>/{agent.yaml,prompt.md,dist/}` or `~/.agent-sync/agents/<name>/...`
 - Claude skills: `.claude/skills` / `~/.claude/skills`
 - Codex skills: `.agents/skills` / `~/.agents/skills`
-- Claude rules: generated `.claude/rules/**/*.md` / `~/.claude/rules/**/*.md`
+- Claude rules: symlinked `.claude/rules/**/*.md` / `~/.claude/rules/**/*.md` pointing to canonical rules
 - Codex rules: generated managed blocks in `AGENTS.md` / `~/.codex/AGENTS.md`
 - Claude agents: `.claude/agents/*.md` / `~/.claude/agents/*.md`
 - Codex agents: `.codex/agents/*.toml` / `~/.codex/agents/*.toml`
@@ -206,7 +206,7 @@ Migration behavior:
 - `cc-hub migrate .claude --from claude` imports Claude skills, agents, commands, and rules into `.agent-sync`.
 - `cc-hub migrate .codex --from codex` imports Codex TOML agents into `.agent-sync`.
 - Claude commands (`.claude/commands/*.md`) become skills (`.agent-sync/skills/<name>/SKILL.md`) because Codex has no command artifact.
-- Claude rules (`.claude/rules/**/*.md`) become canonical rules (`.agent-sync/rules/**/*.md`), then generate Claude `.claude/rules` outputs and Codex `AGENTS.md` blocks.
+- Claude rules (`.claude/rules/**/*.md`) become canonical rules (`.agent-sync/rules/**/*.md`), then create Claude `.claude/rules` symlinks and Codex `AGENTS.md` blocks.
 - `--output <dir>` writes canonical migrated assets to a custom agent-sync root (`<dir>/skills`, `<dir>/rules`, `<dir>/agents`). Relative paths resolve from the project directory. `--scope` still controls project/global provider outputs, which point to or are generated from the custom root.
 - `--dry-run` reports planned writes without changing files.
 - Existing real provider files/directories are preserved unless `--force` is passed.

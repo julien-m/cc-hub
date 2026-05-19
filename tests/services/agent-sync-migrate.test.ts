@@ -333,6 +333,10 @@ describe("agent-sync migration service", () => {
 
 		expect(results.map((result) => `${result.kind}:${result.name}:${result.status}`)).toEqual(["rule:api:MIGRATED"]);
 		expect(readFileSync(join(projectDir, ".agent-sync", "rules", "api.md"), "utf-8")).toContain("Keep api behavior");
+		expect(lstatSync(join(projectDir, ".claude", "rules", "api.md")).isSymbolicLink()).toBe(true);
+		expect(readlinkSync(join(projectDir, ".claude", "rules", "api.md"))).toBe(
+			join(projectDir, ".agent-sync", "rules", "api.md"),
+		);
 		expect(readFileSync(join(projectDir, ".claude", "rules", "api.md"), "utf-8")).toContain("src/api/**/*.ts");
 		expect(readFileSync(join(projectDir, "AGENTS.md"), "utf-8")).toContain("When modifying `src/api/**/*.ts`");
 	});
@@ -358,6 +362,10 @@ describe("agent-sync migration service", () => {
 		expect(results[0].canonicalPath).toBe(join(output, "rules", "collection.md"));
 		expect(readFileSync(join(output, "rules", "collection.md"), "utf-8")).toContain("Keep collection behavior");
 		expect(existsSync(join(homeDir, ".agent-sync", "rules", "collection.md"))).toBe(false);
+		expect(lstatSync(join(homeDir, ".claude", "rules", "collection.md")).isSymbolicLink()).toBe(true);
+		expect(readlinkSync(join(homeDir, ".claude", "rules", "collection.md"))).toBe(
+			join(output, "rules", "collection.md"),
+		);
 		expect(readFileSync(join(homeDir, ".claude", "rules", "collection.md"), "utf-8")).toContain(
 			"Keep collection behavior",
 		);
