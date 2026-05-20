@@ -98,6 +98,78 @@ describe("agent-sync CLI commands", () => {
 		expect(linkHelp).toContain("--targets <targets>");
 	});
 
+	it("skill, agent, and rule commands accept a custom agent-sync root", async () => {
+		const { projectDir, homeDir } = workspace();
+		const skill = writeSkill(projectDir);
+		const rulesDir = join(projectDir, "rules");
+		mkdirSync(rulesDir, { recursive: true });
+		writeFileSync(join(rulesDir, "api.md"), "# API Rules\n\n- Validate all inputs.\n");
+
+		await withWorkspace(projectDir, homeDir, async () => {
+			await createSkillCommand().parseAsync(
+				[
+					"node",
+					"skill",
+					"link",
+					skill,
+					"--scope",
+					"project",
+					"--targets",
+					"all",
+					"--agent-sync-root",
+					".agent-sync.local",
+				],
+				{ from: "node" },
+			);
+			await createAgentCommand().parseAsync(
+				["node", "agent", "create", "reviewer", "--scope", "project", "--agent-sync-root", ".agent-sync.local"],
+				{ from: "node" },
+			);
+			await createRuleCommand().parseAsync(
+				[
+					"node",
+					"rule",
+					"link",
+					"rules/api.md",
+					"--scope",
+					"project",
+					"--targets",
+					"all",
+					"--agent-sync-root",
+					".agent-sync.local",
+					"--force",
+				],
+				{ from: "node" },
+			);
+		});
+
+		expect(readlinkSync(join(projectDir, ".agents", "skills", "my-skill"))).toBe(
+			join(projectDir, ".agent-sync.local", "skills", "my-skill"),
+		);
+		expect(readlinkSync(join(projectDir, ".codex", "agents", "reviewer.toml"))).toBe(
+			join(projectDir, ".agent-sync.local", "agents", "reviewer", "dist", "codex.toml"),
+		);
+		expect(readlinkSync(join(projectDir, ".claude", "rules", "api.md"))).toBe(
+			join(projectDir, ".agent-sync.local", "rules", "api.md"),
+		);
+		expect(readFileSync(join(projectDir, "AGENTS.md"), "utf-8")).toContain("Validate all inputs.");
+		const skillLinkHelp =
+			createSkillCommand()
+				.commands.find((command) => command.name() === "link")
+				?.helpInformation() ?? "";
+		const agentLinkHelp =
+			createAgentCommand()
+				.commands.find((command) => command.name() === "link")
+				?.helpInformation() ?? "";
+		const ruleBuildHelp =
+			createRuleCommand()
+				.commands.find((command) => command.name() === "build")
+				?.helpInformation() ?? "";
+		expect(skillLinkHelp).toContain("--agent-sync-root <dir>");
+		expect(agentLinkHelp).toContain("--agent-sync-root <dir>");
+		expect(ruleBuildHelp).toContain("--agent-sync-root <dir>");
+	});
+
 	it("skill status filters entries by name", async () => {
 		const { projectDir, homeDir } = workspace();
 		const firstSkill = writeSkill(projectDir, "my-skill");

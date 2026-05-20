@@ -529,6 +529,7 @@ Run `cc-hub rule repair --dry-run` before repairing rules. `rule build` and `rul
 # Skills
 cc-hub skill link ./my-skill --scope global --targets all
 cc-hub skill link ./my-skill --scope project --targets claude,codex
+cc-hub skill link ./my-skill --scope project --targets all --agent-sync-root .agent-sync.local
 cc-hub skill status --scope all --targets all
 cc-hub skill repair --scope project --targets all
 cc-hub skill unlink my-skill --scope global --targets claude
@@ -540,6 +541,7 @@ cc-hub command unlink deploy.md
 
 # Rules (source = .md file, canonicalized into .agent-sync/rules)
 cc-hub rule link ./rules/api.md --scope project --targets all
+cc-hub rule build --scope project --targets all --agent-sync-root .agent-sync.local
 cc-hub rule link .agent-sync/rules/api.md --scope global --targets all --namespace project-x
 cc-hub rule build --scope all --targets all
 cc-hub rule list
@@ -550,6 +552,7 @@ cc-hub rule unlink api --scope project --targets all
 # Agents
 cc-hub agent create reviewer --scope project --targets all
 cc-hub agent create local-reviewer --scope project --targets codex
+cc-hub agent link local-reviewer --scope project --targets all --agent-sync-root .agent-sync.local
 cc-hub agent build reviewer --scope project --targets all
 cc-hub agent link reviewer --scope project --targets all
 cc-hub agent status --scope all --targets all
@@ -562,6 +565,7 @@ Common options:
 ```bash
 --scope project|global|all
 --targets claude|codex|all
+--agent-sync-root <dir> # skill/agent/rule: custom canonical root for provider links
 --output <dir> # migrate only: custom agent-sync root for canonical writes
 --force
 --json

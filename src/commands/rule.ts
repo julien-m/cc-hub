@@ -16,6 +16,7 @@ const addRuleOptions = (command: Command, defaults: { scope: string; targets: st
 	command
 		.option("--scope <scope>", "Sync scope: project, global, or all", defaults.scope)
 		.option("--targets <targets>", "Provider targets: claude, codex, or all", defaults.targets)
+		.option("--agent-sync-root <dir>", "Custom canonical agent-sync root")
 		.option("-n, --name <name>", "Custom canonical rule name")
 		.option("--namespace <namespace>", "Namespace for global rule links")
 		.option("--force", "Replace existing canonical/provider paths when required")

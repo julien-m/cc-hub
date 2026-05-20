@@ -15,6 +15,7 @@ const addSyncOptions = (command: Command, defaults: { scope: string; targets: st
 	command
 		.option("--scope <scope>", "Sync scope: project, global, or all", defaults.scope)
 		.option("--targets <targets>", "Provider targets: claude, codex, or all", defaults.targets)
+		.option("--agent-sync-root <dir>", "Custom canonical agent-sync root")
 		.option("-n, --name <name>", "Custom canonical skill name")
 		.option("--force", "Replace existing non-symlink provider paths")
 		.option("--json", "Print JSON output");
