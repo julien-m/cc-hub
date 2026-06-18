@@ -22,6 +22,14 @@ describe("findModel", () => {
 	it("should return undefined for unknown ID", () => {
 		expect(findModel("unknown/model-99")).toBeUndefined();
 	});
+
+	it("should return OpenAI gpt-oss-120b by canonical ID", () => {
+		const model = findModel("openai/gpt-oss-120b");
+		expect(model).toBeDefined();
+		expect(model?.id).toBe("openai/gpt-oss-120b");
+		expect(model?.type).toBe("text");
+		expect(model?.providers.openrouter).toBe("openai/gpt-oss-120b");
+	});
 });
 
 // ---------------------------------------------------------------------------
@@ -93,6 +101,10 @@ describe("resolveForProvider", () => {
 
 	it("should resolve registered model to openrouter name", () => {
 		expect(resolveForProvider("anthropic/claude-sonnet-4", "openrouter")).toBe("anthropic/claude-sonnet-4");
+	});
+
+	it("should resolve OpenAI gpt-oss-120b to its OpenRouter name", () => {
+		expect(resolveForProvider("openai/gpt-oss-120b", "openrouter")).toBe("openai/gpt-oss-120b");
 	});
 
 	it("should pass through unregistered model for openrouter", () => {
@@ -168,6 +180,11 @@ describe("listModels", () => {
 	it("should apply combined type + provider filter", () => {
 		const textPoyo = listModels({ type: "text", provider: "poyo" });
 		expect(textPoyo.every((m) => m.type === "text" && m.providers.poyo !== undefined)).toBe(true);
+	});
+
+	it("should include OpenAI gpt-oss-120b in OpenRouter text models", () => {
+		const openrouterText = listModels({ type: "text", provider: "openrouter" });
+		expect(openrouterText.some((m) => m.id === "openai/gpt-oss-120b")).toBe(true);
 	});
 
 	it("should return empty array when no matches", () => {

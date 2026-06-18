@@ -195,6 +195,7 @@ Uses `crontab` internally.
 ```bash
 cc-hub ask "Summarize this text"
 cc-hub ask "Explain this bug" --model openai/gpt-5.4
+cc-hub ask "Reason with an open-weight model" --model openai/gpt-oss-120b
 cc-hub ask "Translate to English" --model google/gemini-3.1-pro-preview
 ```
 
@@ -609,7 +610,7 @@ cc-hub models list --provider copilot --type text  # combine filters
 
 Providers: `openrouter`, `copilot`, `poyo`, `codex`. Types: `text`, `image`, `video`, `audio`, `music`.
 
-All models across cc-hub use **canonical IDs** (OpenRouter format): `provider/model-name` (e.g. `openai/gpt-5.4`, `anthropic/claude-sonnet-4.6`).
+All models across cc-hub use **canonical IDs** (OpenRouter format): `provider/model-name` (e.g. `openai/gpt-5.4`, `openai/gpt-oss-120b`, `anthropic/claude-sonnet-4.6`).
 
 ## Artifacts
 

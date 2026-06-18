@@ -159,6 +159,13 @@ export const MODELS: Model[] = [
 			copilot: "gpt-4.1",
 		},
 	},
+	{
+		id: "openai/gpt-oss-120b",
+		type: "text",
+		providers: {
+			openrouter: "openai/gpt-oss-120b",
+		},
+	},
 
 	// --- Qwen ---
 	{
