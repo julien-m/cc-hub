@@ -8,6 +8,7 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { stat } from "node:fs/promises";
 import { createInterface, type Interface as ReadlineInterface } from "node:readline";
 import { AUTH_ERROR_PATTERNS, CodexAuthError, CodexNotFoundError } from "./codex.ts";
+import type { ReasoningEffort } from "./models.ts";
 
 /** Thrown when the session times out waiting for turn/completed. */
 export class CodexTimeoutError extends Error {
@@ -35,6 +36,7 @@ export class CodexSessionClosedError extends Error {
 
 export interface CodexSessionOptions {
 	model?: string;
+	effort?: ReasoningEffort;
 	sandbox?: "read-only" | "workspace-write";
 	/** Keep thread history across turns (ephemeral: false). Default: false (ephemeral: true). */
 	persist?: boolean;
@@ -281,6 +283,7 @@ export class CodexSession {
 				threadId: this.threadId,
 				// required by the Codex app-server protocol schema
 				input: [{ type: "text", text: prompt, text_elements: [] }],
+				...(this.opts.effort ? { effort: this.opts.effort } : {}),
 			}).catch((err: Error) => {
 				cleanup();
 				reject(err);

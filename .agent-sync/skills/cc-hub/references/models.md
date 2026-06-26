@@ -18,12 +18,14 @@
 
 - Modèle par défaut : `openai/gpt-5.5`
 - Disponibles : `openai/gpt-5.5`, `openai/gpt-5.4`, `openai/gpt-5.4-mini`, `openai/gpt-5.3-codex`, `openai/gpt-5.3-codex-spark`
+- Effort `codex` : `minimal`, `low`, `medium`, `high`, `xhigh`, `max`; cc-hub mappe vers l'effort connu par modèle avant d'appeler le CLI Codex
 
 ## Ask / Copilot (`cc-hub ask` / `cc-hub copilot`)
 
 - Modèle par défaut : `openai/gpt-5.4` (copilot), configurable (ask)
 - Format : canonical ID OpenRouter (`provider/model-name`)
 - Exemples OpenRouter text : `openai/gpt-oss-120b`, `z-ai/glm-5.2`
+- Effort `ask` : `minimal`, `low`, `medium`, `high`, `xhigh`, `max`; cc-hub mappe vers l'effort OpenRouter supporté par modèle
 - Voir `cc-hub models list --provider <provider>` pour la liste complète
 
 ## Musique (`cc-hub music`)

@@ -197,6 +197,7 @@ cc-hub ask "Summarize this text"
 cc-hub ask "Explain this bug" --model openai/gpt-5.4
 cc-hub ask "Reason with an open-weight model" --model openai/gpt-oss-120b
 cc-hub ask "Use a long-context coding model" --model z-ai/glm-5.2
+cc-hub ask "Deep implementation plan" --model z-ai/glm-5.2 --effort max
 cc-hub ask "Translate to English" --model google/gemini-3.1-pro-preview
 ```
 
@@ -228,7 +229,7 @@ cc-hub ask "3 European capitals" --schema ./capitals.schema.json
 | `--provider <name>` | `openrouter` (default) or `poyo` |
 | `--json` | Free-form JSON output |
 | `--schema <json_or_file>` | Structured output with JSON Schema (inline string or `.json` file path). Implies `--json` |
-| `--effort <level>` | Reasoning effort level (models with extended thinking): `low`, `medium`, `high` |
+| `--effort <level>` | cc-hub reasoning effort: `minimal`, `low`, `medium`, `high`, `xhigh`, `max`; mapped down to the highest effort supported by the selected OpenRouter model |
 
 Output goes to stdout. Silent by default (no auto-logging).
 
@@ -329,15 +330,16 @@ cc-hub codex "Compare these files" -f src/a.ts -f src/b.ts
 cat file.ts | cc-hub codex "Analyze"
 cc-hub codex "Question" --model openai/gpt-5.3-codex
 cc-hub codex "Deep analysis" --effort high
+cc-hub codex "Max reasoning" --effort max
 ```
 
 Default model: `openai/gpt-5.5`. Authentication is managed by the Codex CLI itself (`codex login`).
 
 | Option | Description |
 | --- | --- |
-| `--model <model>` | Model canonical ID (default: `openai/gpt-5.4`) |
+| `--model <model>` | Model canonical ID (default: `openai/gpt-5.5`) |
 | `-f, --file <path>` | File or glob to inject as context in the prompt (repeatable) |
-| `--effort <level>` | Reasoning effort level: `low`, `medium`, `high` |
+| `--effort <level>` | cc-hub reasoning effort: `minimal`, `low`, `medium`, `high`, `xhigh`, `max`; mapped down to the highest effort known for the selected model |
 | `--sandbox <mode>` | Sandbox mode: `read-only` (default), `workspace-write` |
 | `--schema <path>` | JSON Schema file for structured output |
 | `--interactive` | Start an interactive Codex session |
@@ -611,7 +613,7 @@ cc-hub models list --provider copilot --type text  # combine filters
 
 Providers: `openrouter`, `copilot`, `poyo`, `codex`. Types: `text`, `image`, `video`, `audio`, `music`.
 
-All models across cc-hub use **canonical IDs** (OpenRouter format): `provider/model-name` (e.g. `openai/gpt-5.4`, `openai/gpt-oss-120b`, `z-ai/glm-5.2`, `anthropic/claude-sonnet-4.6`).
+All models across cc-hub use **canonical IDs** (OpenRouter format): `provider/model-name` (e.g. `openai/gpt-5.4`, `openai/gpt-oss-120b`, `z-ai/glm-5.2`, `anthropic/claude-sonnet-4.6`). OpenRouter text models show `max-effort:<level>` when cc-hub knows their documented reasoning limit.
 
 ## Artifacts
 

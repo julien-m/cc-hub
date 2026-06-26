@@ -1,7 +1,7 @@
 /** CLI command for browsing the model registry. */
 import { Command } from "commander";
 import { type ModelType, type ProviderName, VALID_TYPES } from "../data/models.ts";
-import { listModels } from "../services/models.ts";
+import { getMaxReasoningEffort, listModels } from "../services/models.ts";
 
 const VALID_PROVIDERS: ProviderName[] = ["openrouter", "copilot", "poyo", "codex"];
 
@@ -39,7 +39,9 @@ export const createModelsCommand = (): Command => {
 
 			for (const m of results) {
 				const providers = Object.keys(m.providers).join(", ");
-				console.log(`${m.id.padEnd(35)} ${m.type.padEnd(7)} [${providers}]`);
+				const maxEffort = getMaxReasoningEffort(m.id);
+				const effortLabel = maxEffort ? ` max-effort:${maxEffort}` : "";
+				console.log(`${m.id.padEnd(35)} ${m.type.padEnd(7)} [${providers}]${effortLabel}`);
 			}
 		});
 

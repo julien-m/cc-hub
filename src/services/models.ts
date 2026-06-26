@@ -1,6 +1,14 @@
-import { MODELS, type Model, type ModelType, type ProviderName } from "../data/models.ts";
+import {
+	MODELS,
+	type Model,
+	type ModelType,
+	type ProviderName,
+	type ReasoningEffort,
+	VALID_REASONING_EFFORTS,
+} from "../data/models.ts";
 
 const byId: ReadonlyMap<string, Model> = new Map<string, Model>(MODELS.map((m) => [m.id, m]));
+const effortRank = new Map<ReasoningEffort, number>(VALID_REASONING_EFFORTS.map((effort, index) => [effort, index]));
 
 /**
  * Finds a model by its canonical ID.
@@ -87,4 +95,56 @@ export const listModels = (opts?: { type?: ModelType; provider?: ProviderName })
 	});
 };
 
-export { type Model, type ModelType, type ProviderName, VALID_TYPES } from "../data/models.ts";
+/**
+ * Returns the documented reasoning efforts for a model.
+ * @param id - The canonical model ID.
+ * @returns Supported efforts, or undefined when OpenRouter does not expose a finite list.
+ */
+export const getReasoningEfforts = (id: string): readonly ReasoningEffort[] | undefined => {
+	return byId.get(id)?.reasoningEfforts;
+};
+
+/**
+ * Returns the highest documented reasoning effort for a model.
+ * @param id - The canonical model ID.
+ * @returns The highest effort, or undefined when unknown.
+ */
+export const getMaxReasoningEffort = (id: string): ReasoningEffort | undefined => {
+	return byId.get(id)?.reasoningEfforts?.at(-1);
+};
+
+/**
+ * Checks model-specific effort support when the registry knows it.
+ * Unknown model effort lists are allowed so OpenRouter can apply its own mapping.
+ * @param id - The canonical model ID.
+ * @param effort - Requested reasoning effort.
+ * @returns Whether cc-hub should allow the request.
+ */
+export const isReasoningEffortSupported = (id: string, effort: ReasoningEffort): boolean => {
+	const efforts = getReasoningEfforts(id);
+	return efforts === undefined || efforts.includes(effort);
+};
+
+/**
+ * Maps a cc-hub effort to the closest effort accepted by a registered model.
+ * @param id - The canonical model ID.
+ * @param effort - Requested cc-hub reasoning effort.
+ * @returns The effort to send to OpenRouter.
+ */
+export const mapReasoningEffortForModel = (id: string, effort: ReasoningEffort): ReasoningEffort => {
+	const efforts = getReasoningEfforts(id);
+	if (efforts === undefined || efforts.includes(effort)) return effort;
+
+	const requestedRank = effortRank.get(effort) ?? 0;
+	const lowerOrEqual = efforts.filter((supported) => (effortRank.get(supported) ?? 0) <= requestedRank).at(-1);
+	return lowerOrEqual ?? efforts[0];
+};
+
+export {
+	type Model,
+	type ModelType,
+	type ProviderName,
+	type ReasoningEffort,
+	VALID_REASONING_EFFORTS,
+	VALID_TYPES,
+} from "../data/models.ts";

@@ -7,7 +7,12 @@ import { resolvePrompt } from "../infra/prompt.ts";
 import { Spinner } from "../infra/spinner.ts";
 import { getEnv } from "../services/env.ts";
 import { loadFileContext } from "../services/files.ts";
-import { resolveForProvider } from "../services/models.ts";
+import {
+	mapReasoningEffortForModel,
+	type ReasoningEffort,
+	resolveForProvider,
+	VALID_REASONING_EFFORTS,
+} from "../services/models.ts";
 import { askLLM } from "../services/openrouter.ts";
 import { askPoyo } from "../services/poyo.ts";
 
@@ -43,7 +48,7 @@ export const createAskCommand = (): Command =>
 		.option("-p, --provider <name>", "LLM provider (openrouter, poyo)")
 		.option("-j, --json", "Request JSON output from the model")
 		.option("-s, --schema <json_or_file>", "JSON schema for structured output (inline JSON or path to .json file)")
-		.option("-e, --effort <level>", "Reasoning effort level (low, medium, high)")
+		.option("-e, --effort <level>", `Reasoning effort level (${VALID_REASONING_EFFORTS.join(", ")})`)
 		.action(
 			async (
 				promptArg: string | undefined,
@@ -79,12 +84,14 @@ export const createAskCommand = (): Command =>
 					const model = resolveForProvider(rawModel, providerName);
 					const askFn = provider === "poyo" ? askPoyo : askLLM;
 
-					const validEfforts = ["low", "medium", "high"];
-					if (opts.effort && !validEfforts.includes(opts.effort)) {
-						console.error(`Invalid effort level: ${opts.effort}. Must be one of: low, medium, high`);
+					if (opts.effort && !VALID_REASONING_EFFORTS.includes(opts.effort as ReasoningEffort)) {
+						console.error(
+							`Invalid effort level: ${opts.effort}. Must be one of: ${VALID_REASONING_EFFORTS.join(", ")}`,
+						);
 						process.exit(2);
 					}
-					const effort = opts.effort as "low" | "medium" | "high" | undefined;
+					const effort = opts.effort as ReasoningEffort | undefined;
+					const openRouterEffort = effort ? mapReasoningEffortForModel(rawModel, effort) : undefined;
 
 					const spinner = new Spinner("waiting...", { elapsed: true }).start();
 
@@ -95,7 +102,7 @@ export const createAskCommand = (): Command =>
 							files: files.length > 0 ? files : undefined,
 							json: opts.json || !!jsonSchema,
 							jsonSchema,
-							effort,
+							effort: openRouterEffort,
 						});
 
 						spinner.stop();

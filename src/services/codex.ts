@@ -5,6 +5,7 @@
  */
 
 import { spawn } from "node:child_process";
+import type { ReasoningEffort } from "./models.ts";
 
 /** Auth patterns from `codex` stderr when not logged in or token expired. */
 export const AUTH_ERROR_PATTERNS: readonly string[] = [
@@ -38,7 +39,7 @@ export interface CodexOptions {
 	model?: string;
 	stdin?: string;
 	files?: Array<{ path: string; content: string }>;
-	effort?: string;
+	effort?: ReasoningEffort;
 	sandbox?: string;
 	schema?: string;
 }

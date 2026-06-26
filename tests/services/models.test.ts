@@ -2,7 +2,11 @@ import { describe, expect, it } from "bun:test";
 import {
 	findByProviderName,
 	findModel,
+	getMaxReasoningEffort,
+	getReasoningEfforts,
+	isReasoningEffortSupported,
 	listModels,
+	mapReasoningEffortForModel,
 	modelToSlug,
 	resolveForProvider,
 	toProviderName,
@@ -207,5 +211,37 @@ describe("listModels", () => {
 	it("should return empty array when no matches", () => {
 		const result = listModels({ type: "audio", provider: "copilot" });
 		expect(result).toEqual([]);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// reasoning efforts
+// ---------------------------------------------------------------------------
+describe("reasoning efforts", () => {
+	it("should expose supported efforts for GLM 5.2", () => {
+		expect(getReasoningEfforts("z-ai/glm-5.2")).toEqual(["high", "xhigh"]);
+		expect(getMaxReasoningEffort("z-ai/glm-5.2")).toBe("xhigh");
+	});
+
+	it("should expose max effort for Claude 4.6 models", () => {
+		expect(getReasoningEfforts("anthropic/claude-sonnet-4.6")).toEqual(["low", "medium", "high", "max"]);
+		expect(getMaxReasoningEffort("anthropic/claude-sonnet-4.6")).toBe("max");
+	});
+
+	it("should validate effort against model-specific support when known", () => {
+		expect(isReasoningEffortSupported("z-ai/glm-5.2", "xhigh")).toBe(true);
+		expect(isReasoningEffortSupported("z-ai/glm-5.2", "max")).toBe(false);
+	});
+
+	it("should map requested effort down to the closest supported effort", () => {
+		expect(mapReasoningEffortForModel("z-ai/glm-5.2", "max")).toBe("xhigh");
+		expect(mapReasoningEffortForModel("openai/gpt-oss-120b", "max")).toBe("high");
+		expect(mapReasoningEffortForModel("openai/gpt-oss-120b", "medium")).toBe("medium");
+	});
+
+	it("should allow any valid OpenRouter effort when model support is unknown", () => {
+		expect(getReasoningEfforts("google/gemini-2.5-flash")).toBeUndefined();
+		expect(isReasoningEffortSupported("google/gemini-2.5-flash", "xhigh")).toBe(true);
+		expect(mapReasoningEffortForModel("google/gemini-2.5-flash", "xhigh")).toBe("xhigh");
 	});
 });

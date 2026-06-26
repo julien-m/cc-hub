@@ -8,7 +8,12 @@ import { askCodex, CodexAuthError, CodexNotFoundError, reviewCodex } from "../se
 import { CodexSession, CodexSessionError, CodexTimeoutError } from "../services/codex-session.ts";
 import { getEnv } from "../services/env.ts";
 import { loadFileContext } from "../services/files.ts";
-import { resolveForProvider } from "../services/models.ts";
+import {
+	mapReasoningEffortForModel,
+	type ReasoningEffort,
+	resolveForProvider,
+	VALID_REASONING_EFFORTS,
+} from "../services/models.ts";
 
 const CODEX_DEFAULT_MODEL = "openai/gpt-5.5";
 
@@ -27,7 +32,7 @@ export const createCodexCommand = (): Command => {
 			(val: string, acc: string[]) => [...acc, val],
 			[],
 		)
-		.option("-e, --effort <level>", "Reasoning effort level (low, medium, high)")
+		.option("-e, --effort <level>", `Reasoning effort level (${VALID_REASONING_EFFORTS.join(", ")})`)
 		.option("-s, --sandbox <mode>", "Sandbox mode (read-only, workspace-write)", "read-only")
 		.option("-x, --schema <path>", "JSON Schema file for structured output")
 		.option(
@@ -49,9 +54,10 @@ export const createCodexCommand = (): Command => {
 				},
 			) => {
 				try {
-					const validEfforts = ["low", "medium", "high"];
-					if (opts.effort && !validEfforts.includes(opts.effort)) {
-						console.error(`Invalid effort level: ${opts.effort}. Must be one of: low, medium, high`);
+					if (opts.effort && !VALID_REASONING_EFFORTS.includes(opts.effort as ReasoningEffort)) {
+						console.error(
+							`Invalid effort level: ${opts.effort}. Must be one of: ${VALID_REASONING_EFFORTS.join(", ")}`,
+						);
 						process.exit(2);
 					}
 					const validSandboxes = ["read-only", "workspace-write"];
@@ -60,6 +66,11 @@ export const createCodexCommand = (): Command => {
 						console.error(`Invalid sandbox mode: ${sandbox}. Must be one of: read-only, workspace-write`);
 						process.exit(2);
 					}
+
+					const rawModel = opts.model || getEnv("CODEX_MODEL") || CODEX_DEFAULT_MODEL;
+					const nativeModel = resolveForProvider(rawModel, "codex");
+					const effort = opts.effort as ReasoningEffort | undefined;
+					const codexEffort = effort ? mapReasoningEffortForModel(rawModel, effort) : undefined;
 
 					// ── Interactive mode ─────────────────────────────────────────────
 					// Machine-readable JSON-lines protocol. Never used by humans directly.
@@ -70,14 +81,12 @@ export const createCodexCommand = (): Command => {
 							process.exit(2);
 						}
 
-						const rawModel = opts.model || getEnv("CODEX_MODEL") || CODEX_DEFAULT_MODEL;
-						const nativeModel = resolveForProvider(rawModel, "codex");
-
 						const session = await (async (): Promise<CodexSession> => {
 							try {
 								return await CodexSession.create(process.cwd(), {
 									model: nativeModel,
-									sandbox: (opts.sandbox ?? "read-only") as "read-only" | "workspace-write",
+									effort: codexEffort,
+									sandbox: sandbox as "read-only" | "workspace-write",
 									persist: opts.persist,
 								});
 							} catch (err) {
@@ -140,9 +149,6 @@ export const createCodexCommand = (): Command => {
 
 					const files = opts.file.length > 0 ? await loadFileContext(opts.file) : [];
 
-					const rawModel = opts.model || getEnv("CODEX_MODEL") || CODEX_DEFAULT_MODEL;
-					const nativeModel = resolveForProvider(rawModel, "codex");
-
 					const spinner = new Spinner("waiting...", { elapsed: true }).start();
 
 					try {
@@ -150,8 +156,8 @@ export const createCodexCommand = (): Command => {
 							model: nativeModel,
 							stdin,
 							files: files.length > 0 ? files : undefined,
-							effort: opts.effort,
-							sandbox: opts.sandbox,
+							effort: codexEffort,
+							sandbox,
 							schema: opts.schema,
 						});
 

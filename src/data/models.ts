@@ -3,10 +3,14 @@ export const VALID_TYPES: readonly ModelType[] = ["text", "image", "video", "aud
 
 export type ProviderName = "openrouter" | "copilot" | "poyo" | "codex";
 
+export type ReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
+export const VALID_REASONING_EFFORTS: readonly ReasoningEffort[] = ["minimal", "low", "medium", "high", "xhigh", "max"];
+
 export interface Model {
 	id: string;
 	type: ModelType;
 	providers: Partial<Record<ProviderName, string>>;
+	reasoningEfforts?: readonly ReasoningEffort[];
 }
 
 export const MODELS: Model[] = [
@@ -18,6 +22,7 @@ export const MODELS: Model[] = [
 			openrouter: "anthropic/claude-opus-4.6",
 			copilot: "claude-opus-4.6",
 		},
+		reasoningEfforts: ["low", "medium", "high", "max"],
 	},
 	{
 		id: "anthropic/claude-opus-4.5",
@@ -34,6 +39,7 @@ export const MODELS: Model[] = [
 			openrouter: "anthropic/claude-sonnet-4.6",
 			copilot: "claude-sonnet-4.6",
 		},
+		reasoningEfforts: ["low", "medium", "high", "max"],
 	},
 	{
 		id: "anthropic/claude-sonnet-4.5",
@@ -70,6 +76,7 @@ export const MODELS: Model[] = [
 			copilot: "gpt-5.5",
 			codex: "gpt-5.5",
 		},
+		reasoningEfforts: ["low", "medium", "high", "xhigh"],
 	},
 	{
 		id: "openai/gpt-5.4",
@@ -79,6 +86,7 @@ export const MODELS: Model[] = [
 			copilot: "gpt-5.4",
 			codex: "gpt-5.4",
 		},
+		reasoningEfforts: ["low", "medium", "high", "xhigh"],
 	},
 	{
 		id: "openai/gpt-5.4-mini",
@@ -118,6 +126,7 @@ export const MODELS: Model[] = [
 			openrouter: "openai/gpt-5.2",
 			copilot: "gpt-5.2",
 		},
+		reasoningEfforts: ["low", "medium", "high", "xhigh"],
 	},
 	{
 		id: "openai/gpt-51-codex-max",
@@ -142,6 +151,7 @@ export const MODELS: Model[] = [
 			openrouter: "openai/gpt-5.1",
 			copilot: "gpt-5.1",
 		},
+		reasoningEfforts: ["low", "medium", "high"],
 	},
 	{
 		id: "openai/gpt-5-mini",
@@ -150,6 +160,7 @@ export const MODELS: Model[] = [
 			openrouter: "openai/gpt-5-mini",
 			copilot: "gpt-5-mini",
 		},
+		reasoningEfforts: ["minimal", "low", "medium", "high"],
 	},
 	{
 		id: "openai/gpt-4.1",
@@ -165,6 +176,7 @@ export const MODELS: Model[] = [
 		providers: {
 			openrouter: "openai/gpt-oss-120b",
 		},
+		reasoningEfforts: ["low", "medium", "high"],
 	},
 
 	// --- Qwen ---
@@ -190,6 +202,7 @@ export const MODELS: Model[] = [
 		providers: {
 			openrouter: "z-ai/glm-5.2",
 		},
+		reasoningEfforts: ["high", "xhigh"],
 	},
 
 	// --- xAI ---
@@ -215,6 +228,7 @@ export const MODELS: Model[] = [
 		providers: {
 			openrouter: "google/gemini-3-flash-preview",
 		},
+		reasoningEfforts: ["minimal", "low", "medium", "high"],
 	},
 	{
 		id: "google/gemini-3.1-pro-preview",
@@ -222,6 +236,7 @@ export const MODELS: Model[] = [
 		providers: {
 			openrouter: "google/gemini-3.1-pro-preview",
 		},
+		reasoningEfforts: ["low", "medium", "high"],
 	},
 	{
 		id: "google/gemini-3.1-flash-lite-preview",
@@ -229,6 +244,7 @@ export const MODELS: Model[] = [
 		providers: {
 			openrouter: "google/gemini-3.1-flash-lite-preview",
 		},
+		reasoningEfforts: ["minimal", "low", "medium", "high"],
 	},
 	{
 		id: "google/gemini-2.5-flash",
