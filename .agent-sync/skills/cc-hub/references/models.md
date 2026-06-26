@@ -23,7 +23,7 @@
 
 - Modèle par défaut : `openai/gpt-5.4` (copilot), configurable (ask)
 - Format : canonical ID OpenRouter (`provider/model-name`)
-- Exemple OpenRouter text : `openai/gpt-oss-120b`
+- Exemples OpenRouter text : `openai/gpt-oss-120b`, `z-ai/glm-5.2`
 - Voir `cc-hub models list --provider <provider>` pour la liste complète
 
 ## Musique (`cc-hub music`)

@@ -184,6 +184,13 @@ export const MODELS: Model[] = [
 			openrouter: "z-ai/glm-5.1",
 		},
 	},
+	{
+		id: "z-ai/glm-5.2",
+		type: "text",
+		providers: {
+			openrouter: "z-ai/glm-5.2",
+		},
+	},
 
 	// --- xAI ---
 	{

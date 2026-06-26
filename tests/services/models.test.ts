@@ -30,6 +30,14 @@ describe("findModel", () => {
 		expect(model?.type).toBe("text");
 		expect(model?.providers.openrouter).toBe("openai/gpt-oss-120b");
 	});
+
+	it("should return Z.AI glm-5.2 by canonical ID", () => {
+		const model = findModel("z-ai/glm-5.2");
+		expect(model).toBeDefined();
+		expect(model?.id).toBe("z-ai/glm-5.2");
+		expect(model?.type).toBe("text");
+		expect(model?.providers.openrouter).toBe("z-ai/glm-5.2");
+	});
 });
 
 // ---------------------------------------------------------------------------
@@ -105,6 +113,10 @@ describe("resolveForProvider", () => {
 
 	it("should resolve OpenAI gpt-oss-120b to its OpenRouter name", () => {
 		expect(resolveForProvider("openai/gpt-oss-120b", "openrouter")).toBe("openai/gpt-oss-120b");
+	});
+
+	it("should resolve Z.AI glm-5.2 to its OpenRouter name", () => {
+		expect(resolveForProvider("z-ai/glm-5.2", "openrouter")).toBe("z-ai/glm-5.2");
 	});
 
 	it("should pass through unregistered model for openrouter", () => {
@@ -185,6 +197,11 @@ describe("listModels", () => {
 	it("should include OpenAI gpt-oss-120b in OpenRouter text models", () => {
 		const openrouterText = listModels({ type: "text", provider: "openrouter" });
 		expect(openrouterText.some((m) => m.id === "openai/gpt-oss-120b")).toBe(true);
+	});
+
+	it("should include Z.AI glm-5.2 in OpenRouter text models", () => {
+		const openrouterText = listModels({ type: "text", provider: "openrouter" });
+		expect(openrouterText.some((m) => m.id === "z-ai/glm-5.2")).toBe(true);
 	});
 
 	it("should return empty array when no matches", () => {

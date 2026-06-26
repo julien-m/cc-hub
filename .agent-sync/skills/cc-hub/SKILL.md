@@ -45,6 +45,7 @@ cc-hub telegram send-file photo.png -c "Légende"
 ```bash
 cc-hub ask "Question" -m anthropic/claude-sonnet-4.6
 cc-hub ask "Question" -m openai/gpt-oss-120b
+cc-hub ask "Question" -m z-ai/glm-5.2
 cc-hub ask "Explique ce code" -f fichier.ts
 cc-hub ask "Compare" -f src/a.ts -f src/b.ts
 cat fichier.ts | cc-hub ask "Explique"
