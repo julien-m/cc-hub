@@ -421,7 +421,7 @@ Guides are stored in `~/.claude-hub/prompts/<model-slug>.md`.
 
 ### `sync` — Turso Cloud sync
 
-Synchronize portable AI assets from `.agent-sync` / `~/.agent-sync` to Claude Code and Codex provider directories. `sync run`, `sync status`, and `sync repair` include skills, agents, and rules.
+Synchronize portable AI assets from `.agent-sync` / `~/.agent-sync` to Claude Code and Codex provider directories. `sync run`, `sync status`, and `sync repair` include skills, agents, rules, and hooks.
 
 ```bash
 cc-hub sync run --scope project --targets all
@@ -484,9 +484,9 @@ cc-hub migrate command .claude/commands/review.md \
 
 With `--output`, the destination root is `<dir>/skills`, `<dir>/rules`, and `<dir>/agents`. Relative output paths resolve from the project directory. `--scope` still controls where provider outputs are published: `project` writes project provider links/files, `global` writes global provider links/files, and those outputs point to or are generated from the custom root.
 
-### `skill` / `command` / `rule` / `agent` — Provider linking
+### `skill` / `command` / `rule` / `hook` / `agent` — Provider linking
 
-Install skills, rules, and agents via `.agent-sync` so the same source can be linked or generated for Claude Code and Codex. Commands remain Claude Code `.md` links because Codex has no matching command artifact.
+Install skills, rules, hooks, and agents via `.agent-sync` so the same source can be linked or generated for Claude Code and Codex. Commands remain Claude Code `.md` links because Codex has no matching command artifact.
 
 Skills are portable folders with `SKILL.md`, so cc-hub symlinks the whole canonical skill directory:
 
@@ -529,6 +529,17 @@ Claude reads the canonical file through the `.claude/rules` symlink, so `paths:`
 
 Run `cc-hub rule repair --dry-run` before repairing rules. `rule build` and `rule link` without `--force` preserve conflicting local Claude rule files, but non-dry-run `rule repair` is intentionally forceful: it may replace conflicting Claude rule files or symlinks while converting legacy copies to canonical agent-sync symlinks; inspect [`.claude/rules`](.claude/rules) and [`.agent-sync/rules`](.agent-sync/rules) before running without `--dry-run`.
 
+Hooks use a distinct canonical source directory and merge into user-level provider hook configs:
+
+```text
+.agent-sync/hooks/<name>/session-start.sh  # project canonical hook
+~/.agent-sync/hooks/<name>/session-start.sh # global canonical hook
+~/.claude/settings.json                    # Claude hooks.SessionStart merge target
+~/.codex/hooks.json                        # Codex hooks.SessionStart merge target
+```
+
+`hook link` supports source directories such as `projects/core/kit/hooks/workflow-router/`. The hook source should contain `session-start.sh`, `hook.sh`, or `<name>.sh`; cc-hub configures a portable `bash '<canonical-script>'` `SessionStart` command for Claude and Codex. Config writes are idempotent and preserve existing `PreToolUse`, `Stop`, and unrelated `SessionStart` hooks. Subagents/workers do not automatically inherit a parent session's hook-injected routing context; briefs must copy the active routing instruction or re-detect the target repo.
+
 ```bash
 # Skills
 cc-hub skill link ./my-skill --scope global --targets all
@@ -553,6 +564,13 @@ cc-hub rule status --scope all --targets all
 cc-hub rule repair --scope project --targets all
 cc-hub rule unlink api --scope project --targets all
 
+# Hooks (source = directory or script with SessionStart shell entry)
+cc-hub hook link ./projects/core/kit/hooks/workflow-router --scope global --targets all
+cc-hub hook list --scope global
+cc-hub hook status --scope all --targets all
+cc-hub hook repair --scope global --targets all --dry-run
+cc-hub hook unlink workflow-router --scope global --targets claude
+
 # Agents
 cc-hub agent create reviewer --scope project --targets all
 cc-hub agent create local-reviewer --scope project --targets codex
@@ -569,7 +587,7 @@ Common options:
 ```bash
 --scope project|global|all
 --targets claude|codex|all
---agent-sync-root <dir> # skill/agent/rule: custom canonical root for provider links
+--agent-sync-root <dir> # skill/agent/rule/hook: custom canonical root for agent-sync sources
 --output <dir> # migrate only: custom agent-sync root for canonical writes
 --force
 --json
@@ -586,7 +604,7 @@ cc-hub rule link ./local-rule.md --name project-rules.md --scope project --targe
 
 For commands and rule names, the `.md` extension is added automatically if omitted.
 
-All provider installs use symlinks where the provider supports symlinks. Skills link to canonical skill directories; agents link to generated provider-native files; Claude rules link to canonical `.agent-sync/rules`; Codex rules generate provider-facing `AGENTS.md` blocks.
+All provider installs use symlinks where the provider supports symlinks. Skills link to canonical skill directories; agents link to generated provider-native files; Claude rules link to canonical `.agent-sync/rules`; Codex rules generate provider-facing `AGENTS.md` blocks. Hooks keep a canonical source and merge provider JSON config entries because Claude/Codex hook configuration is JSON, not a provider filesystem target.
 
 ### `config` — Preferences
 
@@ -700,6 +718,7 @@ cc-hub/
       skill.js             # portable skill link, list, status, repair, unlink
       command.js           # command link, list, unlink
       rule.js              # portable rule build, link, list, status, repair, unlink
+      hook.js              # portable SessionStart hook link, list, status, repair, unlink
       agent.js             # portable agent create, build, link, status, repair
       claude-link.js       # legacy Claude command/rule linking logic
     db/
@@ -712,6 +731,7 @@ cc-hub/
       image-input.ts       # resolve local image path or URL for Poyo API
       agent-sync.js        # provider registry, agent rendering, symlink sync
       agent-sync-rules.js  # portable rule generation for Claude and Codex
+      agent-sync-hooks.js  # portable SessionStart hook config merge for Claude and Codex
       agent-sync-migrate.js # provider folder migration to agent-sync
       openrouter.js        # OpenRouter API client
       replicate.js         # Replicate API client (predict + poll + download)

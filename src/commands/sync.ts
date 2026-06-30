@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { getDb, isTursoEnabled, syncDb } from "../db/index.ts";
 import { exitCode } from "../errors.ts";
 import { cleanAll, repairAll, runSync, type SyncEntry, type SyncOptions, statusAll } from "../services/agent-sync.ts";
+import { type HookSyncEntry, repairHooks, runHooks, statusHooks } from "../services/agent-sync-hooks.ts";
 import { buildRules, type RuleSyncEntry, repairRules, statusRules } from "../services/agent-sync-rules.ts";
 
 const addSyncOptions = (command: Command): Command =>
@@ -13,7 +14,7 @@ const addSyncOptions = (command: Command): Command =>
 		.option("--force", "Replace existing non-symlink provider paths")
 		.option("--json", "Print JSON output");
 
-type SyncPrintableEntry = SyncEntry | RuleSyncEntry;
+type SyncPrintableEntry = SyncEntry | RuleSyncEntry | HookSyncEntry;
 
 const formatSyncEntries = (entries: readonly SyncPrintableEntry[]): string => {
 	if (entries.length === 0) return "No agent-sync entries found.";
@@ -57,24 +58,29 @@ const runDatabaseSync = async (): Promise<void> => {
 export const createSyncCommand = (): Command => {
 	const sync = new Command("sync").description("Synchronize agent assets and inspect database sync");
 
-	const run = addSyncOptions(sync.command("run").description("Synchronize agent-sync skills, agents, and rules"));
+	const run = addSyncOptions(
+		sync.command("run").description("Synchronize agent-sync skills, agents, rules, and hooks"),
+	);
 	run.action(() => {
 		const options = run.opts<SyncOptions>();
 		// @spec FR-010: Rules in sync run/status/repair — .specs/features/004-portable-agent-sync-rules/spec.md#fr-010
-		printEntries([...runSync(options), ...buildRules(options)], options);
+		// @spec FR-005: Hooks in aggregate sync - .specs/features/006-agent-sync-hooks/spec.md#fr-005
+		printEntries([...runSync(options), ...buildRules(options), ...runHooks(options)], options);
 	});
 
 	const status = addSyncOptions(sync.command("status").description("Show agent-sync status"));
 	status.action(() => {
 		const options = status.opts<SyncOptions>();
-		printEntries([...statusAll(options), ...statusRules(options)], options);
+		printEntries([...statusAll(options), ...statusRules(options), ...statusHooks(options)], options);
 	});
 
-	const repair = addSyncOptions(sync.command("repair").description("Repair missing or broken agent-sync symlinks"));
+	const repair = addSyncOptions(
+		sync.command("repair").description("Repair missing or broken agent-sync provider entries"),
+	);
 	repair.option("--dry-run", "Show repair actions without writing");
 	repair.action(() => {
 		const options = repair.opts<SyncOptions>();
-		printEntries([...repairAll(options), ...repairRules(options)], options);
+		printEntries([...repairAll(options), ...repairRules(options), ...repairHooks(options)], options);
 	});
 
 	const clean = addSyncOptions(sync.command("clean").description("Remove broken agent-sync symlinks"));

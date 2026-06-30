@@ -10,8 +10,9 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { createAgentCommand } from "../../src/commands/agent.ts";
+import { createHookCommand } from "../../src/commands/hook.ts";
 import { createMigrateCommand } from "../../src/commands/migrate.ts";
 import { createRuleCommand } from "../../src/commands/rule.ts";
 import { createSkillCommand } from "../../src/commands/skill.ts";
@@ -34,6 +35,29 @@ const writeSkill = (projectDir: string, name = "my-skill"): string => {
 	mkdirSync(dir, { recursive: true });
 	writeFileSync(join(dir, "SKILL.md"), `---\nname: ${name}\ndescription: ${name} skill\n---\n`);
 	return dir;
+};
+
+const writeHook = (projectDir: string, name = "workflow-router"): string => {
+	const dir = join(projectDir, "hooks", name);
+	mkdirSync(dir, { recursive: true });
+	writeFileSync(join(dir, "session-start.sh"), "#!/bin/sh\nprintf '%s\\n' '{}'\n");
+	return dir;
+};
+
+const writeJson = (path: string, value: unknown): void => {
+	mkdirSync(dirname(path), { recursive: true });
+	writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`);
+};
+
+const readJson = (path: string): Record<string, unknown> =>
+	JSON.parse(readFileSync(path, "utf-8")) as Record<string, unknown>;
+
+const sessionStartCommands = (config: Record<string, unknown>): readonly string[] => {
+	const hooks = config.hooks as Record<string, unknown>;
+	const entries = hooks.SessionStart as Array<{ hooks: Array<{ command?: string }> }>;
+	return entries.flatMap((entry) =>
+		entry.hooks.map((hook) => hook.command).filter((command): command is string => Boolean(command)),
+	);
 };
 
 const withWorkspace = async <T>(projectDir: string, homeDir: string, fn: () => Promise<T>): Promise<T> => {
@@ -304,6 +328,57 @@ describe("agent-sync CLI commands", () => {
 		expect(readlinkSync(join(projectDir, ".claude", "rules", "api.md"))).toBe(rulePath);
 		expect(readFileSync(join(projectDir, ".claude", "rules", "api.md"), "utf-8")).toContain("Validate payloads.");
 		expect(readFileSync(join(projectDir, "AGENTS.md"), "utf-8")).toContain("Validate payloads.");
+	});
+
+	it("hook link and sync run publish SessionStart provider configs", async () => {
+		const { projectDir, homeDir } = workspace();
+		const hook = writeHook(projectDir);
+		writeJson(join(homeDir, ".claude", "settings.json"), {
+			hooks: {
+				PreToolUse: [{ matcher: "Bash", hooks: [{ type: "command", command: "existing-claude-pre" }] }],
+				Stop: [{ matcher: "", hooks: [{ type: "command", command: "existing-claude-stop" }] }],
+				SessionStart: [{ matcher: "", hooks: [{ type: "command", command: "existing-claude-session" }] }],
+			},
+		});
+		writeJson(join(homeDir, ".codex", "hooks.json"), {
+			hooks: {
+				PreToolUse: [{ matcher: "Bash", hooks: [{ type: "command", command: "existing-codex-pre" }] }],
+				Stop: [{ matcher: "", hooks: [{ type: "command", command: "existing-codex-stop" }] }],
+				SessionStart: [{ matcher: "", hooks: [{ type: "command", command: "existing-codex-session" }] }],
+			},
+		});
+
+		await withWorkspace(projectDir, homeDir, async () => {
+			const hookCommand = createHookCommand();
+			hookCommand.commands.find((command) => command.name() === "link")?.setOptionValue("homeDir", homeDir);
+			await hookCommand.parseAsync(["node", "hook", "link", hook, "--scope", "project", "--targets", "claude"], {
+				from: "node",
+			});
+			const syncCommand = createSyncCommand();
+			syncCommand.commands.find((command) => command.name() === "run")?.setOptionValue("homeDir", homeDir);
+			await syncCommand.parseAsync(["node", "sync", "run", "--scope", "project", "--targets", "all"], {
+				from: "node",
+			});
+			await syncCommand.parseAsync(["node", "sync", "run", "--scope", "project", "--targets", "all"], {
+				from: "node",
+			});
+		});
+
+		expect(readlinkSync(join(projectDir, ".agent-sync", "hooks", "workflow-router"))).toBe(hook);
+		const expectedCommand = `bash '${join(projectDir, ".agent-sync", "hooks", "workflow-router", "session-start.sh")}'`;
+		const claudeConfig = readJson(join(homeDir, ".claude", "settings.json"));
+		const codexConfig = readJson(join(homeDir, ".codex", "hooks.json"));
+		expect(JSON.stringify(claudeConfig)).toContain("existing-claude-pre");
+		expect(JSON.stringify(claudeConfig)).toContain("existing-claude-stop");
+		expect(JSON.stringify(codexConfig)).toContain("existing-codex-pre");
+		expect(JSON.stringify(codexConfig)).toContain("existing-codex-stop");
+		expect(sessionStartCommands(claudeConfig).filter((command) => command === expectedCommand)).toHaveLength(1);
+		expect(sessionStartCommands(codexConfig).filter((command) => command === expectedCommand)).toHaveLength(1);
+		expect(sessionStartCommands(claudeConfig)).toContain("existing-claude-session");
+		expect(sessionStartCommands(codexConfig)).toContain("existing-codex-session");
+		const commandHelp = createHookCommand().helpInformation();
+		expect(commandHelp).toContain("link");
+		expect(commandHelp).toContain("repair");
 	});
 
 	it("migrate imports a Claude command as a project skill", async () => {

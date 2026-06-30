@@ -5,6 +5,15 @@
 
 ---
 
+## 2026-06-30 — Feature 006 implemented: Agent sync hooks
+
+- **Type:** Feature implementation
+- **Author:** Codex
+- **Artifacts:** `src/services/agent-sync-hooks.ts`, `src/commands/hook.ts`, `src/commands/sync.ts`, `src/cli.ts`, `tests/services/agent-sync-hooks.test.ts`, `tests/commands/agent-sync-cli.test.ts`, `README.md`, `.agent-sync/skills/cc-hub/SKILL.md`, `.specs/features/006-agent-sync-hooks/{spec,plan,progress,implementation,changelog}.md`
+- **Notes:** Added first-class `.agent-sync/hooks` / `~/.agent-sync/hooks` SessionStart hook sync for Claude Code and Codex, idempotent JSON config merge, status/repair/unlink lifecycle, aggregate sync inclusion, and isolated tests for config preservation and non-overwrite behavior.
+
+---
+
 ## 2026-05-18 — Bugfix: Codex agent generation ignores Claude-only models
 
 - **Type:** Bugfix

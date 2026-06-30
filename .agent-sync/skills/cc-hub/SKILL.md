@@ -183,6 +183,11 @@ cc-hub command link <path> [-n <name>]
 cc-hub rule link <path> [--scope project|global|all] [--targets claude|codex|all] [-n <name>] [--namespace <ns>] [--force]
 cc-hub rule build|list|status|repair [--scope project|global|all] [--targets claude|codex|all]
 cc-hub rule unlink <name> [--scope project|global|all] [--targets claude|codex|all]
+cc-hub hook link <path> [--scope project|global|all] [--targets claude|codex|all] [-n <name>] [--force]
+cc-hub hook list [--scope project|global|all]
+cc-hub hook status [--scope project|global|all] [--targets claude|codex|all]
+cc-hub hook repair [--scope project|global|all] [--targets claude|codex|all] [--dry-run]
+cc-hub hook unlink <name> [--scope project|global|all] [--targets claude|codex|all]
 cc-hub agent create <name> [--scope project|global] [--targets claude|codex|all]
 cc-hub agent build <name> [--scope project|global|all] [--targets claude|codex|all]
 cc-hub agent link <name> [--scope project|global|all] [--targets claude|codex|all]
@@ -195,6 +200,7 @@ Agent-sync paths:
 
 - skills: `.agent-sync/skills/<name>` or `~/.agent-sync/skills/<name>`
 - rules: `.agent-sync/rules/<name>.md` or `~/.agent-sync/rules/<namespace>/<name>.md`
+- hooks: `.agent-sync/hooks/<name>/session-start.sh` or `~/.agent-sync/hooks/<name>/session-start.sh`
 - agents: `.agent-sync/agents/<name>/{agent.yaml,prompt.md,dist/}` or `~/.agent-sync/agents/<name>/...`
 - Claude skills: `.claude/skills` / `~/.claude/skills`
 - Codex skills: `.agents/skills` / `~/.agents/skills`
@@ -202,6 +208,8 @@ Agent-sync paths:
 - Codex rules: generated managed blocks in `AGENTS.md` / `~/.codex/AGENTS.md`
 - Claude agents: `.claude/agents/*.md` / `~/.claude/agents/*.md`
 - Codex agents: `.codex/agents/*.toml` / `~/.codex/agents/*.toml`
+- Claude hooks: merged `hooks.SessionStart` command entries in `~/.claude/settings.json`
+- Codex hooks: merged `hooks.SessionStart` command entries in `~/.codex/hooks.json`
 
 Agent `model` behavior: `haiku`, `sonnet`, `opus`, and Claude model IDs are Claude-only and omitted from generated Codex TOML. OpenAI canonical IDs with Codex support render as Codex-native names.
 
@@ -215,6 +223,7 @@ Migration behavior:
 - `--dry-run` reports planned writes without changing files.
 - Existing real provider files/directories are preserved unless `--force` is passed.
 - For rules, run `cc-hub rule repair --dry-run` first. `rule build` and `rule link` without `--force` preserve conflicting local Claude rule files, but non-dry-run `rule repair` may replace conflicting Claude rule files or symlinks while converting legacy copies to canonical agent-sync symlinks; inspect [`.claude/rules`](../../../.claude/rules) and [`.agent-sync/rules`](../../rules) before running without `--dry-run`.
+- Hook sources are distinct runtime artifacts under `kit/hooks` / `.agent-sync/hooks`, not skills. `hook link` expects `session-start.sh`, `hook.sh`, or `<name>.sh`, then adds a portable `bash '<canonical-script>'` SessionStart command. It preserves existing `PreToolUse`, `Stop`, and unrelated `SessionStart` entries and avoids duplicate commands. Subagents/workers do not automatically inherit parent SessionStart context; briefs must copy the active routing instruction or re-detect the target repo.
 
 ### Digest
 
