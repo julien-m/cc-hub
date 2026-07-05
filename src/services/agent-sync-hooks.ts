@@ -165,6 +165,7 @@ const removeHookCommand = (config: JsonObject, command: string): boolean => {
 	if (typeof hooks !== "object" || hooks === null || Array.isArray(hooks)) return false;
 	const entries = (hooks as JsonObject)[HOOK_EVENT];
 	if (!Array.isArray(entries)) return false;
+	let removed = false;
 	const next = entries
 		.map((entry) => {
 			if (typeof entry !== "object" || entry === null) return entry;
@@ -175,6 +176,8 @@ const removeHookCommand = (config: JsonObject, command: string): boolean => {
 				const candidate = hook as { type?: unknown; command?: unknown };
 				return !(candidate.type === "command" && candidate.command === command);
 			});
+			if (keptHooks.length === hookList.length) return entry;
+			removed = true;
 			return { ...(entry as JsonObject), hooks: keptHooks };
 		})
 		.filter((entry) => {
@@ -182,8 +185,9 @@ const removeHookCommand = (config: JsonObject, command: string): boolean => {
 			const hookList = (entry as { hooks?: unknown }).hooks;
 			return !Array.isArray(hookList) || hookList.length > 0;
 		});
+	if (!removed) return false;
 	(hooks as JsonObject)[HOOK_EVENT] = next;
-	return next.length !== entries.length || next.some((entry, index) => entry !== entries[index]);
+	return true;
 };
 
 const appendHookCommand = (config: JsonObject, hook: HookCommand): boolean => {

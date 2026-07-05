@@ -156,6 +156,24 @@ describe("agent-sync hooks service", () => {
 		expect(commands).toEqual(["other-session-start"]);
 	});
 
+	it("does not rewrite provider config when unlinking an absent hook", () => {
+		const { projectDir, homeDir } = tempWorkspace();
+		mkdirp(projectDir);
+		mkdirp(homeDir);
+		const configPath = join(homeDir, ".claude", "settings.json");
+		writeJson(configPath, {
+			hooks: {
+				SessionStart: [{ matcher: "", hooks: [{ type: "command", command: "other-session-start" }] }],
+			},
+		});
+		const before = readFileSync(configPath, "utf-8");
+
+		const removed = unlinkHook("missing-hook", { projectDir, homeDir, scope: "project", targets: "claude" });
+
+		expect(removed).toEqual([]);
+		expect(readFileSync(configPath, "utf-8")).toBe(before);
+	});
+
 	it("syncs every canonical hook through aggregate hook sync", () => {
 		const { projectDir, homeDir } = tempWorkspace();
 		mkdirp(projectDir);
