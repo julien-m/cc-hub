@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { linkHook, repairHooks, runHooks, statusHooks, unlinkHook } from "../../src/services/agent-sync-hooks.ts";
@@ -151,9 +151,11 @@ describe("agent-sync hooks service", () => {
 
 		const removed = unlinkHook("workflow-router", { projectDir, homeDir, scope: "project", targets: "claude" });
 		const commands = sessionStartCommands(readJson(configPath));
+		const canonicalPath = join(projectDir, ".agent-sync", "hooks", "workflow-router");
 
-		expect(removed).toEqual([configPath]);
+		expect(removed).toEqual([configPath, canonicalPath]);
 		expect(commands).toEqual(["other-session-start"]);
+		expect(existsSync(canonicalPath)).toBe(false);
 	});
 
 	it("does not rewrite provider config when unlinking an absent hook", () => {
@@ -185,5 +187,21 @@ describe("agent-sync hooks service", () => {
 		const entries = runHooks({ projectDir, homeDir, scope: "project", targets: "all" });
 
 		expect(entries.map((entry) => `${entry.provider}:${entry.status}`).sort()).toEqual(["claude:OK", "codex:OK"]);
+	});
+
+	it("does not republish an unlinked hook through aggregate hook sync", () => {
+		const { projectDir, homeDir } = tempWorkspace();
+		mkdirp(projectDir);
+		mkdirp(homeDir);
+		const source = writeHook(projectDir);
+		linkHook(source, { projectDir, homeDir, scope: "project", targets: "claude" });
+		const configPath = join(homeDir, ".claude", "settings.json");
+
+		unlinkHook("workflow-router", { projectDir, homeDir, scope: "project", targets: "claude" });
+		const entries = runHooks({ projectDir, homeDir, scope: "project", targets: "claude" });
+
+		expect(entries).toEqual([]);
+		expect(sessionStartCommands(readJson(configPath))).toEqual([]);
+		expect(existsSync(join(projectDir, ".agent-sync", "hooks", "workflow-router"))).toBe(false);
 	});
 });

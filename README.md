@@ -538,7 +538,7 @@ Hooks use a distinct canonical source directory and merge into user-level provid
 ~/.codex/hooks.json                        # Codex hooks.SessionStart merge target
 ```
 
-`hook link` supports source directories such as `projects/core/kit/hooks/workflow-router/`. The hook source should contain `session-start.sh`, `hook.sh`, or `<name>.sh`; cc-hub configures a portable `bash '<canonical-script>'` `SessionStart` command for Claude and Codex. Config writes are idempotent and preserve existing `PreToolUse`, `Stop`, and unrelated `SessionStart` hooks. Subagents/workers do not automatically inherit a parent session's hook-injected routing context; briefs must copy the active routing instruction or re-detect the target repo.
+`hook link` supports source directories such as `projects/core/kit/hooks/workflow-router/`. The hook source should contain `session-start.sh`, `hook.sh`, or `<name>.sh`; cc-hub configures a portable `bash '<canonical-script>'` `SessionStart` command for Claude and Codex. Config writes are idempotent and preserve existing `PreToolUse`, `Stop`, and unrelated `SessionStart` hooks. `hook unlink` removes the selected canonical hook and its managed provider config commands so later sync runs do not republish it. Subagents/workers do not automatically inherit a parent session's hook-injected routing context; briefs must copy the active routing instruction or re-detect the target repo.
 
 ```bash
 # Skills

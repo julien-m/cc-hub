@@ -399,10 +399,10 @@ export const runHooks = (options: SyncOptions = {}): readonly HookSyncEntry[] =>
 };
 
 /**
- * Remove provider config entries for one managed hook.
+ * Remove one canonical hook and its provider config entries.
  * @param name Canonical hook name.
  * @param options Scope and target options.
- * @returns Provider config paths changed by the unlink.
+ * @returns Provider config and canonical hook paths changed by the unlink.
  */
 export const unlinkHook = (name: string, options: SyncOptions = {}): readonly string[] => {
 	const paths = runtimePaths(options);
@@ -417,6 +417,10 @@ export const unlinkHook = (name: string, options: SyncOptions = {}): readonly st
 				writeJsonConfig(configInfo.configPath, config);
 				removed.push(configInfo.configPath);
 			}
+		}
+		if (existsSync(canonicalPath)) {
+			rmSync(canonicalPath, { recursive: true, force: true });
+			removed.push(canonicalPath);
 		}
 	}
 	return removed;
