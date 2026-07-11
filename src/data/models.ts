@@ -3,8 +3,17 @@ export const VALID_TYPES: readonly ModelType[] = ["text", "image", "video", "aud
 
 export type ProviderName = "openrouter" | "copilot" | "poyo" | "codex";
 
-export type ReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
-export const VALID_REASONING_EFFORTS: readonly ReasoningEffort[] = ["minimal", "low", "medium", "high", "xhigh", "max"];
+// @spec FR-003: Ultra effort vocabulary — .specs/features/007-add-gpt-56-sol-terra-luna-to-codex-provider/spec.md#fr-003
+export type ReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh" | "max" | "ultra";
+export const VALID_REASONING_EFFORTS: readonly ReasoningEffort[] = [
+	"minimal",
+	"low",
+	"medium",
+	"high",
+	"xhigh",
+	"max",
+	"ultra",
+];
 
 export interface Model {
 	id: string;
@@ -68,6 +77,31 @@ export const MODELS: Model[] = [
 
 	// --- OpenAI ---
 	// Codex models: OpenRouter strips dots in their slug (gpt-53-codex, not gpt-5.3-codex)
+	// @spec FR-001: Codex 5.6 variants — .specs/features/007-add-gpt-56-sol-terra-luna-to-codex-provider/spec.md#fr-001
+	{
+		id: "openai/gpt-5.6-sol",
+		type: "text",
+		providers: {
+			codex: "gpt-5.6-sol",
+		},
+		reasoningEfforts: ["low", "medium", "high", "xhigh", "max", "ultra"],
+	},
+	{
+		id: "openai/gpt-5.6-terra",
+		type: "text",
+		providers: {
+			codex: "gpt-5.6-terra",
+		},
+		reasoningEfforts: ["low", "medium", "high", "xhigh", "max", "ultra"],
+	},
+	{
+		id: "openai/gpt-5.6-luna",
+		type: "text",
+		providers: {
+			codex: "gpt-5.6-luna",
+		},
+		reasoningEfforts: ["low", "medium", "high", "xhigh", "max"],
+	},
 	{
 		id: "openai/gpt-5.5",
 		type: "text",

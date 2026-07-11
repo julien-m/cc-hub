@@ -52,7 +52,7 @@ describe("codex command reasoning effort", () => {
 		codexCalls.length = 0;
 	});
 
-	it("should use GPT 5.5 as the default Codex model", async () => {
+	it("should use GPT 5.6 Sol as the default Codex model", async () => {
 		const realWrite = process.stdout.write;
 		process.stdout.write = (() => true) as typeof process.stdout.write;
 		try {
@@ -62,7 +62,48 @@ describe("codex command reasoning effort", () => {
 		}
 
 		expect(codexCalls).toHaveLength(1);
+		expect(codexCalls[0].opts.model).toBe("gpt-5.6-sol");
+	});
+
+	it("should keep resolving the previous Codex default for codex", async () => {
+		const realWrite = process.stdout.write;
+		process.stdout.write = (() => true) as typeof process.stdout.write;
+		try {
+			await createCodexCommand().parseAsync(["node", "codex", "question", "-m", "openai/gpt-5.5"]);
+		} finally {
+			process.stdout.write = realWrite;
+		}
+
+		expect(codexCalls).toHaveLength(1);
 		expect(codexCalls[0].opts.model).toBe("gpt-5.5");
+	});
+
+	it("should pass ultra effort through for gpt-5.6-sol", async () => {
+		const realWrite = process.stdout.write;
+		process.stdout.write = (() => true) as typeof process.stdout.write;
+		try {
+			await createCodexCommand().parseAsync(["node", "codex", "question", "-m", "openai/gpt-5.6-sol", "-e", "ultra"]);
+		} finally {
+			process.stdout.write = realWrite;
+		}
+
+		expect(codexCalls).toHaveLength(1);
+		expect(codexCalls[0].opts.model).toBe("gpt-5.6-sol");
+		expect(codexCalls[0].opts.effort).toBe("ultra");
+	});
+
+	it("should map ultra effort down to max for gpt-5.6-luna", async () => {
+		const realWrite = process.stdout.write;
+		process.stdout.write = (() => true) as typeof process.stdout.write;
+		try {
+			await createCodexCommand().parseAsync(["node", "codex", "question", "-m", "openai/gpt-5.6-luna", "-e", "ultra"]);
+		} finally {
+			process.stdout.write = realWrite;
+		}
+
+		expect(codexCalls).toHaveLength(1);
+		expect(codexCalls[0].opts.model).toBe("gpt-5.6-luna");
+		expect(codexCalls[0].opts.effort).toBe("max");
 	});
 
 	it("should map max effort to GPT xhigh before invoking codex exec", async () => {

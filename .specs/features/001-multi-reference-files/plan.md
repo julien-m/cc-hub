@@ -4,6 +4,8 @@ status: Approved
 scope: M
 feature_number: "001"
 date: 2026-05-04
+created: 2026-05-04
+spec_ref: .specs/features/001-multi-reference-files/spec.md
 ---
 
 # Plan: Multi-reference files for media generation commands

@@ -1,5 +1,6 @@
 /** Provider-driven synchronization for portable skills and agents. */
 
+import type { Stats } from "node:fs";
 import {
 	existsSync,
 	lstatSync,
@@ -195,8 +196,13 @@ const ensureDirectory = (path: string): void => {
 };
 
 const removeIfAllowed = (path: string, force: boolean | undefined): void => {
-	if (!existsSync(path)) return;
-	const stat = lstatSync(path);
+	let stat: Stats;
+	try {
+		stat = lstatSync(path);
+	} catch (error) {
+		if (error instanceof Error && "code" in error && error.code === "ENOENT") return;
+		throw error;
+	}
 	if (!stat.isSymbolicLink() && !force) {
 		throw new Error(`${path} already exists and is not a symlink. Re-run with --force to replace it.`);
 	}

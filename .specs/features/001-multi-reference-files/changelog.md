@@ -1,6 +1,6 @@
 # Changelog — 001-multi-reference-files
 
-### 2026-05-04 — Feature: Multi-reference files for imagine/video/motion
+## 2026-05-04 — [feature]: Multi-reference files for imagine/video/motion
 
 - **Type:** Feature
 - **Spec modified:** No

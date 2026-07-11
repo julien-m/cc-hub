@@ -56,7 +56,7 @@ cc-hub ask "Max effort" -e max -m z-ai/glm-5.2
 cc-hub ask "Question" -p poyo -m gemini-3-flash-preview
 ```
 
-Options : `-j/--json` (libre), `-s/--schema <json_or_file>` (contraint), `-e/--effort minimal|low|medium|high|xhigh|max`. L'effort est mappé vers l'effort OpenRouter supporté le plus proche pour le modèle choisi.
+Options : `-j/--json` (libre), `-s/--schema <json_or_file>` (contraint), `-e/--effort minimal|low|medium|high|xhigh|max|ultra`. L'effort est mappé vers l'effort OpenRouter supporté le plus proche pour le modèle choisi.
 
 ### Image (Poyo)
 
@@ -102,7 +102,7 @@ cc-hub codex review                   # review uncommitted changes
 cc-hub codex review -b main
 ```
 
-Défaut : `openai/gpt-5.5`. Auth via `codex login`. Options : `-e/--effort minimal|low|medium|high|xhigh|max` (mappé vers l'effort connu du modèle), `-s/--sandbox read-only|workspace-write`, `-x/--schema <path>`, `-p/--persist` (create a non-ephemeral thread; no automatic resume).
+Défaut : `openai/gpt-5.6-sol`. Auth via `codex login`. Options : `-e/--effort minimal|low|medium|high|xhigh|max|ultra` (mappé vers l'effort connu du modèle), `-s/--sandbox read-only|workspace-write`, `-x/--schema <path>`, `-p/--persist` (create a non-ephemeral thread; no automatic resume).
 Modèles : **Read** [`references/models.md`](references/models.md)
 
 #### Mode interactif machine (`-i`)

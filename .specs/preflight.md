@@ -117,3 +117,14 @@ fix: creds set TURSO_AUTH_TOKEN
 <!-- preflight:custom:start -->
 <!-- Add manual checks here. Use the same ### format as above. Set source: manual -->
 <!-- preflight:custom:end -->
+
+## LiveSpec-Managed (auto-generated)
+
+<!-- preflight:livespec:start -->
+### node (driver)
+- **binary:** `node`
+- **verify:** `node --version`
+- **install:** `brew install node`
+- **severity:** critical
+- **source:** stack (driver: node)
+<!-- preflight:livespec:end -->

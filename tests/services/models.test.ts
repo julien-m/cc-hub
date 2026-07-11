@@ -89,6 +89,10 @@ describe("toProviderName", () => {
 		// gemini-2.5-flash has no copilot entry
 		expect(() => toProviderName("google/gemini-2.5-flash", "copilot")).toThrow("not available on copilot");
 	});
+
+	it("should keep gpt-5.6 variants unavailable on openrouter", () => {
+		expect(() => toProviderName("openai/gpt-5.6-sol", "openrouter")).toThrow("not available");
+	});
 });
 
 // ---------------------------------------------------------------------------
@@ -140,6 +144,12 @@ describe("resolveForProvider", () => {
 		// gemini-2.5-flash has only openrouter
 		expect(() => resolveForProvider("google/gemini-2.5-flash", "copilot")).toThrow("not available on copilot");
 		expect(() => resolveForProvider("google/gemini-2.5-flash", "copilot")).toThrow("cc-hub models list");
+	});
+
+	it("should resolve gpt-5.6 variants to codex native names", () => {
+		expect(resolveForProvider("openai/gpt-5.6-sol", "codex")).toBe("gpt-5.6-sol");
+		expect(resolveForProvider("openai/gpt-5.6-terra", "codex")).toBe("gpt-5.6-terra");
+		expect(resolveForProvider("openai/gpt-5.6-luna", "codex")).toBe("gpt-5.6-luna");
 	});
 });
 
@@ -243,5 +253,11 @@ describe("reasoning efforts", () => {
 		expect(getReasoningEfforts("google/gemini-2.5-flash")).toBeUndefined();
 		expect(isReasoningEffortSupported("google/gemini-2.5-flash", "xhigh")).toBe(true);
 		expect(mapReasoningEffortForModel("google/gemini-2.5-flash", "xhigh")).toBe("xhigh");
+	});
+
+	it("should expose ultra as max effort for sol and cap luna at max", () => {
+		expect(getMaxReasoningEffort("openai/gpt-5.6-sol")).toBe("ultra");
+		expect(getMaxReasoningEffort("openai/gpt-5.6-luna")).toBe("max");
+		expect(mapReasoningEffortForModel("openai/gpt-5.6-luna", "ultra")).toBe("max");
 	});
 });

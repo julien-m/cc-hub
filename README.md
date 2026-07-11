@@ -57,7 +57,7 @@ LLM_MODEL=anthropic/claude-sonnet-4.6
 COPILOT_MODEL=openai/gpt-5.4
 
 # Codex — via OpenAI Codex CLI
-CODEX_MODEL=openai/gpt-5.5
+CODEX_MODEL=openai/gpt-5.6-sol
 
 # Image — via Poyo
 IMAGE_PROVIDER=poyo
@@ -229,7 +229,7 @@ cc-hub ask "3 European capitals" --schema ./capitals.schema.json
 | `--provider <name>` | `openrouter` (default) or `poyo` |
 | `--json` | Free-form JSON output |
 | `--schema <json_or_file>` | Structured output with JSON Schema (inline string or `.json` file path). Implies `--json` |
-| `--effort <level>` | cc-hub reasoning effort: `minimal`, `low`, `medium`, `high`, `xhigh`, `max`; mapped down to the highest effort supported by the selected OpenRouter model |
+| `--effort <level>` | cc-hub reasoning effort: `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `ultra`; mapped down to the highest effort supported by the selected OpenRouter model |
 
 Output goes to stdout. Silent by default (no auto-logging).
 
@@ -333,13 +333,13 @@ cc-hub codex "Deep analysis" --effort high
 cc-hub codex "Max reasoning" --effort max
 ```
 
-Default model: `openai/gpt-5.5`. Authentication is managed by the Codex CLI itself (`codex login`).
+Default model: `openai/gpt-5.6-sol`. Authentication is managed by the Codex CLI itself (`codex login`).
 
 | Option | Description |
 | --- | --- |
-| `--model <model>` | Model canonical ID (default: `openai/gpt-5.5`) |
+| `--model <model>` | Model canonical ID (default: `openai/gpt-5.6-sol`) |
 | `-f, --file <path>` | File or glob to inject as context in the prompt (repeatable) |
-| `--effort <level>` | cc-hub reasoning effort: `minimal`, `low`, `medium`, `high`, `xhigh`, `max`; mapped down to the highest effort known for the selected model |
+| `--effort <level>` | cc-hub reasoning effort: `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `ultra`; mapped down to the highest effort known for the selected model |
 | `--sandbox <mode>` | Sandbox mode: `read-only` (default), `workspace-write` |
 | `--schema <path>` | JSON Schema file for structured output |
 | `--interactive` | Start an interactive Codex session |
@@ -374,7 +374,7 @@ cc-hub codex review --model openai/gpt-53-codex
 | `--model <model>` | Model canonical ID (default: `openai/gpt-5.4`) |
 | `--base <ref>` | Git base reference for review (e.g. `main`) |
 
-Available Codex models: `openai/gpt-5.5`, `openai/gpt-5.4` (default), `openai/gpt-5.4-mini`, `openai/gpt-53-codex`, `openai/gpt-53-codex-spark`.
+Available Codex models: `openai/gpt-5.6-sol` (default), `openai/gpt-5.6-terra`, `openai/gpt-5.6-luna`, `openai/gpt-5.5`, `openai/gpt-5.4`, `openai/gpt-5.4-mini`, `openai/gpt-53-codex`, `openai/gpt-53-codex-spark`.
 
 ### `copilot` — LLM via GitHub Copilot CLI
 

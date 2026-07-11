@@ -2,6 +2,8 @@
 title: "Implementation - Agent Sync Hooks"
 status: Implemented
 feature_number: "006"
+feature: 006-agent-sync-hooks
+spec_ref: .specs/features/006-agent-sync-hooks/spec.md
 created: 2026-06-30
 updated: 2026-06-30
 ---

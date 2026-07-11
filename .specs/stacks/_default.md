@@ -1,4 +1,5 @@
 ---
+title: "Default Stack"
 updated: 2026-04-14
 ---
 
@@ -10,6 +11,8 @@ updated: 2026-04-14
 ---
 
 ## Runtime & Language
+
+## Stack
 
 | Layer | Choice | Version | Evidence | Rationale |
 |---|---|---|---|---|
@@ -72,6 +75,10 @@ updated: 2026-04-14
 | Layer | Choice | Notes |
 |---|---|---|
 | Design Tool | Pencil (MCP enabled) | N/A — cc-hub is a pure CLI with no UI screens |
+
+## Rationale
+
+The project is a local-first TypeScript CLI on Bun. Commander keeps the command surface explicit, Bun provides runtime and tests, libSQL supports optional local persistence, and macOS Keychain via `creds` keeps secrets out of plaintext configuration.
 
 ---
 

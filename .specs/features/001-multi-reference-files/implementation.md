@@ -1,6 +1,16 @@
+---
+title: "Implementation - Multi-reference files for media generation commands"
+status: Implemented
+feature_number: "001"
+feature: 001-multi-reference-files
+spec_ref: .specs/features/001-multi-reference-files/spec.md
+created: 2026-05-04
+updated: 2026-05-04
+---
+
 # Implementation Map — 001-multi-reference-files
 
-## FR → @spec anchor mapping
+## Requirement Mapping
 
 | Requirement | File | Anchor | Status | Date |
 |---|---|---|---|---|
@@ -14,7 +24,7 @@
 | [FR-007: Help text "repeatable"](spec.md#fr-007) | `src/commands/{imagine,video,motion}.ts` (option description) | covered by `tests/commands/help-text.test.ts` | Implemented | 2026-05-04 |
 | [FR-008: README multi-`-i` examples](spec.md#fr-008) | `README.md` | imagine/video/motion sections | Implemented | 2026-05-04 |
 
-## AC verification
+## Acceptance Criteria
 
 | AC | Test file | Outcome |
 |---|---|---|

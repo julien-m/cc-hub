@@ -1,3 +1,13 @@
+---
+title: "Multi-reference files for media generation commands"
+status: Implemented
+priority: P1
+feature_number: "001"
+feature: 001-multi-reference-files
+created: 2026-05-04
+updated: 2026-05-04
+---
+
 # Feature Spec: Multi-reference files for media generation commands
 
 ## Header

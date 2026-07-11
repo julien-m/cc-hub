@@ -15,7 +15,8 @@ import {
 	VALID_REASONING_EFFORTS,
 } from "../services/models.ts";
 
-const CODEX_DEFAULT_MODEL = "openai/gpt-5.5";
+// @spec FR-002: Default Codex model — .specs/features/007-add-gpt-56-sol-terra-luna-to-codex-provider/spec.md#fr-002
+const CODEX_DEFAULT_MODEL = "openai/gpt-5.6-sol";
 
 /**
  * Create the `codex` command.

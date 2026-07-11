@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -104,6 +104,21 @@ describe("agent-sync service", () => {
 		);
 		expect(readlinkSync(join(projectDir, ".codex", "agents", "reviewer.toml"))).toBe(
 			join(projectDir, ".agent-sync", "agents", "reviewer", "dist", "codex.toml"),
+		);
+	});
+
+	it("replaces broken provider symlinks when linking project agents", () => {
+		const { projectDir, homeDir } = tempWorkspace();
+		mkdirp(projectDir);
+		mkdirp(homeDir);
+		writeAgent(projectDir);
+		mkdirp(join(projectDir, ".claude", "agents"));
+		symlinkSync(join(projectDir, "missing-agent.md"), join(projectDir, ".claude", "agents", "reviewer.md"));
+
+		linkAgent("reviewer", { projectDir, homeDir, scope: "project", targets: "claude" });
+
+		expect(readlinkSync(join(projectDir, ".claude", "agents", "reviewer.md"))).toBe(
+			join(projectDir, ".agent-sync", "agents", "reviewer", "dist", "claude.md"),
 		);
 	});
 

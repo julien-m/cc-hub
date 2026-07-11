@@ -5,7 +5,16 @@
 
 ---
 
-## 2026-06-30 — Feature 006 implemented: Agent sync hooks
+## 2026-07-11 — [feature]: Feature 007 implemented: Add GPT-5.6 Sol/Terra/Luna to Codex Provider
+
+- **Type:** Feature implementation
+- **Author:** Codex
+- **Artifacts:** `src/data/models.ts`, `src/commands/codex.ts`, `tests/commands/codex.test.ts`, `tests/services/models.test.ts`, `README.md`, `.agent-sync/skills/cc-hub/SKILL.md`, `.agent-sync/skills/cc-hub/references/models.md`, `.specs/features/007-add-gpt-56-sol-terra-luna-to-codex-provider/{spec,plan,progress,implementation,changelog}.md`
+- **Notes:** Added Codex-only GPT-5.6 Sol/Terra/Luna entries, changed the Codex default to Sol, kept GPT-5.5 compatibility, and added `ultra` as an opt-in effort capability with Luna capped to `max`.
+
+---
+
+## 2026-06-30 — [feature]: Feature 006 implemented: Agent sync hooks
 
 - **Type:** Feature implementation
 - **Author:** Codex
@@ -14,7 +23,7 @@
 
 ---
 
-## 2026-05-18 — Bugfix: Codex agent generation ignores Claude-only models
+## 2026-05-18 — [bugfix]: Codex agent generation ignores Claude-only models
 
 - **Type:** Bugfix
 - **Author:** Codex
@@ -23,7 +32,7 @@
 
 ---
 
-## 2026-05-18 — Feature 005 implemented: Migration output root override
+## 2026-05-18 — [feature]: Feature 005 implemented: Migration output root override
 
 - **Type:** Feature implementation
 - **Author:** Codex
@@ -32,7 +41,7 @@
 
 ---
 
-## 2026-05-18 — Feature 004 implemented: Portable agent-sync rules
+## 2026-05-18 — [feature]: Feature 004 implemented: Portable agent-sync rules
 
 - **Type:** Feature implementation
 - **Author:** Codex
@@ -41,7 +50,7 @@
 
 ---
 
-## 2026-05-18 — Check: Feature 002 + 003 spec-code alignment verified
+## 2026-05-18 — [check]: Feature 002 + 003 spec-code alignment verified
 
 - **Type:** Check
 - **Author:** /spec.check
@@ -49,7 +58,7 @@
 
 ---
 
-## 2026-05-18 — Feature 003 implemented: Migrate provider folders to agent-sync
+## 2026-05-18 — [feature]: Feature 003 implemented: Migrate provider folders to agent-sync
 
 - **Type:** Feature implementation
 - **Author:** Codex
@@ -58,7 +67,7 @@
 
 ---
 
-## 2026-05-17 — Feature 002 implemented: Multi-provider agent sync for Claude and Codex
+## 2026-05-17 — [feature]: Feature 002 implemented: Multi-provider agent sync for Claude and Codex
 
 - **Type:** Feature implementation
 - **Author:** Codex
@@ -67,7 +76,7 @@
 
 ---
 
-## 2026-05-04 — Feature 001 implemented: Multi-reference files for imagine/video/motion
+## 2026-05-04 — [feature]: Feature 001 implemented: Multi-reference files for imagine/video/motion
 
 - **Type:** Feature implementation
 - **Author:** spec.implement (livespec-implementer agent)
@@ -76,7 +85,7 @@
 
 ---
 
-## 2026-04-14 — Setup: LiveSpec initialized via `spec.init --from-code`
+## 2026-04-14 — [setup]: LiveSpec initialized via `spec.init --from-code`
 
 - **Type:** Setup
 - **Author:** spec.init
