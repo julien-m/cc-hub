@@ -11,7 +11,7 @@
 		"typecheck": "bunx tsc --noEmit"
 	},
 	"dependencies": {
-		"@libsql/client": "^0.14.0",
+		"@libsql/client": "^0.17.4",
 		"commander": "^13.0.0",
 		"ora": "^9.3.0"
 	},
