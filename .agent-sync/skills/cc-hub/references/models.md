@@ -35,3 +35,10 @@
 ## Motion Control (`cc-hub motion`)
 
 - Modèle fixe : `kuaishou/kling-2.6-motion-control`
+
+## Decide / Jev (`cc-hub decide` / `cc-hub jev`)
+
+- Type: `decision`; OpenRouter uniquement, endpoint `/api/alpha/decisions`.
+- Defaut reproductible: `typesafe/jev-1.13`; alias officiel latest: `~typesafe/jev-latest` (tilde obligatoire).
+- Questions choice/score/noul et sortie JSON complete. Aucun effort de raisonnement/chat/prose.
+- Lister: `cc-hub models list --provider openrouter --type decision`.

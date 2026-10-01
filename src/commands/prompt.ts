@@ -20,6 +20,8 @@ const FALLBACK_MODEL_BY_TYPE: Record<ModelType, string> = {
 	video: "kuaishou/kling-3.0-pro",
 	audio: "soniox/soniox",
 	music: "poyo/generate-music",
+	// Pin the decision guide to the same reproducible version as decide.
+	decision: "typesafe/jev-1.13",
 };
 
 /**
@@ -72,7 +74,7 @@ export const createPromptCommand = (): Command => {
 		.command("get")
 		.description("Show the prompt guide for a model or type")
 		.option("-m, --model <model>", "Model (e.g. anthropic/claude-opus-4.6)")
-		.option("-t, --type <type>", "Type (text, image, video, audio) — uses the default model for that type")
+		.option("-t, --type <type>", `Type (${VALID_TYPES.join(", ")}) — uses the default model for that type`)
 		.action((opts: { model?: string; type?: string }) => {
 			if (!opts.model && !opts.type) {
 				console.error("Specify --model or --type");
@@ -108,7 +110,7 @@ export const createPromptCommand = (): Command => {
 	prompt
 		.command("list")
 		.description("List available guides")
-		.option("-t, --type <type>", "Filter by type (text, image, video, audio)")
+		.option("-t, --type <type>", `Filter by type (${VALID_TYPES.join(", ")})`)
 		.action((opts: { type?: string }) => {
 			ensureDirs();
 			if (opts.type) validateModelType(opts.type);

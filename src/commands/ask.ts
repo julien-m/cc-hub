@@ -8,6 +8,7 @@ import { Spinner } from "../infra/spinner.ts";
 import { getEnv } from "../services/env.ts";
 import { loadFileContext } from "../services/files.ts";
 import {
+	findModel,
 	mapReasoningEffortForModel,
 	type ReasoningEffort,
 	resolveForProvider,
@@ -81,6 +82,13 @@ export const createAskCommand = (): Command =>
 						process.exit(2);
 					}
 					const providerName: ProviderName = provider === "poyo" ? "poyo" : "openrouter";
+					// @spec FR-005: Reject decisions on chat route — .specs/features/008-jev-openrouter/spec.md#fr-005
+					if (findModel(rawModel)?.type === "decision") {
+						console.error(
+							"Decision models use typed questions. Use cc-hub decide --input request.json (or cc-hub jev).",
+						);
+						process.exit(2);
+					}
 					const model = resolveForProvider(rawModel, providerName);
 					const askFn = provider === "poyo" ? askPoyo : askLLM;
 

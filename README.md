@@ -39,7 +39,7 @@ creds set TURSO_AUTH_TOKEN
 | Telegram Bot Token           | `TELEGRAM_BOT_TOKEN`   | yes      |
 | Telegram Chat ID             | `TELEGRAM_CHAT_ID`     | yes      |
 | Anthropic API Key (digest)   | `ANTHROPIC_API_KEY`    | yes      |
-| OpenRouter API Key (ask)     | `OPENROUTER_API_KEY`   | yes      |
+| OpenRouter API Key (ask/decide)     | `OPENROUTER_API_KEY`   | yes      |
 | Replicate API Key (media)    | `REPLICATE_API_KEY`    | yes      |
 | Turso Database URL           | `TURSO_DATABASE_URL`   | no       |
 | Turso Auth Token             | `TURSO_AUTH_TOKEN`     | no       |
@@ -232,6 +232,73 @@ cc-hub ask "3 European capitals" --schema ./capitals.schema.json
 | `--effort <level>` | cc-hub reasoning effort: `minimal`, `low`, `medium`, `high`, `xhigh`, `max`, `ultra`; mapped down to the highest effort supported by the selected OpenRouter model |
 
 Output goes to stdout. Silent by default (no auto-logging).
+
+### `decide` / `jev` — Jev typed decisions via OpenRouter
+
+<!-- @spec FR-006: Complete Jev command documentation — .specs/features/008-jev-openrouter/spec.md#fr-006 -->
+Jev answers bounded questions with `choice` (category), `score` (ordered levels, including decimal scores) and `noul` (yes/no probability). It uses OpenRouter's [Decisions API](https://openrouter.ai/docs/api/api-reference/alphadecisions/submit-a-decisions-request), with `typesafe/jev-1.13` pinned by default. It is a `decision` model; `ask` directs you to `decide` when Jev is selected.
+
+```bash
+# Fast single-question call: no prompts or spinner; JSON stdout
+cc-hub jev "This post advertises a paid course" -q '{"ad":{"type":"noul","instructions":"Is this an advertisement?"}}'
+
+# Full body from a file, inline JSON or stdin
+cc-hub decide --input request.json
+cat request.json | cc-hub jev
+cc-hub decide -i '{"state":"Please refund my duplicate charge","questions":{"refund":{"type":"noul","instructions":"Is a refund requested?"}}}'
+
+# Structured state, routing and output options
+cc-hub jev --state '{"post":"A new compiler tutorial"}' --questions questions.json \
+  --provider '{"only":["TypeSafe"],"allow_fallbacks":false}' \
+  --session-id filter-run --trace '{"trace_name":"feed-filter"}' --user feed-script \
+  --timeout-ms 5000 --answers-only --pretty --output answers.json
+cc-hub jev -i request.json -m '~typesafe/jev-latest' --dry-run
+```
+
+Full `request.json` example (illustrative data):
+
+```json
+{
+  "model": "typesafe/jev-1.13",
+  "state": {"post": "Sponsored: buy our coding course today"},
+  "questions": {
+    "topic": {"type":"choice","instructions":"Classify the post","criteria":{"advertisement":"Promotional offer","technical":"Substantive technical content","other":null}},
+    "relevance": {"type":"score","instructions":"How relevant is this post to software development?","criteria":["Unrelated","Some technical content","Substantive tutorial"]},
+    "ad": {"type":"noul","instructions":"Is the post advertising something?","criteria":{"true":"Promotional offer","false":"Ordinary post"}}
+  },
+  "provider": {"only":["TypeSafe"],"allow_fallbacks":false},
+  "session_id": "feed-filter-run",
+  "trace": {"trace_name":"feed-filter","generation_name":"post-classification"},
+  "user": "feed-script"
+}
+```
+
+| Input option | Meaning |
+|---|---|
+| `[state]` | Plain text state; when questions are supplied, piped text can supply state too |
+| `-i, --input <json_or_file>` | Complete JSON request, inline or file; `-` reads stdin; omitted input/flags reads piped full request |
+| `-s, --state <json_or_file>` | JSON string, object or array for structured state |
+| `-q, --questions <json_or_file>` | Named typed questions; instructions accept strings, objects or arrays |
+| `-m, --model <model>` | Override body model; default `typesafe/jev-1.13`; official latest alias `~typesafe/jev-latest` |
+| `-p, --provider <json_or_file>` | OpenRouter provider routing preferences |
+| `--session-id <id>` | OpenRouter session grouping; maximum 256 characters |
+| `--trace <json_or_file>` | Trace identifiers, names and custom metadata |
+| `--user <id>` | End-user identifier; maximum 256 characters |
+| `--timeout-ms <ms>` | Positive integer timeout in milliseconds; default 10000; no automatic retries |
+
+Choice supports 1–255 options; Score supports 1–10 ordered levels. Explicit flags override matching full-body fields. Full-body requests preserve additional JSON fields. Provider routing accepts the complete OpenRouter object, including `order`, `only`, `ignore`, `allow_fallbacks`, `require_parameters`, `data_collection`, `zdr`, `enforce_distillable_text`, `quantizations`, `sort`, `max_price`, `preferred_min_throughput`, `preferred_max_latency` and `options`.
+
+| Output option | Meaning |
+|---|---|
+| `-j, --json` | Explicit JSON mode; JSON is already the default |
+| `--answers-only` | Emit only the named `answers` object |
+| `--pretty` | Indent JSON for reading |
+| `-o, --output <path>` | Write to the exact specified file; stdout stays empty |
+| `--dry-run` | Validate and print the effective request without authentication or network |
+
+Default output preserves the complete response: `model`, `answers`, `usage.input_tokens`, `usage.output_tokens`, optional `usage.cost`, `id`, `provider` and additional metadata. Choice answers include `choice` and optional `probabilities`/`confidence`; score answers include decimal `score` and optional `legend`/`probabilities`/`confidence`; noul answers contain a probability `noul` between 0 and 1. No explanations or generated prose are requested. JSON can be consumed directly, for example `cc-hub jev -i request.json | jq '.answers.ad.noul'`.
+
+Uses the existing `OPENROUTER_API_KEY` configuration resolved through `creds`/Keychain. `OPENROUTER_BASE_URL` is shared with chat; a trailing `/v1` is removed for the Decisions endpoint. Errors go to stderr, with empty successful-result stdout: input errors exit 2, missing credentials exit 3, network/provider/invalid-response failures exit 4. Input is validated before key lookup; no request payloads or secrets are logged.
 
 ### `imagine` — Image generation
 
@@ -623,13 +690,14 @@ cc-hub models list                          # all models
 cc-hub models list --provider copilot       # models available on GitHub Copilot
 cc-hub models list --provider openrouter    # models available on OpenRouter
 cc-hub models list --provider poyo          # models available on Poyo
+cc-hub models list --type decision          # Jev pinned and latest alias
 cc-hub models list --type text              # text models only
 cc-hub models list --type image             # image models only
 cc-hub models list --type video             # video models only
 cc-hub models list --provider copilot --type text  # combine filters
 ```
 
-Providers: `openrouter`, `copilot`, `poyo`, `codex`. Types: `text`, `image`, `video`, `audio`, `music`.
+Providers: `openrouter`, `copilot`, `poyo`, `codex`. Types: `text`, `image`, `video`, `audio`, `music`, `decision`.
 
 All models across cc-hub use **canonical IDs** (OpenRouter format): `provider/model-name` (e.g. `openai/gpt-5.4`, `openai/gpt-oss-120b`, `z-ai/glm-5.2`, `anthropic/claude-sonnet-4.6`). OpenRouter text models show `max-effort:<level>` when cc-hub knows their documented reasoning limit.
 

@@ -2,4 +2,5 @@
 
 import { program } from "../src/cli.ts";
 
-program.parse();
+// Await async actions so decision output files and errors finish before command completion.
+await program.parseAsync();

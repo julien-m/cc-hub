@@ -105,3 +105,19 @@ describe("ask command reasoning effort", () => {
 		expect(askCalls[0].opts.effort).toBe("high");
 	});
 });
+
+describe("ask decision model guard", () => {
+	it.each(["openrouter", "poyo"])("should reject Jev on %s with a typed-decision usage hint", (provider) => {
+		const result = Bun.spawnSync(
+			[process.execPath, "bin/cc-hub.ts", "ask", "Classify this", "--provider", provider, "-m", "typesafe/jev-1.13"],
+			{
+				cwd: new URL("../..", import.meta.url).pathname,
+				stdout: "pipe",
+				stderr: "pipe",
+			},
+		);
+		expect(result.exitCode).toBe(2);
+		expect(result.stdout.toString()).toBe("");
+		expect(result.stderr.toString()).toContain("cc-hub decide");
+	});
+});

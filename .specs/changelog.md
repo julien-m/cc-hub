@@ -5,6 +5,15 @@
 
 ---
 
+## 2026-10-01 — [feature]: Feature 008 Jev OpenRouter Decisions
+
+- **Type:** Feature
+- **Author:** Codex
+- **Artifacts:** Read [specification](features/008-jev-openrouter/spec.md) and [implementation mapping](features/008-jev-openrouter/implementation.md).
+- **Notes:** Dedicated decide/jev command, choice/score/noul request contract, complete JSON output, OpenRouter-only decision registry, guarded chat routes and synchronized documentation. APEX explicitly selected by user.
+
+---
+
 ## 2026-07-11 — [feature]: Feature 007 implemented: Add GPT-5.6 Sol/Terra/Luna to Codex Provider
 
 - **Type:** Feature implementation

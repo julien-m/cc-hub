@@ -16,6 +16,15 @@ import {
 // findModel
 // ---------------------------------------------------------------------------
 describe("findModel", () => {
+	it("should discover pinned Jev and latest as OpenRouter-only decision models", () => {
+		for (const id of ["typesafe/jev-1.13", "~typesafe/jev-latest"]) {
+			expect(findModel(id)?.type).toBe("decision");
+			expect(toProviderName(id, "openrouter")).toBe(id);
+			expect(() => resolveForProvider(id, "codex")).toThrow("not available");
+			expect(listModels({ type: "text" }).some((model) => model.id === id)).toBe(false);
+		}
+		expect(listModels({ type: "decision", provider: "openrouter" })).toHaveLength(2);
+	});
 	it("should return model by canonical ID", () => {
 		const m = findModel("anthropic/claude-sonnet-4");
 		expect(m).toBeDefined();

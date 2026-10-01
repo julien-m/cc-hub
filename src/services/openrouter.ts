@@ -1,6 +1,7 @@
-import { ConfigError } from "../errors.ts";
+import { AppError, ConfigError } from "../errors.ts";
 import type { AskOptions } from "../types/ask.ts";
 import { getEnv } from "./env.ts";
+import { findModel } from "./models.ts";
 
 /**
  * Sends a prompt to an LLM via the OpenRouter API.
@@ -11,6 +12,10 @@ import { getEnv } from "./env.ts";
  * @throws Error if no model is specified or the API returns an error
  */
 export const askLLM = async (prompt: string, opts: AskOptions = {}): Promise<string> => {
+	// @spec FR-005: Reject decisions on chat route — .specs/features/008-jev-openrouter/spec.md#fr-005
+	if (opts.model && findModel(opts.model)?.type === "decision") {
+		throw new AppError("Decision models require cc-hub decide --input request.json (or cc-hub jev).", 2);
+	}
 	const apiKey = getEnv("OPENROUTER_API_KEY");
 	if (!apiKey) {
 		throw new ConfigError("OPENROUTER_API_KEY not configured in .env");

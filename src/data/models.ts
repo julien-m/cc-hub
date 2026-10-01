@@ -1,5 +1,7 @@
-export type ModelType = "text" | "image" | "video" | "audio" | "music";
-export const VALID_TYPES: readonly ModelType[] = ["text", "image", "video", "audio", "music"];
+/** Static catalog of model capabilities and provider-specific identifiers. */
+// @spec FR-001: Jev decision models — .specs/features/008-jev-openrouter/spec.md#fr-001
+export type ModelType = "text" | "image" | "video" | "audio" | "music" | "decision";
+export const VALID_TYPES: readonly ModelType[] = ["text", "image", "video", "audio", "music", "decision"];
 
 export type ProviderName = "openrouter" | "copilot" | "poyo" | "codex";
 
@@ -23,6 +25,17 @@ export interface Model {
 }
 
 export const MODELS: Model[] = [
+	// Jev uses OpenRouter's Decisions API rather than chat completions.
+	{
+		id: "typesafe/jev-1.13",
+		type: "decision",
+		providers: { openrouter: "typesafe/jev-1.13" },
+	},
+	{
+		id: "~typesafe/jev-latest",
+		type: "decision",
+		providers: { openrouter: "~typesafe/jev-latest" },
+	},
 	// --- Anthropic ---
 	{
 		id: "anthropic/claude-opus-4.6",

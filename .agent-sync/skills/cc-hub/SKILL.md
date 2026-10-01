@@ -12,7 +12,7 @@ allowed-tools: Bash
 # cc-hub — CLI IA global
 
 Tous les modèles : **format canonical ID** `provider/model-name` (ex: `openai/gpt-5.4`, `anthropic/claude-sonnet-4.6`).
-Lister les modèles : `cc-hub models list [-p openrouter|copilot|poyo|codex] [-t text|image|video|audio|music]`
+Lister les modèles : `cc-hub models list [-p openrouter|copilot|poyo|codex] [-t text|image|video|audio|music|decision]`
 **Listes complètes de modèles par commande** : **Read** [`references/models.md`](references/models.md)
 
 ## Commandes
@@ -57,6 +57,26 @@ cc-hub ask "Question" -p poyo -m gemini-3-flash-preview
 ```
 
 Options : `-j/--json` (libre), `-s/--schema <json_or_file>` (contraint), `-e/--effort minimal|low|medium|high|xhigh|max|ultra`. L'effort est mappé vers l'effort OpenRouter supporté le plus proche pour le modèle choisi.
+
+<!-- @spec FR-006: Complete Jev command documentation — .specs/features/008-jev-openrouter/spec.md#fr-006 -->
+### Decide / Jev (OpenRouter)
+
+```bash
+cc-hub jev "Texte a classifier" -q '{"ad":{"type":"noul","instructions":"Is this an advertisement?"}}'
+cc-hub decide -i request.json                   # body complet JSON inline/fichier; - = stdin
+cat request.json | cc-hub jev                   # body complet via stdin
+cc-hub jev -s '{"post":"Tutoriel compilateur"}' -q questions.json --answers-only --pretty
+cc-hub jev -i request.json -m '~typesafe/jev-latest' --timeout-ms 5000 -o answers.json
+cc-hub jev -i request.json --dry-run             # validation sans auth/reseau
+```
+
+- `decide` alias `jev`; type modele `decision`, defaut `typesafe/jev-1.13`, alias officiel `~typesafe/jev-latest`. `ask` renvoie vers `decide` pour Jev.
+- Entree complete: `model`, `state` string/object/array, `questions` map; `provider`, `session_id`, `trace`, `user` optionnels; champs supplementaires preserves. Questions: `choice` + criteria map (guidance ou null), `score` + criteria niveaux ordonnes, `noul` + criteria true/false optionnels. Instructions/guidance string/object/array.
+- Flags prioritaires sur body: `[state]` texte, `-s/--state <json_or_file>`, `-q/--questions <json_or_file>`, `-m/--model`, `-p/--provider <json_or_file>`, `--session-id`, `--trace <json_or_file>`, `--user`. Avec questions, stdin peut fournir le texte state. `--input/-i` body complet inline/fichier/`-`.
+- `provider` accepte toutes preferences OpenRouter: order/only/ignore/allow_fallbacks/require_parameters/data_collection/zdr/enforce_distillable_text/quantizations/sort/max_price/preferred_min_throughput/preferred_max_latency/options. `trace` conserve metadata custom; user/session_id max256.
+- Sortie JSON complete par defaut (`-j/--json` explicite): model/answers/usage/input_tokens/output_tokens/cost?/id?/provider? et extensions; choice/probabilities?/confidence?, score decimal/legend?/probabilities?/confidence?, noul probabilite. `--answers-only`, `--pretty`, `-o/--output <path>` (stdout vide), `--dry-run` (requete effective, sans auth/reseau).
+- `--timeout-ms` entier positif, defaut10000, pas de retry automatique/spinner. Endpoint POST `/api/alpha/decisions`, base partagee `OPENROUTER_BASE_URL` sans suffixe `/v1`; meme credential OpenRouter via creds/Keychain. Erreurs stderr: entree2, credential3, reseau/provider/reponse invalide4; pas de payload/secret dans logs.
+- **Read** [la reference Decisions OpenRouter](https://openrouter.ai/docs/api/api-reference/alphadecisions/submit-a-decisions-request) pour le contrat natif; les questions constituent le contrat de sortie, pas un schema JSON de chat.
 
 ### Image (Poyo)
 
@@ -268,5 +288,5 @@ Cache de session : charger une fois par modèle, réutiliser pour les appels sui
 
 - Pas de secrets dans `--details` ou `--title`
 - `--important` avec parcimonie (→ Telegram)
-- stdout de `ask/copilot/imagine/video/music/transcribe` exploitable en pipe
+- stdout de `decide/jev/ask/copilot/imagine/video/music/transcribe` exploitable en pipe
 - Secrets via `creds` uniquement (jamais de clés en dur)
