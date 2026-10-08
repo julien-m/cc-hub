@@ -44,7 +44,7 @@ export const AUTH_ERROR_PATTERNS: readonly string[] = [
 - [ ] **Step 1.2: Verify TypeScript compiles**
 
 ```bash
-cd /Users/julienm/projects/cc-hub && bun run start -- --version
+bun run start -- --version
 ```
 
 Expected: `0.1.0` (or current version, no errors).
@@ -130,7 +130,7 @@ type NotificationHandler = (msg: JsonRpcNotification) => void;
 - [ ] **Step 2.2: Verify file parses (no TypeScript errors)**
 
 ```bash
-cd /Users/julienm/projects/cc-hub && bun run start -- --version
+bun run start -- --version
 ```
 
 Expected: no errors.
@@ -173,7 +173,7 @@ describe('CodexSession error classes', () => {
 - [ ] **Step 2.4: Run tests to confirm they pass**
 
 ```bash
-cd /Users/julienm/projects/cc-hub && bun test tests/services/codex-session.test.ts
+bun test tests/services/codex-session.test.ts
 ```
 
 Expected: 3 tests pass.
@@ -432,7 +432,7 @@ export class CodexSession {
 - [ ] **Step 3.2: Verify TypeScript (no import errors)**
 
 ```bash
-cd /Users/julienm/projects/cc-hub && bun run start -- --version
+bun run start -- --version
 ```
 
 Expected: version printed, no errors.
@@ -440,7 +440,7 @@ Expected: version printed, no errors.
 - [ ] **Step 3.3: Run existing tests (no regressions)**
 
 ```bash
-cd /Users/julienm/projects/cc-hub && bun test
+bun test
 ```
 
 Expected: all tests pass.
@@ -518,7 +518,7 @@ In `src/services/codex-session.ts`, insert the following method **before** the `
 - [ ] **Step 4.2: Verify TypeScript**
 
 ```bash
-cd /Users/julienm/projects/cc-hub && bun run start -- --version
+bun run start -- --version
 ```
 
 Expected: no errors.
@@ -526,7 +526,7 @@ Expected: no errors.
 - [ ] **Step 4.3: Run all tests**
 
 ```bash
-cd /Users/julienm/projects/cc-hub && bun test
+bun test
 ```
 
 Expected: all pass.
@@ -597,7 +597,7 @@ const handleError = (err: unknown): never => {
 - [ ] **Step 5.3: Verify TypeScript**
 
 ```bash
-cd /Users/julienm/projects/cc-hub && bun run start -- --version
+bun run start -- --version
 ```
 
 Expected: no errors.
@@ -605,7 +605,7 @@ Expected: no errors.
 - [ ] **Step 5.4: Run all tests**
 
 ```bash
-cd /Users/julienm/projects/cc-hub && bun test
+bun test
 ```
 
 Expected: all pass.
@@ -768,7 +768,7 @@ In the action body, after the `validSandboxes` check block and before the `const
 - [ ] **Step 6.5: Verify TypeScript compiles**
 
 ```bash
-cd /Users/julienm/projects/cc-hub && bun run start -- --version
+bun run start -- --version
 ```
 
 Expected: `0.1.0`, no errors.
@@ -776,7 +776,7 @@ Expected: `0.1.0`, no errors.
 - [ ] **Step 6.6: Smoke-test the options parsing (no codex needed)**
 
 ```bash
-cd /Users/julienm/projects/cc-hub && bun run start -- codex --help
+bun run start -- codex --help
 ```
 
 Expected: output includes `--interactive` and `--persist` in the options list.
@@ -784,7 +784,7 @@ Expected: output includes `--interactive` and `--persist` in the options list.
 - [ ] **Step 6.7: Test --schema + --interactive conflict**
 
 ```bash
-cd /Users/julienm/projects/cc-hub && bun run start -- codex --interactive --schema /tmp/schema.json "test" 2>&1; echo "exit: $?"
+bun run start -- codex --interactive --schema /tmp/schema.json "test" 2>&1; echo "exit: $?"
 ```
 
 Expected: `Error: --schema is not compatible with --interactive` and exit code `2`.
@@ -792,7 +792,7 @@ Expected: `Error: --schema is not compatible with --interactive` and exit code `
 - [ ] **Step 6.8: Run all tests**
 
 ```bash
-cd /Users/julienm/projects/cc-hub && bun test
+bun test
 ```
 
 Expected: all pass.
@@ -849,7 +849,7 @@ And add `--interactive` and `--persist` to the options description line.
 - [ ] **Step 7.3: Verify no broken markdown**
 
 ```bash
-cd /Users/julienm/projects/cc-hub && grep -c "interactive" README.md
+grep -c "interactive" README.md
 ```
 
 Expected: at least 3 matches.

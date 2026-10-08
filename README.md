@@ -16,33 +16,27 @@ bun link
 ### Prerequisites
 
 - [Bun](https://bun.sh/) >= 1.0
-- macOS (Keychain via [`creds`](https://github.com/anthropics/keychain-creds))
+- [`creds`](https://github.com/julien-m/keychain-creds) — only for commands that call external APIs
 
 ### Credentials setup
+
+No API key is needed for local commands such as `skill`, `rule`, `command`, `agent`, `log` or `hook`. Configure only the keys of the commands you use.
 
 API keys are stored and read exclusively via the `creds` CLI. No token is ever stored in plaintext.
 
 ```bash
-creds set TELEGRAM_BOT_TOKEN
-creds set TELEGRAM_CHAT_ID
-creds set ANTHROPIC_API_KEY
-creds set OPENROUTER_API_KEY
-creds set REPLICATE_API_KEY
-
-# Optional — Turso Cloud sync (multi-machine)
-creds set TURSO_DATABASE_URL
-creds set TURSO_AUTH_TOKEN
+creds set OPENROUTER_API_KEY   # example: enables ask / decide
 ```
 
-| Usage                        | Creds key              | Required |
-| ---------------------------- | ---------------------- | -------- |
-| Telegram Bot Token           | `TELEGRAM_BOT_TOKEN`   | yes      |
-| Telegram Chat ID             | `TELEGRAM_CHAT_ID`     | yes      |
-| Anthropic API Key (digest)   | `ANTHROPIC_API_KEY`    | yes      |
-| OpenRouter API Key (ask/decide)     | `OPENROUTER_API_KEY`   | yes      |
-| Replicate API Key (media)    | `REPLICATE_API_KEY`    | yes      |
-| Turso Database URL           | `TURSO_DATABASE_URL`   | no       |
-| Turso Auth Token             | `TURSO_AUTH_TOKEN`     | no       |
+| Usage                         | Creds key              | Needed by                                  |
+| ----------------------------- | ---------------------- | ------------------------------------------ |
+| Telegram Bot Token            | `TELEGRAM_BOT_TOKEN`   | `telegram`                                 |
+| Telegram Chat ID              | `TELEGRAM_CHAT_ID`     | `telegram`                                 |
+| OpenRouter API Key            | `OPENROUTER_API_KEY`   | `ask`, `decide`                            |
+| Poyo API Key (media)          | `POYO_API_KEY`         | `ask` (media), `imagine`, `video`, `motion`, `music` |
+| Soniox API Key                | `SONIOX_API_KEY`       | `transcribe`                               |
+| Turso Database URL            | `TURSO_DATABASE_URL`   | optional multi-machine sync                |
+| Turso Auth Token              | `TURSO_AUTH_TOKEN`     | optional multi-machine sync                |
 
 ### Provider & model defaults
 
@@ -779,7 +773,7 @@ cc-hub/
       imagine.js           # image generation via Poyo
       video.js             # video generation via Poyo
       music.js             # music generation via Poyo
-      transcribe.js        # audio transcription via Replicate
+      transcribe.js        # audio transcription via Soniox
       prompt.js            # prompting guides (get, init, list, update)
       sync.js              # agent-sync run/status/repair/clean + Turso db sync
       migrate.js           # import Claude/Codex folders into agent-sync
@@ -802,7 +796,7 @@ cc-hub/
       agent-sync-hooks.js  # portable SessionStart hook config merge for Claude and Codex
       agent-sync-migrate.js # provider folder migration to agent-sync
       openrouter.js        # OpenRouter API client
-      replicate.js         # Replicate API client (predict + poll + download)
+      soniox.js            # Soniox transcription API client
       purge.js             # automatic purge
       telegram.js          # Telegram API (message + document)
     utils/

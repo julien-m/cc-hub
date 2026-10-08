@@ -11,7 +11,7 @@
 - **Name:** cc-hub
 - **Description:** All-in-one AI Swiss-army knife CLI. Centralizes AI agent execution logs, sends daily digest to Telegram, exposes multi-model AI capabilities (LLM, image, video, audio, music), and provides Claude Code integration utilities. Zero server, fully local.
 - **Vision:** A personal developer tool that makes the AI agent ecosystem manageable — one morning digest, one CLI entrypoint for all AI capabilities.
-- **Repository:** `/Users/julienm/projects/cc-hub`
+- **Repository:** `https://github.com/julien-m/cc-hub`
 - **Stack Reference:** See `.specs/stacks/_default.md`
 
 ---

@@ -15,11 +15,11 @@ Transformer la rule en skill on-demand. Le skill est chargé uniquement quand Cl
 
 ```
 Before:
-~/.claude/rules/cc-hub.md → /Users/julienm/projects/cc-hub/.claude/rules/cc-hub.md
+~/.claude/rules/cc-hub.md → ~/projects/cc-hub/.claude/rules/cc-hub.md
 (chargé automatiquement dans CHAQUE conversation)
 
 After:
-~/.claude/skills/cc-hub/ → /Users/julienm/projects/claude-skills/projects/dev/kit/skills/cc-hub/
+~/.claude/skills/cc-hub/ → ~/projects/claude-skills/projects/dev/kit/skills/cc-hub/
 (chargé uniquement à la demande)
 ```
 
@@ -32,7 +32,7 @@ After:
 
 ### 2. Suppression rule
 - Supprimer symlink `~/.claude/rules/cc-hub.md`
-- Supprimer source `/Users/julienm/projects/cc-hub/.claude/rules/cc-hub.md`
+- Supprimer source `~/projects/cc-hub/.claude/rules/cc-hub.md`
 
 ### 3. Mise à jour CLAUDE.md du projet cc-hub
 - Remplacer la référence à la rule par une instruction d'invocation du skill
