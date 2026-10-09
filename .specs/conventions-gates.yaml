@@ -1,0 +1,84 @@
+schema_version: 2
+generated_from:
+  constitution: .specs/constitution.md
+  constitution_sha256: 49ce11fb6b4874825a61f23012972282421759e4ce6d860276c687d9293a1a10
+  stack: .specs/stacks/_default.md
+commands:
+  lint:
+  - id: biome
+    run: bunx --no-install biome check . --reporter=json
+  - id: ruff
+    run: ruff check tests/acceptance --output-format json
+  # Native collector runs the lint group; formatter exit1 must also block conventions.
+  - id: ruff-format
+    run: ruff format --check tests/acceptance
+  format:
+  - id: ruff-format
+    run: ruff format --check tests/acceptance
+  typecheck:
+  - id: typescript
+    run: bunx tsc --noEmit
+builtin:
+  max_file_lines:
+    target: 400
+    limit: 500
+  max_function_lines:
+    target: 30
+    limit: 60
+  file_header:
+    swift: ^//\n//  [^\n]+\.swift
+    python: null
+  doc_coverage:
+    require_public_api: true
+  token_scale:
+    scale:
+    - 2
+    - 4
+    - 8
+    - 12
+    - 16
+    - 24
+    - 32
+    - 40
+    - 48
+    - 64
+    - 80
+    properties:
+    - padding
+    - margin
+    - spacing
+  suppression_directives:
+    budget: 0
+    whitelist: []
+  import_rules: []
+coverage:
+  typescript: full
+  react: full
+exclusions:
+- .specs/**
+- .git/**
+- .mimocode/**
+- .mypy_cache/**
+- .pytest_cache/**
+- .ruff_cache/**
+- .venv/**
+- build/**
+- coverage/**
+- dist/**
+- node_modules/**
+- playwright-report/**
+- '**/__pycache__/**'
+- '**/Generated/**'
+- '**/node_modules/**'
+scope: repo
+ast_rules:
+  mode: enforce
+  backend:
+    name: ast-grep
+    command: sg
+    timeout_seconds: 10
+  catalogs:
+  - validator/conventions_ast/rule_catalog/ast_high.yaml
+  - validator/conventions_ast/rule_catalog/rust_high.yaml
+  - validator/conventions_ast/rule_catalog/swift_high.yaml
+  - validator/conventions_ast/rule_catalog/kotlin_high.yaml

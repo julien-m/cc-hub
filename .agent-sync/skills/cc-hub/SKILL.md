@@ -58,7 +58,29 @@ cc-hub ask "Question" -p poyo -m gemini-3-flash-preview
 
 Options : `-j/--json` (libre), `-s/--schema <json_or_file>` (contraint), `-e/--effort minimal|low|medium|high|xhigh|max|ultra`. L'effort est mappé vers l'effort OpenRouter supporté le plus proche pour le modèle choisi.
 
+<!-- model-catalog-010:start -->
+<!-- @spec FR-005: Document verified text models — .specs/features/010-model-catalog-update/spec.md#fr-005 -->
+These four text models are available through `ask` on OpenRouter:
+
+| Canonical ID | OpenRouter native ID | Supported effort |
+| --- | --- | --- |
+| `openai/gpt-6.1-sol` | `openai/gpt-6.1-sol` | low, medium, high, xhigh, max |
+| `anthropic/claude-sonnet-5.5` | `anthropic/claude-sonnet-5.5` | low, medium, high, xhigh, max |
+| `anthropic/claude-opus-5.5` | `anthropic/claude-opus-5.5` | low, medium, high, xhigh, max |
+| `xai/grok-4.6` | `x-ai/grok-4.6` | low, medium, high, xhigh |
+
+The existing prompt/stdin, files, JSON/schema and effort options apply. `minimal → low`; `ultra → max` for GPT/Claude and `ultra → xhigh` for Grok. Omitting `--effort` preserves the provider default; explicit effort sends `reasoning: {effort, exclude: true}`. `exclude: true` controls reasoning output and does not disable mandatory reasoning. No verified mappings for Copilot, Codex or Poyo are added. Existing defaults and decision-model routes remain unchanged.
+
+```bash
+cc-hub ask "Explain this compiler error" -m openai/gpt-6.1-sol -e high
+cc-hub ask "Summarize this file" -m anthropic/claude-sonnet-5.5 -f src/index.ts
+cc-hub ask "Return JSON" -m anthropic/claude-opus-5.5 -j
+cat question.txt | cc-hub ask -m xai/grok-4.6 -e ultra
+```
+<!-- model-catalog-010:end -->
+
 <!-- @spec FR-006: Complete Jev command documentation — .specs/features/008-jev-openrouter/spec.md#fr-006 -->
+<!-- @spec FR-006: Generic Decisions usage and limits — .specs/features/009-decision-models/spec.md#fr-006 -->
 ### Decide / Jev (OpenRouter)
 
 ```bash
@@ -68,9 +90,12 @@ cat request.json | cc-hub jev                   # body complet via stdin
 cc-hub jev -s '{"post":"Tutoriel compilateur"}' -q questions.json --answers-only --pretty
 cc-hub jev -i request.json -m '~typesafe/jev-latest' --timeout-ms 5000 -o answers.json
 cc-hub jev -i request.json --dry-run             # validation sans auth/reseau
+cc-hub decide -m luna-decisions --input '{"state":"Compiler tutorial","questions":{"useful":{"type":"noul","instructions":"Is this useful?"}}}' --dry-run
 ```
 
-- `decide` alias `jev`; type modele `decision`, defaut `typesafe/jev-1.13`, alias officiel `~typesafe/jev-latest`. `ask` renvoie vers `decide` pour Jev.
+- `decide` alias `jev`; type modele `decision`, defaut `typesafe/jev-1.13`, alias officiel `~typesafe/jev-latest`. Luna: ID `openai/gpt-6-luna-decisions`, alias `luna-decisions`. `ask` renvoie vers `decide` pour les modeles decision enregistres.
+- Modele: flag explicite `-m/--model` > body `model` > defaut Jev; aliases enregistres normalises, IDs natifs inconnus non vides preserves. Jev: choice1–255, score1–10; Luna:1–200 questions, aucune borne choice/score inventee; inconnus: formes communes sans maxima non documentes.
+- JSON natif: images/references dans state structure, guidance et extensions imbriquees preserves sans upload/conversion. Parametres Decisions distincts du chat `supported_parameters`; passthrough ne garantit pas support provider.
 - Entree complete: `model`, `state` string/object/array, `questions` map; `provider`, `session_id`, `trace`, `user` optionnels; champs supplementaires preserves. Questions: `choice` + criteria map (guidance ou null), `score` + criteria niveaux ordonnes, `noul` + criteria true/false optionnels. Instructions/guidance string/object/array.
 - Flags prioritaires sur body: `[state]` texte, `-s/--state <json_or_file>`, `-q/--questions <json_or_file>`, `-m/--model`, `-p/--provider <json_or_file>`, `--session-id`, `--trace <json_or_file>`, `--user`. Avec questions, stdin peut fournir le texte state. `--input/-i` body complet inline/fichier/`-`.
 - `provider` accepte toutes preferences OpenRouter: order/only/ignore/allow_fallbacks/require_parameters/data_collection/zdr/enforce_distillable_text/quantizations/sort/max_price/preferred_min_throughput/preferred_max_latency/options. `trace` conserve metadata custom; user/session_id max256.
@@ -242,7 +267,7 @@ Migration behavior:
 - `--output <dir>` writes canonical migrated assets to a custom agent-sync root (`<dir>/skills`, `<dir>/rules`, `<dir>/agents`). Relative paths resolve from the project directory. `--scope` still controls project/global provider outputs, which point to or are generated from the custom root.
 - `--dry-run` reports planned writes without changing files.
 - Existing real provider files/directories are preserved unless `--force` is passed.
-- For rules, run `cc-hub rule repair --dry-run` first. `rule build` and `rule link` without `--force` preserve conflicting local Claude rule files, but non-dry-run `rule repair` may replace conflicting Claude rule files or symlinks while converting legacy copies to canonical agent-sync symlinks; inspect [`.claude/rules`](../../../.claude/rules) and [`.agent-sync/rules`](../../rules) before running without `--dry-run`.
+- For rules, run `cc-hub rule repair --dry-run` first. `rule build` and `rule link` without `--force` preserve conflicting local Claude rule files, but non-dry-run `rule repair` may replace conflicting Claude rule files or symlinks while converting legacy copies to canonical agent-sync symlinks; inspect [Claude rules](../../../.claude/rules) and [canonical agent-sync sources](../..), including any canonical rules already present, before running without `--dry-run`.
 - Hook sources are distinct runtime artifacts under `kit/hooks` / `.agent-sync/hooks`, not skills. `hook link` expects `session-start.sh`, `hook.sh`, or `<name>.sh`, then adds a portable `bash '<canonical-script>'` SessionStart command. It preserves existing `PreToolUse`, `Stop`, and unrelated `SessionStart` entries and avoids duplicate commands. Subagents/workers do not automatically inherit parent SessionStart context; briefs must copy the active routing instruction or re-detect the target repo.
 
 ### Digest

@@ -5,6 +5,63 @@
 
 ---
 
+## 2026-10-09 — [Feature 010] Feature: Register four source-backed OpenRouter text models
+<!-- finalize:spec-feature:2026-10-09:ee1c68ea -->
+
+## 2026-10-09 — [Feature 009] Registry finalized after filtered FR-004 audit48 correction; AC-005 native PASS, broader parent certification pending
+<!-- finalize:spec-fix:2026-10-09:d3c8441c -->
+
+## 2026-10-09 — [Feature 009] Fix: Four audit48 quality gaps closed; filtered FR-004 / AC-005 native PASS
+
+- Read [current gap report](features/009-decision-models/checks/2026-10-09.md) and [implementation mapping](features/009-decision-models/implementation.md). FullBun264PASS; ordinary0098PASS1scopeSKIP; no new isolated delivery or publication.
+
+## 2026-10-09 — [Feature 009] Check: After correction,5/6FR and7/8AC verified
+
+- Read [current gap report](features/009-decision-models/checks/2026-10-09.md): three009 convention gaps and formatter gate coverage resolved; ordinary8PASS1SKIP, filtered nativeAC005 observation1PASS/25assertions. No new full009 isolation certificate; two separate registry warnings and nine nativeadvisories remain.
+
+## 2026-10-09 — [Feature 009] Check: Current alignment5/6FR,7/8AC; convention corrections pending
+
+- Read [current gap report](features/009-decision-models/checks/2026-10-09.md): ordinary8PASS1scopeSKIP;75-line validator/defaultformat/H2 gaps. No new isolated009 certificate.
+
+## 2026-10-09 — [Feature 010] Test: 100% AC covered(8/8), 0 tests generated
+
+- Read [the independent Test report](features/010-model-catalog-update/checks/2026-10-09-test.md) for actual264Bun/8native acceptance/strict types and compatibility boundaries.
+
+## 2026-10-09 — [Feature 010] Feature: Register four source-backed OpenRouter text models
+<!-- finalize:spec-implement:2026-10-09:9604b97a -->
+
+## 2026-10-08 — [Feature 010] Plan review after acceptance format repair
+<!-- finalize:spec-feature:2026-10-08:a0cacc53 -->
+
+## 2026-10-08 — [Feature 010] Plan revalidated after AC heading normalization — 4 implementation steps, 1 sequence; existing plan content preserved, runtime evidence pending
+<!-- finalize:spec-plan:2026-10-08:aeebb87f -->
+
+## 2026-10-08 — [Feature 010] Spec AC format normalized: eight native-supported headings; unchanged semantics, current independent review and plan readiness
+<!-- finalize:spec-specify:2026-10-08:87d5b083 -->
+
+## 2026-10-08 — Approved current four-model catalog plan after complete source-bound review; implementation remains pending.
+<!-- finalize:spec-feature:2026-10-08:7793aa77 -->
+
+## 2026-10-08 — [Feature 010] Plan revalidated for current candidate: Text Model Catalog Update — 4 implementation steps, 1 sequence diagram; runtime evidence pending
+<!-- finalize:spec-plan:2026-10-08:74cb4620 -->
+
+## 2026-10-08 — [Feature 010] Spec revalidated: Text Model Catalog Update — 3 stories, 8 AC, 6 FR; current complete source-bound review and plan readiness
+<!-- finalize:spec-specify:2026-10-08:b6264089 -->
+
+## 2026-10-08 — Feature 009: Generic Luna/Jev Decisions
+<!-- finalize:spec-feature:2026-10-08:a972c7a8 -->
+
+## 2026-10-08 — Spec Update: Feature 009 source-backed validation and exact delivery scope
+<!-- finalize:spec-implement:2026-10-08:01c83b0f -->
+
+## 2026-10-08 — Spec Update: Feature 009 final audit documentation and formatter gate
+<!-- finalize:spec-implement:2026-10-08:93bb16e4 -->
+
+## 2026-10-08 — Feature 009: Generic Luna/Jev Decisions
+<!-- finalize:spec-implement:2026-10-08:7b95579a -->
+
+- Test: 100% AC covered (8/8), 0 generated tests; native 9 PASS / 99 assertions, Bun 247 PASS. Read [historical Test report](features/009-decision-models/checks/2026-10-08-test.md).
+
 ## 2026-10-01 — [feature]: Feature 008 Jev OpenRouter Decisions
 
 - **Type:** Feature

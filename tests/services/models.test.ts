@@ -1,4 +1,8 @@
+/** Tests pure catalog lookup, capability routing and bounded effort mapping. */
 import { describe, expect, it } from "bun:test";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { MODELS, type ProviderName, type ReasoningEffort } from "../../src/data/models.ts";
 import {
 	findByProviderName,
 	findModel,
@@ -23,7 +27,7 @@ describe("findModel", () => {
 			expect(() => resolveForProvider(id, "codex")).toThrow("not available");
 			expect(listModels({ type: "text" }).some((model) => model.id === id)).toBe(false);
 		}
-		expect(listModels({ type: "decision", provider: "openrouter" })).toHaveLength(2);
+		expect(listModels({ type: "decision", provider: "openrouter" })).toHaveLength(3);
 	});
 	it("should return model by canonical ID", () => {
 		const m = findModel("anthropic/claude-sonnet-4");
@@ -268,5 +272,93 @@ describe("reasoning efforts", () => {
 		expect(getMaxReasoningEffort("openai/gpt-5.6-sol")).toBe("ultra");
 		expect(getMaxReasoningEffort("openai/gpt-5.6-luna")).toBe("max");
 		expect(mapReasoningEffortForModel("openai/gpt-5.6-luna", "ultra")).toBe("max");
+	});
+});
+
+// @spec FR-001: Exact source-backed text entries — .specs/features/010-model-catalog-update/spec.md#fr-001
+// @spec FR-003: Ordered supported effort bounds — .specs/features/010-model-catalog-update/spec.md#fr-003
+// @spec FR-004: Preserve prior catalog values — .specs/features/010-model-catalog-update/spec.md#fr-004
+// @spec FR-006: Prove catalog regressions — .specs/features/010-model-catalog-update/spec.md#fr-006
+describe("source-backed text catalog additions", () => {
+	const ids = ["openai/gpt-6.1-sol", "anthropic/claude-sonnet-5.5", "anthropic/claude-opus-5.5", "xai/grok-4.6"];
+	it("should register exactly one OpenRouter-only text entry per requested ID", () => {
+		for (const id of ids) {
+			const native = id === "xai/grok-4.6" ? "x-ai/grok-4.6" : id;
+			expect(MODELS.filter((model) => model.id === id)).toHaveLength(1);
+			expect(findModel(id)?.type).toBe("text");
+			expect(findModel(id)?.providers).toEqual({ openrouter: native });
+			expect(resolveForProvider(id, "openrouter")).toBe(native);
+		}
+	});
+	it("should preserve source effort lists and map minimal/ultra to their documented bounds", () => {
+		for (const id of ids) {
+			const upperEfforts: ReasoningEffort[] = id === "xai/grok-4.6" ? [] : ["max"];
+			const efforts: ReasoningEffort[] = ["low", "medium", "high", "xhigh", ...upperEfforts];
+			expect(getReasoningEfforts(id)).toEqual(efforts);
+			for (const effort of efforts) expect(mapReasoningEffortForModel(id, effort)).toBe(effort);
+			expect(mapReasoningEffortForModel(id, "minimal")).toBe("low");
+			expect(mapReasoningEffortForModel(id, "ultra")).toBe(id === "xai/grok-4.6" ? "xhigh" : "max");
+		}
+	});
+	it("should retain every pre-addition field and order from the independent 105-entry capture", () => {
+		const captured = readFileSync(new URL("../fixtures/model-catalog-baseline.json", import.meta.url));
+		expect(createHash("sha256").update(captured).digest("hex")).toBe(
+			"19ef7f285fbe1f4ff026f8fa5653b0fe2390961b316a59f16d2a3d700945a96a",
+		);
+		const baseline: unknown = JSON.parse(captured.toString());
+		expect(baseline).toHaveLength(105);
+		expect(MODELS).toHaveLength(109);
+		// Compare only the independently captured prior IDs; additions cannot rewrite the baseline.
+		// Compare the unknown JSON boundary directly, without coercing it into trusted Model records.
+		expect<unknown>(MODELS.filter((model) => !ids.includes(model.id))).toEqual(baseline);
+		const priorJSON = JSON.stringify(MODELS.filter((model) => !ids.includes(model.id)));
+		expect(priorJSON).toBe(JSON.stringify(baseline));
+		// Canonical digest is derived only from the immutable pre-app capture, never from the additions.
+		expect(createHash("sha256").update(priorJSON).digest("hex")).toBe(
+			"00d3955ab961b03a398f68f4098b13d3cdee5c264332af155cbbeb5558bcc0cc",
+		);
+		expect(findModel("openai/gpt-6-luna-decisions")?.type).toBe("decision");
+		expect(findModel("typesafe/jev-1.13")?.type).toBe("decision");
+	});
+});
+
+// @spec FR-002: Verify provider-only resolution — .specs/features/010-model-catalog-update/spec.md#fr-002
+describe("new text provider capabilities", () => {
+	it("should include every new text model only on its verified provider", () => {
+		const unsupportedProviders: ProviderName[] = ["copilot", "codex", "poyo"];
+		for (const id of [
+			"openai/gpt-6.1-sol",
+			"anthropic/claude-sonnet-5.5",
+			"anthropic/claude-opus-5.5",
+			"xai/grok-4.6",
+		]) {
+			expect(listModels({ type: "text", provider: "openrouter" }).filter((model) => model.id === id)).toHaveLength(1);
+			for (const provider of unsupportedProviders) {
+				expect(listModels({ provider }).some((model) => model.id === id)).toBe(false);
+				expect(() => resolveForProvider(id, provider)).toThrow(`${id} is not available on ${provider}`);
+				expect(() => resolveForProvider(id, provider)).toThrow(`cc-hub models list --provider ${provider}`);
+			}
+		}
+	});
+
+	// @spec FR-004: Preserve defaults and ask routing — .specs/features/010-model-catalog-update/spec.md#fr-004
+	it("should retain default-bearing configuration and ask routing from independent pre-app source captures", () => {
+		// These digests were captured before additions; the test reads source, never personal config or Keychain.
+		for (const [path, digest] of [
+			["../../src/services/env.ts", "27eaae131b290455a9d41627d8b72c94839e56b780f32cfab150903c3213e535"],
+			["../../src/commands/ask.ts", "07583c6546e25d3cb31e35128cc5bc7cd66d6cc02eaa7659308cac6c800e6e37"],
+		]) {
+			expect(
+				createHash("sha256")
+					.update(readFileSync(new URL(path, import.meta.url)))
+					.digest("hex"),
+			).toBe(digest);
+		}
+	});
+
+	it("should retain direct native Grok raw-ID pass-through without claiming alias-specific effort mapping", () => {
+		expect(resolveForProvider("x-ai/grok-4.6", "openrouter")).toBe("x-ai/grok-4.6");
+		expect(getReasoningEfforts("x-ai/grok-4.6")).toBeUndefined();
+		expect(mapReasoningEffortForModel("x-ai/grok-4.6", "ultra")).toBe("ultra");
 	});
 });

@@ -1,3 +1,5 @@
+/** Model lookup, explicit selectors and provider capability routing. */
+
 import {
 	MODELS,
 	type Model,
@@ -6,8 +8,12 @@ import {
 	type ReasoningEffort,
 	VALID_REASONING_EFFORTS,
 } from "../data/models.ts";
+import { AppError } from "../errors.ts";
 
 const byId: ReadonlyMap<string, Model> = new Map<string, Model>(MODELS.map((m) => [m.id, m]));
+const byAlias: ReadonlyMap<string, Model> = new Map(
+	MODELS.flatMap((model) => (model.aliases ?? []).map((alias): [string, Model] => [alias, model])),
+);
 const effortRank = new Map<ReasoningEffort, number>(VALID_REASONING_EFFORTS.map((effort, index) => [effort, index]));
 
 /**
@@ -16,7 +22,7 @@ const effortRank = new Map<ReasoningEffort, number>(VALID_REASONING_EFFORTS.map(
  * @returns The model definition, or undefined if not found
  */
 export const findModel = (id: string): Model | undefined => {
-	return byId.get(id);
+	return byId.get(id) ?? byAlias.get(id);
 };
 
 /**
@@ -37,7 +43,7 @@ export const findByProviderName = (provider: ProviderName, name: string): Model 
  * @throws Error if the model is unknown or not available on the provider
  */
 export const toProviderName = (id: string, provider: ProviderName): string => {
-	const model = byId.get(id);
+	const model = findModel(id);
 	if (!model) throw new Error(`Unknown model: ${id}`);
 	const native = model.providers[provider];
 	if (!native) throw new Error(`${id} is not available on ${provider}`);
@@ -53,7 +59,7 @@ export const toProviderName = (id: string, provider: ProviderName): string => {
  * @throws Error if the model is not available on the provider
  */
 export const resolveForProvider = (userInput: string, provider: ProviderName): string => {
-	const model = byId.get(userInput);
+	const model = findModel(userInput);
 	if (model) {
 		const native = model.providers[provider];
 		if (native) return native;
@@ -148,3 +154,23 @@ export {
 	VALID_REASONING_EFFORTS,
 	VALID_TYPES,
 } from "../data/models.ts";
+
+/** Resolve registered decision aliases while preserving future native IDs unchanged.
+ * @param selector The requested decision model ID or registered alias.
+ * @returns Known native ID, otherwise the unchanged nonempty selector.
+ * @throws {AppError} Empty/padded selectors or registered incompatible model categories (2).
+ */
+// @spec FR-002: Resolve decision selectors explicitly — .specs/features/009-decision-models/spec.md#fr-002
+export const resolveDecisionModel = (selector: unknown): string => {
+	if (typeof selector !== "string" || !selector.trim())
+		throw new AppError("Invalid decision request: model must be a nonempty string.", 2);
+	if (selector !== selector.trim())
+		throw new AppError("Invalid decision request: model must not contain surrounding whitespace.", 2);
+	const known = findModel(selector) ?? findByProviderName("openrouter", selector);
+	if (known && known.type !== "decision")
+		throw new AppError(
+			"Invalid decision request: the selected model does not support decisions; use a decision model or cc-hub ask for text models.",
+			2,
+		);
+	return known?.providers.openrouter ?? selector;
+};

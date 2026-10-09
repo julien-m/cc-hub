@@ -5,6 +5,8 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { Command } from "commander";
+import { createDecideCommand } from "../../src/commands/decide.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 let testDirectory: string;
@@ -30,9 +32,10 @@ const request = (overrides: Record<string, unknown> = {}) => ({
 
 const run = async (
 	args: string[],
-	options: { stdin?: string; failure?: string; tty?: boolean } = {},
+	options: { stdin?: string; failure?: string; tty?: boolean; production?: boolean } = {},
 ): Promise<CliResult> => {
-	const child = Bun.spawn([process.execPath, harnessPath, ...args], {
+	const entryPoint = options.production ? join(root, "bin/cc-hub.ts") : harnessPath;
+	const child = Bun.spawn([process.execPath, entryPoint, ...args], {
 		cwd: testDirectory,
 		stdin: options.stdin === undefined ? "ignore" : new Blob([options.stdin]),
 		stdout: "pipe",
@@ -64,7 +67,7 @@ beforeAll(async () => {
 	await writeFile(
 		harnessPath,
 		`import { mock } from "bun:test";
-import { Command } from ${JSON.stringify(join(root, "node_modules/commander/esm.mjs"))};
+import { Command, CommanderError } from ${JSON.stringify(join(root, "node_modules/commander/esm.mjs"))};
 import { ConfigError, NetworkError } from ${JSON.stringify(join(root, "src/errors.ts"))};
 import type { DecisionRequest } from ${JSON.stringify(join(root, "src/types/decisions.ts"))};
 const servicePath = ${JSON.stringify(join(root, "src/services/decisions.ts"))};
@@ -79,13 +82,51 @@ mock.module(servicePath, () => ({ ...real, decide: async (body: DecisionRequest,
 } }));
 if (process.env.DECISION_TEST_TTY === "true") Object.defineProperty(process.stdin, "isTTY", {value: true});
 const { createDecideCommand } = await import(${JSON.stringify(join(root, "src/commands/decide.ts"))});
-await new Command("cc-hub").addCommand(createDecideCommand()).parseAsync(process.argv);
+try {
+ await new Command("cc-hub").addCommand(createDecideCommand()).parseAsync(process.argv);
+} catch (error) {
+ if (!(error instanceof CommanderError)) throw error;
+ process.exitCode = error.exitCode;
+}
 `,
 	);
 });
 
 afterAll(async () => {
 	await rm(testDirectory, { recursive: true, force: true });
+});
+
+// @spec AC-007: Complete help through a pipe — .specs/features/009-decision-models/spec.md#ac-007
+describe("decide piped help and parser exits", () => {
+	it("should flush the complete native help for decide and jev before exiting", async () => {
+		const command = createDecideCommand();
+		new Command("cc-hub").addCommand(command);
+		const expected = command.helpInformation();
+		for (const production of [true, false]) {
+			for (const name of ["decide", "jev"]) {
+				const result = await run([name, "--help"], { production });
+				expect(result.code).toBe(0);
+				expect(result.stderr).toBe("");
+				expect(result.stdout).toBe(expected);
+				expect(result.stdout).toContain("luna-decisions");
+				expect(result.stdout).toContain("--dry-run");
+			}
+		}
+	});
+
+	it("should keep Commander usage errors on stderr with exit code one", async () => {
+		for (const production of [true, false]) {
+			for (const args of [
+				["decide", "--unknown-option"],
+				["jev", "--model"],
+			]) {
+				const result = await run(args, { production });
+				expect(result.code).toBe(1);
+				expect(result.stdout).toBe("");
+				expect(result.stderr).toContain("error:");
+			}
+		}
+	});
 });
 
 describe("decide JSON input and overrides", () => {
@@ -285,5 +326,38 @@ describe("decide safe failures", () => {
 			expect(result.stderr).not.toContain("PRIVATE");
 			expect(await readFile(outputPath, "utf8")).toBe("existing content");
 		}
+	});
+});
+
+// @spec AC-002: Explicit body default precedence — .specs/features/009-decision-models/spec.md#ac-002
+// @spec AC-003: Native multimodal envelope retained — .specs/features/009-decision-models/spec.md#ac-003
+describe("generic decision selection", () => {
+	it("should select explicit model over body and Jev default for both command names", async () => {
+		for (const command of ["decide", "jev"])
+			for (const [bodyModel, explicit, expected] of [
+				[undefined, undefined, "typesafe/jev-1.13"],
+				["luna-decisions", undefined, "openai/gpt-6-luna-decisions"],
+				["typesafe/jev-1.13", "luna-decisions", "openai/gpt-6-luna-decisions"],
+				["luna-decisions", "typesafe/jev-1.13", "typesafe/jev-1.13"],
+				["unknown/future-decisions", undefined, "unknown/future-decisions"],
+			]) {
+				const body = request(bodyModel === undefined ? {} : { model: bodyModel });
+				const args = [command, "-i", JSON.stringify(body), "--dry-run"];
+				if (explicit !== undefined) args.push("-m", explicit);
+				const result = await run(args, { failure: "config" });
+				expect(result.code).toBe(0);
+				expect(result.stderr).toBe("");
+				expect(JSON.parse(result.stdout)).toEqual({ ...body, model: expected });
+			}
+	});
+	it("should preserve nested native images and JSON extensions with only alias normalization", async () => {
+		const body = request({
+			model: "luna-decisions",
+			state: { text: "Diagram", images: [{ url: "https://example.test/chart.png", detail: "high" }] },
+			extension: { native: [null, true, { level: 0.125 }] },
+		});
+		const result = await run(["decide", "-i", JSON.stringify(body)]);
+		expect(result.code).toBe(0);
+		expect(JSON.parse(result.stdout).extension.request).toEqual({ ...body, model: "openai/gpt-6-luna-decisions" });
 	});
 });

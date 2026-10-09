@@ -24,15 +24,21 @@ interface DecideOptions extends DecisionInputOptions, DecisionOutputOptions {
  */
 // @spec FR-002: Scriptable decide/jev command — .specs/features/008-jev-openrouter/spec.md#fr-002
 // @spec FR-004: Raw JSON and dry run controls — .specs/features/008-jev-openrouter/spec.md#fr-004
+// @spec FR-006: Generic model selection help — .specs/features/009-decision-models/spec.md#fr-006
 export const createDecideCommand = (): Command =>
 	new Command("decide")
+		// Let the CLI boundary set exitCode so Bun drains piped help before exiting.
+		.exitOverride()
 		.alias("jev")
-		.description("Get typed Jev decisions from state and questions (JSON output by default)")
+		.description("Get typed decisions from an OpenRouter Decisions model (JSON output by default)")
 		.argument("[state]", "Raw text state; without state/questions options, stdin is a full JSON request")
 		.option("-i, --input <json_or_file>", "Full request JSON, JSON file, or '-' for stdin")
 		.option("-s, --state <json_or_file>", "State JSON value or file (quote JSON strings); '-' reads stdin")
 		.option("-q, --questions <json_or_file>", "Questions JSON object or file; '-' reads stdin")
-		.option("-m, --model <model>", "Model override (default: typesafe/jev-1.13, or request model)")
+		.option(
+			"-m, --model <model>",
+			"Explicit model > body model > typesafe/jev-1.13; Luna: openai/gpt-6-luna-decisions or luna-decisions",
+		)
 		.option("-p, --provider <json_or_file>", "Provider routing JSON or file; '-' reads stdin")
 		.option("--session-id <id>", "Session identifier override")
 		.option("--trace <json_or_file>", "Trace metadata JSON or file; '-' reads stdin")

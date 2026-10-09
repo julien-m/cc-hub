@@ -1,7 +1,7 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.4.11/schema.json",
 	"files": {
-		"includes": ["**", "!.claude", "!.agents", "!.agent-sync", "!.agent-sync.local", "!.codex"]
+		"includes": ["**", "!.specs", "!.claude", "!.agents", "!.agent-sync", "!.agent-sync.local", "!.codex"]
 	},
 	"formatter": {
 		"indentStyle": "tab",

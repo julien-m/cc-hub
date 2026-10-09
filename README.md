@@ -227,10 +227,33 @@ cc-hub ask "3 European capitals" --schema ./capitals.schema.json
 
 Output goes to stdout. Silent by default (no auto-logging).
 
-### `decide` / `jev` — Jev typed decisions via OpenRouter
+<!-- model-catalog-010:start -->
+<!-- @spec FR-005: Document verified text models — .specs/features/010-model-catalog-update/spec.md#fr-005 -->
+These four text models are available through `ask` on OpenRouter:
+
+| Canonical ID | OpenRouter native ID | Supported effort |
+| --- | --- | --- |
+| `openai/gpt-6.1-sol` | `openai/gpt-6.1-sol` | low, medium, high, xhigh, max |
+| `anthropic/claude-sonnet-5.5` | `anthropic/claude-sonnet-5.5` | low, medium, high, xhigh, max |
+| `anthropic/claude-opus-5.5` | `anthropic/claude-opus-5.5` | low, medium, high, xhigh, max |
+| `xai/grok-4.6` | `x-ai/grok-4.6` | low, medium, high, xhigh |
+
+The existing prompt/stdin, files, JSON/schema and effort options apply. `minimal → low`; `ultra → max` for GPT/Claude and `ultra → xhigh` for Grok. Omitting `--effort` preserves the provider default; explicit effort sends `reasoning: {effort, exclude: true}`. `exclude: true` controls reasoning output and does not disable mandatory reasoning. No verified mappings for Copilot, Codex or Poyo are added. Existing defaults and decision-model routes remain unchanged.
+
+```bash
+cc-hub ask "Explain this compiler error" -m openai/gpt-6.1-sol -e high
+cc-hub ask "Summarize this file" -m anthropic/claude-sonnet-5.5 -f src/index.ts
+cc-hub ask "Return JSON" -m anthropic/claude-opus-5.5 -j
+cat question.txt | cc-hub ask -m xai/grok-4.6 -e ultra
+```
+<!-- model-catalog-010:end -->
+
+### `decide` / `jev` — Generic typed decisions via OpenRouter
+
+
 
 <!-- @spec FR-006: Complete Jev command documentation — .specs/features/008-jev-openrouter/spec.md#fr-006 -->
-Jev answers bounded questions with `choice` (category), `score` (ordered levels, including decimal scores) and `noul` (yes/no probability). It uses OpenRouter's [Decisions API](https://openrouter.ai/docs/api/api-reference/alphadecisions/submit-a-decisions-request), with `typesafe/jev-1.13` pinned by default. It is a `decision` model; `ask` directs you to `decide` when Jev is selected.
+Luna and Jev answer typed questions with `choice` (category), `score` (ordered levels, including decimal scores) and `noul` (yes/no probability). They use OpenRouter's Decisions API; **Read** [the Decisions API reference](https://openrouter.ai/docs/api/api-reference/alphadecisions/submit-a-decisions-request) for the native contract. `typesafe/jev-1.13` is pinned by default. These are `decision` models; `ask` directs you to `decide` when a registered decision model is selected.
 
 ```bash
 # Fast single-question call: no prompts or spinner; JSON stdout
@@ -247,6 +270,7 @@ cc-hub jev --state '{"post":"A new compiler tutorial"}' --questions questions.js
   --session-id filter-run --trace '{"trace_name":"feed-filter"}' --user feed-script \
   --timeout-ms 5000 --answers-only --pretty --output answers.json
 cc-hub jev -i request.json -m '~typesafe/jev-latest' --dry-run
+cc-hub decide -m luna-decisions --input '{"state":"Compiler tutorial","questions":{"useful":{"type":"noul","instructions":"Is this useful?"}}}' --dry-run
 ```
 
 Full `request.json` example (illustrative data):
@@ -273,14 +297,15 @@ Full `request.json` example (illustrative data):
 | `-i, --input <json_or_file>` | Complete JSON request, inline or file; `-` reads stdin; omitted input/flags reads piped full request |
 | `-s, --state <json_or_file>` | JSON string, object or array for structured state |
 | `-q, --questions <json_or_file>` | Named typed questions; instructions accept strings, objects or arrays |
-| `-m, --model <model>` | Override body model; default `typesafe/jev-1.13`; official latest alias `~typesafe/jev-latest` |
+| `-m, --model <model>` | Explicit flag > body model > `typesafe/jev-1.13`; Luna ID `openai/gpt-6-luna-decisions` or alias `luna-decisions`; Jev latest `~typesafe/jev-latest` |
 | `-p, --provider <json_or_file>` | OpenRouter provider routing preferences |
 | `--session-id <id>` | OpenRouter session grouping; maximum 256 characters |
 | `--trace <json_or_file>` | Trace identifiers, names and custom metadata |
 | `--user <id>` | End-user identifier; maximum 256 characters |
 | `--timeout-ms <ms>` | Positive integer timeout in milliseconds; default 10000; no automatic retries |
 
-Choice supports 1–255 options; Score supports 1–10 ordered levels. Explicit flags override matching full-body fields. Full-body requests preserve additional JSON fields. Provider routing accepts the complete OpenRouter object, including `order`, `only`, `ignore`, `allow_fallbacks`, `require_parameters`, `data_collection`, `zdr`, `enforce_distillable_text`, `quantizations`, `sort`, `max_price`, `preferred_min_throughput`, `preferred_max_latency` and `options`.
+<!-- @spec FR-006: Generic Decisions usage and limits — .specs/features/009-decision-models/spec.md#fr-006 -->
+Jev supports 1–255 choice options and 1–10 score levels. Luna supports 1–200 named questions; no source-backed choice/score maximum is applied locally to Luna or unknown models. Shared required shapes still apply. Registered aliases normalize to provider IDs; unknown nonempty native model IDs pass unchanged. `jev` remains a command alias and obeys explicit model selection. Explicit flags override matching full-body fields. Full-body requests preserve additional JSON fields. Provider routing accepts the complete OpenRouter object, including `order`, `only`, `ignore`, `allow_fallbacks`, `require_parameters`, `data_collection`, `zdr`, `enforce_distillable_text`, `quantizations`, `sort`, `max_price`, `preferred_min_throughput`, `preferred_max_latency` and `options`.
 
 | Output option | Meaning |
 |---|---|
@@ -289,6 +314,8 @@ Choice supports 1–255 options; Score supports 1–10 ordered levels. Explicit 
 | `--pretty` | Indent JSON for reading |
 | `-o, --output <path>` | Write to the exact specified file; stdout stays empty |
 | `--dry-run` | Validate and print the effective request without authentication or network |
+
+Full native JSON input preserves nested extensions and native image references inside structured state; no image upload or conversion is performed. Decisions parameters are distinct from chat `supported_parameters`; forwarding an extension does not guarantee provider support.
 
 Default output preserves the complete response: `model`, `answers`, `usage.input_tokens`, `usage.output_tokens`, optional `usage.cost`, `id`, `provider` and additional metadata. Choice answers include `choice` and optional `probabilities`/`confidence`; score answers include decimal `score` and optional `legend`/`probabilities`/`confidence`; noul answers contain a probability `noul` between 0 and 1. No explanations or generated prose are requested. JSON can be consumed directly, for example `cc-hub jev -i request.json | jq '.answers.ad.noul'`.
 
@@ -588,7 +615,7 @@ AGENTS.md                               # generated project Codex rule block
 
 Claude reads the canonical file through the `.claude/rules` symlink, so `paths:` frontmatter is preserved without copying. Codex has no equivalent path-scoped rules mechanism, so cc-hub renders paths as textual "When modifying ..." guidance inside the managed `AGENTS.md` block. Edit `.agent-sync/rules` / `~/.agent-sync/rules`, not provider outputs.
 
-Run `cc-hub rule repair --dry-run` before repairing rules. `rule build` and `rule link` without `--force` preserve conflicting local Claude rule files, but non-dry-run `rule repair` is intentionally forceful: it may replace conflicting Claude rule files or symlinks while converting legacy copies to canonical agent-sync symlinks; inspect [`.claude/rules`](.claude/rules) and [`.agent-sync/rules`](.agent-sync/rules) before running without `--dry-run`.
+Run `cc-hub rule repair --dry-run` before repairing rules. `rule build` and `rule link` without `--force` preserve conflicting local Claude rule files, but non-dry-run `rule repair` is intentionally forceful: it may replace conflicting Claude rule files or symlinks while converting legacy copies to canonical agent-sync symlinks; inspect [Claude rules](.claude/rules) and [canonical agent-sync sources](.agent-sync), including any canonical rules already present, before running without `--dry-run`.
 
 Hooks use a distinct canonical source directory and merge into user-level provider hook configs:
 
@@ -684,7 +711,7 @@ cc-hub models list                          # all models
 cc-hub models list --provider copilot       # models available on GitHub Copilot
 cc-hub models list --provider openrouter    # models available on OpenRouter
 cc-hub models list --provider poyo          # models available on Poyo
-cc-hub models list --type decision          # Jev pinned and latest alias
+cc-hub models list --type decision          # Luna plus Jev pinned/latest
 cc-hub models list --type text              # text models only
 cc-hub models list --type image             # image models only
 cc-hub models list --type video             # video models only

@@ -1,8 +1,10 @@
 /** Validated, bounded transport for OpenRouter alpha Decisions without retries. */
+
+import { type DecisionCapabilities, getDecisionCapabilities } from "../data/decision-models.ts";
 import { AppError, ConfigError, NetworkError } from "../errors.ts";
 import type { DecisionRequest, DecisionResponse } from "../types/decisions.ts";
 import { getEnv } from "./env.ts";
-import { findByProviderName, findModel } from "./models.ts";
+import { resolveDecisionModel } from "./models.ts";
 
 /** Pinned Jev default; requests may explicitly select another decision model. */
 export const DEFAULT_DECISION_MODEL = "typesafe/jev-1.13";
@@ -108,31 +110,19 @@ const validateProvider = (value: unknown): void => {
 	}
 };
 
-// @spec FR-003: Validate before auth and HTTP — .specs/features/008-jev-openrouter/spec.md#fr-003
-/**
- * Validates documented request fields without dropping JSON extensions or performing I/O.
- * @param value Untrusted parsed request envelope.
- * @returns The same envelope, narrowed to complete typed decision input.
- * @throws {AppError} Invalid JSON, model, questions or metadata (exit code 2).
- */
-export const validateDecisionRequest = (value: unknown): DecisionRequest => {
-	if (!isObject(value)) inputError("the envelope must be an object.");
-	let jsonValid = false;
-	try {
-		jsonValid = isJson(value);
-	} catch {
-		/* Excessively nested JSON is rejected safely. */
-	}
-	requireInput(jsonValid, "all fields must contain finite, acyclic JSON data.");
-	requireInput(typeof value.model === "string" && value.model.trim().length > 0, "model must be a nonempty string.");
-	if (typeof value.model === "string") {
-		const known = findModel(value.model) ?? findByProviderName("openrouter", value.model);
-		if (known && known.type !== "decision")
-			inputError("the selected model does not support decisions; use a decision model or cc-hub ask for text models.");
-	}
-	requireInput(isGuidance(value.state), "state must be a string, object or array.");
-	const questions = value.questions;
+// @spec FR-004: Preserve ordered common question checks and identity-specific bounds — .specs/features/009-decision-models/spec.md#fr-004
+const validateDecisionQuestions = (
+	questions: unknown,
+	model: string,
+	limits: DecisionCapabilities | undefined,
+): void => {
 	if (!isObject(questions) || Object.keys(questions).length === 0) inputError("questions must be a nonempty object.");
+	// Only documented bounds for the selected model apply; unknown limits remain provider-owned.
+	if (limits?.maxQuestions !== undefined)
+		requireInput(
+			Object.keys(questions).length <= limits.maxQuestions,
+			`${model} supports at most ${limits.maxQuestions} questions.`,
+		);
 	for (const question of Object.values(questions)) {
 		if (!isObject(question)) inputError("each question must be an object.");
 		requireInput(isGuidance(question.instructions), "question instructions must be a string, object or array.");
@@ -141,18 +131,22 @@ export const validateDecisionRequest = (value: unknown): DecisionRequest => {
 				requireInput(
 					isObject(question.criteria) &&
 						Object.keys(question.criteria).length > 0 &&
-						Object.keys(question.criteria).length <= 255 &&
+						(limits?.maxChoices === undefined || Object.keys(question.criteria).length <= limits.maxChoices) &&
 						Object.values(question.criteria).every((criterion) => criterion === null || isGuidance(criterion)),
-					"choice criteria must contain 1 to 255 guidance or null values.",
+					limits?.maxChoices === undefined
+						? "choice criteria must contain one or more guidance or null values."
+						: `choice criteria must contain 1 to ${limits.maxChoices} guidance or null values.`,
 				);
 				break;
 			case "score":
 				requireInput(
 					Array.isArray(question.criteria) &&
 						question.criteria.length >= 1 &&
-						question.criteria.length <= 10 &&
+						(limits?.maxScoreLevels === undefined || question.criteria.length <= limits.maxScoreLevels) &&
 						question.criteria.every(isGuidance),
-					"score criteria must contain 1 to 10 guidance levels.",
+					limits?.maxScoreLevels === undefined
+						? "score criteria must contain one or more guidance levels."
+						: `score criteria must contain 1 to ${limits.maxScoreLevels} guidance levels.`,
 				);
 				break;
 			case "noul":
@@ -166,6 +160,33 @@ export const validateDecisionRequest = (value: unknown): DecisionRequest => {
 				inputError("question type must be choice, score or noul.");
 		}
 	}
+};
+
+// @spec FR-003: Validate before auth and HTTP — .specs/features/008-jev-openrouter/spec.md#fr-003
+/**
+ * Validates documented request fields without dropping JSON extensions or performing I/O.
+ * @param value Untrusted parsed request envelope.
+ * @returns Native envelope with only a registered alias normalized; caller data is preserved.
+ * @throws {AppError} Invalid JSON, model, questions or metadata (exit code 2).
+ */
+// @spec FR-002: Resolve aliases for CLI and service — .specs/features/009-decision-models/spec.md#fr-002
+// @spec FR-004: Validate common shapes and known bounds — .specs/features/009-decision-models/spec.md#fr-004
+// @spec FR-005: Reject invalid input before auth — .specs/features/009-decision-models/spec.md#fr-005
+// Validate finite JSON, resolve model bounds, check common questions/provider/metadata, then normalize only the alias.
+// Existing Jev schema validators remain intact to preserve feature008 compatibility.
+export const validateDecisionRequest = (value: unknown): DecisionRequest => {
+	if (!isObject(value)) inputError("the envelope must be an object.");
+	let jsonValid = false;
+	try {
+		jsonValid = isJson(value);
+	} catch {
+		/* Excessively nested JSON is rejected safely. */
+	}
+	requireInput(jsonValid, "all fields must contain finite, acyclic JSON data.");
+	const model = resolveDecisionModel(value.model);
+	const limits = getDecisionCapabilities(model);
+	requireInput(isGuidance(value.state), "state must be a string, object or array.");
+	validateDecisionQuestions(value.questions, model, limits);
 	// JSON Schema maxLength counts Unicode codepoints, not UTF-16 units.
 	for (const key of ["session_id", "user"]) {
 		if (has(value, key))
@@ -182,7 +203,7 @@ export const validateDecisionRequest = (value: unknown): DecisionRequest => {
 		}
 	}
 	// All documented fields and every recursive JSON value were narrowed above.
-	return value as DecisionRequest;
+	return (value.model === model ? value : { ...value, model }) as DecisionRequest;
 };
 
 function invalidResponse(): never {
@@ -229,8 +250,8 @@ export const validateDecisionResponse = (value: unknown, request: DecisionReques
 				if (typeof answer.choice !== "string" || !has(question.criteria, answer.choice)) invalidResponse();
 				break;
 			case "score":
-				if (!isFiniteNumber(answer.score) || answer.score < 0 || answer.score > question.criteria.length - 1)
-					invalidResponse();
+				// The source schema defines a double, without a rubric-derived numeric range.
+				if (!isFiniteNumber(answer.score)) invalidResponse();
 				if (has(answer, "legend") && (!isObject(answer.legend) || !Object.values(answer.legend).every(isGuidance)))
 					invalidResponse();
 				break;
@@ -283,6 +304,8 @@ const httpFailure = (status: number): string => {
  * @throws {ConfigError} Missing credentials or invalid API base URL (exit code 3).
  * @throws {NetworkError} HTTP, timeout, network or response failure (exit code 4).
  */
+// @spec FR-003: Preserve full native JSON round trip — .specs/features/009-decision-models/spec.md#fr-003
+// @spec FR-005: Validate before bounded transport — .specs/features/009-decision-models/spec.md#fr-005
 export const decide = async (request: DecisionRequest, opts: DecisionOptions = {}): Promise<DecisionResponse> => {
 	const validated = validateDecisionRequest(request);
 	const timeoutMs = opts.timeoutMs ?? 10_000;

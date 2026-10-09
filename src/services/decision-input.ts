@@ -57,6 +57,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  * @returns The effective validated request, including extension fields.
  * @throws {AppError} For missing, ambiguous, unreadable, or invalid input (code 2).
  */
+// @spec FR-002: Explicit body default model precedence — .specs/features/009-decision-models/spec.md#fr-002
+// @spec FR-003: Preserve full native input envelope — .specs/features/009-decision-models/spec.md#fr-003
 // @spec FR-002: Full request, sources and overrides — .specs/features/008-jev-openrouter/spec.md#fr-002
 export const resolveDecisionInput = async (
 	stateArg: string | undefined,

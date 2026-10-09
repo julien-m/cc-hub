@@ -29,6 +29,8 @@
 - [x] **OpenAI Codex CLI integration** — `codex` command with JSON-lines machine protocol. · Scope: M
 - [x] **Automatic purge** — Events purged after N days (configurable), artifacts deleted simultaneously. · Scope: S
 - [x] **Jev OpenRouter Decisions** — Typed decision command with full input/output and pinned/latest catalog. · Scope: M → [008-jev-openrouter](features/008-jev-openrouter/spec.md)
+- [x] **Generic Decision Models** — Luna alongside Jev; generic explicit selection and native JSON compatibility. · Scope: M · Deps: 008 · Read [009-decision-models](features/009-decision-models/spec.md)
+- [x] **Text Model Catalog Update** — Four source-backed OpenRouter text entries; current ask/default compatibility. · Scope: S · Deps: existing models/ask · Read [010-model-catalog-update](features/010-model-catalog-update/spec.md)
 <!-- roadmap:mvp:end -->
 
 ---

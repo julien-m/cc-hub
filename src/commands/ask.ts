@@ -82,6 +82,7 @@ export const createAskCommand = (): Command =>
 						process.exit(2);
 					}
 					const providerName: ProviderName = provider === "poyo" ? "poyo" : "openrouter";
+					// @spec FR-005: Guard Luna and Jev including aliases — .specs/features/009-decision-models/spec.md#fr-005
 					// @spec FR-005: Reject decisions on chat route — .specs/features/008-jev-openrouter/spec.md#fr-005
 					if (findModel(rawModel)?.type === "decision") {
 						console.error(

@@ -55,6 +55,43 @@ describe("ask command reasoning effort", () => {
 		askCalls.length = 0;
 	});
 
+	// @spec FR-002: Native route and existing ask options — .specs/features/010-model-catalog-update/spec.md#fr-002
+	// @spec FR-003: Preserve absent effort and map documented bounds — .specs/features/010-model-catalog-update/spec.md#fr-003
+	it.each([
+		"openai/gpt-6.1-sol",
+		"anthropic/claude-sonnet-5.5",
+		"anthropic/claude-opus-5.5",
+		"xai/grok-4.6",
+	])("should route and map all new text efforts for %s", async (id) => {
+		const realWrite = process.stdout.write;
+		// This compatible stdout output-port fake suppresses only fixture response bytes.
+		process.stdout.write = (() => true) as typeof process.stdout.write;
+		try {
+			for (const effort of [undefined, "minimal", "high", "ultra"]) {
+				await createAskCommand().parseAsync([
+					"bun",
+					"ask",
+					"Compiler question",
+					"-m",
+					id,
+					...(effort ? ["-e", effort] : []),
+				]);
+			}
+		} finally {
+			process.stdout.write = realWrite;
+		}
+		expect(askCalls.map((call) => call.prompt)).toEqual(Array<string>(4).fill("Compiler question"));
+		expect(askCalls.map((call) => call.opts.model)).toEqual(
+			Array<string>(4).fill(id === "xai/grok-4.6" ? "x-ai/grok-4.6" : id),
+		);
+		expect(askCalls.map((call) => call.opts.effort)).toEqual([
+			undefined,
+			"low",
+			"high",
+			id === "xai/grok-4.6" ? "xhigh" : "max",
+		]);
+	});
+
 	it("should pass xhigh effort for GLM 5.2", async () => {
 		const output: string[] = [];
 		const realWrite = process.stdout.write;
@@ -106,18 +143,29 @@ describe("ask command reasoning effort", () => {
 	});
 });
 
+// @spec AC-006: Guard every registered decision selector — .specs/features/009-decision-models/spec.md#ac-006
 describe("ask decision model guard", () => {
-	it.each(["openrouter", "poyo"])("should reject Jev on %s with a typed-decision usage hint", (provider) => {
-		const result = Bun.spawnSync(
-			[process.execPath, "bin/cc-hub.ts", "ask", "Classify this", "--provider", provider, "-m", "typesafe/jev-1.13"],
-			{
-				cwd: new URL("../..", import.meta.url).pathname,
-				stdout: "pipe",
-				stderr: "pipe",
-			},
-		);
-		expect(result.exitCode).toBe(2);
-		expect(result.stdout.toString()).toBe("");
-		expect(result.stderr.toString()).toContain("cc-hub decide");
+	it.each([
+		"openrouter",
+		"poyo",
+	])("should reject every registered decision model on %s with a typed-decision usage hint", (provider) => {
+		for (const model of [
+			"typesafe/jev-1.13",
+			"~typesafe/jev-latest",
+			"openai/gpt-6-luna-decisions",
+			"luna-decisions",
+		]) {
+			const result = Bun.spawnSync(
+				[process.execPath, "bin/cc-hub.ts", "ask", "Classify this", "--provider", provider, "-m", model],
+				{
+					cwd: new URL("../..", import.meta.url).pathname,
+					stdout: "pipe",
+					stderr: "pipe",
+				},
+			);
+			expect(result.exitCode).toBe(2);
+			expect(result.stdout.toString()).toBe("");
+			expect(result.stderr.toString()).toContain("cc-hub decide");
+		}
 	});
 });
